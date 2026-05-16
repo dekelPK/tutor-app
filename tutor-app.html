@@ -894,11 +894,6 @@
       <div class="auth-title">שיעורים פרטיים</div>
       <div class="auth-subtitle">מערכת ניהול חכמה למורים פרטיים</div>
 
-      <div class="auth-tabs">
-        <button class="auth-tab-btn active" id="auth-tab-login" onclick="showAuthTab('login')">כניסה</button>
-        <button class="auth-tab-btn" id="auth-tab-register" onclick="showAuthTab('register')">הרשמה</button>
-      </div>
-
       <!-- LOGIN -->
       <div id="auth-form-login">
         <div class="auth-field">
@@ -919,35 +914,25 @@
         <button class="btn-auth" id="login-btn" onclick="doLogin()">כניסה למערכת</button>
       </div>
 
-      <!-- REGISTER -->
+      <!-- REGISTER (hidden – closed) -->
       <div id="auth-form-register" style="display:none">
-        <div class="auth-field">
-          <label>שם מלא</label>
-          <div class="auth-input-wrap">
-            <span class="auth-input-icon">👤</span>
-            <input type="text" id="auth-name" placeholder="ישראל ישראלי" autocomplete="name" onkeydown="if(event.key==='Enter')doRegister()">
+        <div style="text-align:center;padding:20px 0 10px">
+          <div style="font-size:40px;margin-bottom:12px">🔒</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:8px;color:var(--text)">ההרשמה סגורה</div>
+          <div style="font-size:14px;color:var(--text-muted);line-height:1.6">
+            לפתיחת חשבון חדש במערכת<br>יש לפנות למנהל המערכת
           </div>
         </div>
-        <div class="auth-field">
-          <label>אימייל</label>
-          <div class="auth-input-wrap">
-            <span class="auth-input-icon">✉️</span>
-            <input type="email" id="auth-email-reg" placeholder="your@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')doRegister()">
-          </div>
-        </div>
-        <div class="auth-field">
-          <label>סיסמה</label>
-          <div class="auth-input-wrap">
-            <span class="auth-input-icon">🔒</span>
-            <input type="password" id="auth-password-reg" placeholder="לפחות 6 תווים" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()">
-            <button class="auth-pw-toggle" type="button" onclick="togglePw('auth-password-reg',this)" tabindex="-1">👁</button>
-          </div>
-        </div>
-        <button class="btn-auth" id="register-btn" onclick="doRegister()">יצירת חשבון חינם</button>
-        <div class="auth-note">🔒 הנתונים שלך מאובטחים ופרטיים לחלוטין</div>
+        <button class="btn-auth" style="background:#64748b;box-shadow:none" onclick="showAuthTab('login')">← חזרה לכניסה</button>
       </div>
 
       <div id="auth-error" class="auth-error">⚠️ <span id="auth-error-text"></span></div>
+
+      <div style="text-align:center;margin-top:16px">
+        <button onclick="showAuthTab('register')" style="background:none;border:none;color:var(--text-muted);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline">
+          אין לך חשבון?
+        </button>
+      </div>
     </div>
   </div>
 

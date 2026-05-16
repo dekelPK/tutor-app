@@ -14,6 +14,9 @@ DB_PATH  = os.path.join(BASE_DIR, 'tutor.db')
 app = Flask(__name__, static_folder=BASE_DIR)
 app.permanent_session_lifetime = timedelta(days=30)
 
+# ── Set to True only when you want to allow new registrations ─────────────────
+REGISTRATION_OPEN = False
+
 # ── Secret key (persist across restarts) ──────────────────────────────────────
 _sk_file = os.path.join(BASE_DIR, '.secret_key')
 if os.path.exists(_sk_file):
@@ -135,6 +138,8 @@ def auth_login():
 
 @app.route('/api/auth/register', methods=['POST'])
 def auth_register():
+    if not REGISTRATION_OPEN:
+        return jsonify({'error': 'ההרשמה סגורה. לפתיחת חשבון יש לפנות למנהל המערכת.'}), 403
     body  = request.json or {}
     email = (body.get('email') or '').strip().lower()
     pw    = body.get('password', '')
