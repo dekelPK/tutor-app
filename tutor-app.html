@@ -1,0 +1,2703 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="שיעורים פרטיים">
+  <meta name="theme-color" content="#4f46e5">
+  <title>ניהול שיעורים פרטיים</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #eef2ff;
+      --primary-dark: #3730a3;
+      --success: #10b981;
+      --success-light: #d1fae5;
+      --warning: #f59e0b;
+      --warning-light: #fef3c7;
+      --danger: #ef4444;
+      --danger-light: #fee2e2;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      direction: rtl;
+      min-height: 100vh;
+      font-size: 15px;
+    }
+
+    /* ===== HEADER ===== */
+    .app-header {
+      background: var(--primary);
+      color: white;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+    }
+    .app-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .btn-import {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-import:hover { background: rgba(255,255,255,0.25); }
+
+    /* ===== NAV ===== */
+    .nav-tabs {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      padding: 0 24px;
+      gap: 4px;
+    }
+    .nav-tab {
+      padding: 14px 18px;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .nav-tab:hover { color: var(--primary); }
+    .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* ===== MAIN ===== */
+    .main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+    .page { display: none; }
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .page-title { font-size: 20px; font-weight: 700; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 500;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      line-height: 1.4;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-warning { background: var(--warning); color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--bg); color: var(--text); }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+    .btn-xs { padding: 4px 8px; font-size: 12px; border-radius: 6px; }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    /* ===== STAT CARDS ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      border-top: 3px solid var(--primary);
+    }
+    .stat-card:nth-child(2) { border-top-color: var(--success); }
+    .stat-card:nth-child(3) { border-top-color: var(--warning); }
+    .stat-card:nth-child(4) { border-top-color: var(--danger); }
+    .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-bottom: 6px; }
+    .stat-value { font-size: 26px; font-weight: 700; color: var(--text); }
+
+    /* ===== DASHBOARD GRIDS ===== */
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .dash-card-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+
+    /* ===== TABLES ===== */
+    .table-wrapper { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th {
+      text-align: right;
+      padding: 10px 12px;
+      background: var(--bg);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafbfc; }
+    .empty-cell { text-align: center; color: var(--text-muted); padding: 32px; }
+    .actions-cell { white-space: nowrap; display: flex; gap: 4px; flex-wrap: wrap; }
+
+    /* ===== BADGES ===== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      color: white;
+    }
+    .badge-success { background: var(--success); }
+    .badge-warning { background: var(--warning); color: white; }
+    .badge-danger { background: var(--danger); }
+    .badge-muted { background: var(--border); color: var(--text-muted); }
+    .badge-partial { background: #ea580c; color: white; }
+
+    /* ===== AUTH OVERLAY ===== */
+    .auth-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .auth-overlay.visible { display: flex; }
+    .auth-card {
+      background: white;
+      border-radius: 20px;
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .auth-logo { text-align: center; font-size: 40px; margin-bottom: 8px; }
+    .auth-title { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 4px; color: var(--text); }
+    .auth-subtitle { text-align: center; font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+    .auth-tabs {
+      display: flex;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 24px;
+      gap: 4px;
+    }
+    .auth-tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: none;
+      border-radius: 7px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .auth-tab-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    }
+    .auth-error {
+      background: var(--danger-light);
+      color: var(--danger);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+    .auth-error.visible { display: block; }
+
+    /* ===== STUDENT DOT ===== */
+    .student-dot {
+      display: inline-block;
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      margin-left: 6px;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+
+    /* ===== STUDENTS GRID ===== */
+    .students-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .student-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      border-top: 4px solid var(--primary);
+    }
+    .student-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .student-card-header h3 { font-size: 17px; font-weight: 700; }
+    .student-info {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .student-notes {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      font-style: italic;
+    }
+    .student-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      margin-top: 4px;
+    }
+    .empty-state-card {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      color: var(--text-muted);
+    }
+    .empty-state-card p:first-child { font-size: 16px; font-weight: 500; margin-bottom: 8px; }
+
+    /* ===== FILTERS ===== */
+    .filters-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filters-bar select, .filters-bar input {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      background: var(--card);
+      color: var(--text);
+      min-width: 140px;
+    }
+    .lessons-summary {
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 10px 0 6px;
+    }
+
+    /* ===== BALANCE CARDS ===== */
+    .balance-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .balance-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      border-inline-start: 4px solid var(--primary);
+    }
+    .balance-name { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+    .balance-amount { font-size: 16px; font-weight: 700; }
+
+    /* ===== RECENT LESSONS ===== */
+    .recent-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .recent-item:last-child { border-bottom: none; }
+    .recent-item .badge { font-size: 11px; min-width: 52px; justify-content: center; }
+
+    /* ===== HISTORY LIST ===== */
+    .history-list { max-height: 200px; overflow-y: auto; }
+    .history-item {
+      display: flex;
+      gap: 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      align-items: center;
+    }
+    .history-item:last-child { border-bottom: none; }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-body { padding: 20px; flex: 1; overflow-y: auto; }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--card);
+      z-index: 1;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; }
+    .modal-close {
+      background: none; border: none; cursor: pointer;
+      font-size: 22px; color: var(--text-muted); line-height: 1;
+      padding: 0 4px;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-handle {
+      display: none;
+      width: 36px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 10px auto 0;
+    }
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* ===== FORM ===== */
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="date"],
+    .form-group input[type="time"],
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      background: white;
+      transition: border-color 0.15s;
+      direction: rtl;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    .form-hint { font-size: 12px; margin-top: 4px; }
+    .checkbox-label {
+      display: flex !important;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 14px !important;
+      color: var(--text) !important;
+      font-weight: normal !important;
+    }
+    .checkbox-label input { width: auto; }
+    .days-checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .day-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      transition: all 0.15s;
+    }
+    .day-checkbox:hover { border-color: var(--primary); background: var(--primary-light); }
+    .day-checkbox input { cursor: pointer; }
+    .color-options { display: flex; gap: 10px; flex-wrap: wrap; }
+    .color-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: transform 0.15s;
+    }
+    .color-dot:hover { transform: scale(1.15); }
+    .color-dot.selected { border-color: var(--text); box-shadow: 0 0 0 2px white inset; }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1e293b;
+      color: white;
+      padding: 11px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 2000;
+      transition: transform 0.25s ease;
+      box-shadow: var(--shadow-md);
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast-error { background: var(--danger); }
+    .toast-warning { background: var(--warning); }
+    .toast-success { background: var(--success); }
+
+    /* ===== UTILS ===== */
+    .text-danger { color: var(--danger); }
+    .text-success { color: var(--success); }
+    .text-muted { color: var(--text-muted); }
+    .text-warning { color: var(--warning); }
+    hr { border: none; border-top: 1px solid var(--border); }
+
+    /* ===== CALENDAR ===== */
+    .cal-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; gap: 10px; flex-wrap: wrap;
+    }
+    .cal-nav { display: flex; gap: 4px; }
+    .cal-title { font-size: 15px; font-weight: 700; flex: 1; text-align: center; }
+    .cal-views { display: flex; gap: 2px; background: var(--bg); border-radius: 8px; padding: 2px; }
+    .cal-view-btn {
+      padding: 5px 12px; border: none; border-radius: 6px; background: transparent;
+      cursor: pointer; font-size: 13px; font-family: inherit; color: var(--text-muted);
+      font-weight: 500; transition: all 0.15s;
+    }
+    .cal-view-btn:hover { color: var(--text); }
+    .cal-view-btn.active { background: white; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600; }
+
+    /* Month */
+    .cal-month { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .cal-month th {
+      text-align: center; padding: 8px 4px; font-size: 12px; font-weight: 600;
+      color: var(--text-muted); border-bottom: 1px solid var(--border);
+    }
+    .cal-day-cell {
+      border: 1px solid var(--border); vertical-align: top; padding: 4px 6px;
+      height: 82px; cursor: pointer; transition: background 0.1s; overflow: hidden;
+    }
+    .cal-day-cell:hover { background: var(--primary-light); }
+    .cal-day-cell.today { background: #eef2ff; }
+    .cal-day-cell.other-month { background: #fafbfc; opacity: 0.45; pointer-events: none; }
+    .cal-day-num { font-size: 12px; font-weight: 500; margin-bottom: 3px; display: flex; justify-content: flex-end; }
+    .cal-day-cell.today .cal-day-num span {
+      background: var(--primary); color: white; border-radius: 50%;
+      width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-weight: 700;
+    }
+    .cal-event {
+      font-size: 11px; padding: 2px 5px; border-radius: 4px; color: white;
+      margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; line-height: 1.4;
+    }
+    .cal-event:hover { opacity: 0.85; }
+    .cal-more { font-size: 10px; color: var(--text-muted); }
+
+    /* Week */
+    .cal-week-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      gap: 1px; background: var(--border); border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden;
+    }
+    .cal-week-col { background: white; min-height: 180px; }
+    .cal-week-col.today { background: #eef2ff; }
+    .cal-week-header {
+      padding: 7px 4px; text-align: center; border-bottom: 1px solid var(--border);
+      cursor: pointer; background: var(--bg);
+    }
+    .cal-week-header:hover { background: var(--primary-light); }
+    .cal-week-day-name { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+    .cal-week-day-num { font-size: 15px; font-weight: 600; margin-top: 2px; }
+    .cal-week-day-num.today-num {
+      background: var(--primary); color: white; border-radius: 50%;
+      width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; margin: 2px auto 0;
+    }
+    .cal-week-events { padding: 4px; min-height: 120px; cursor: pointer; }
+    .cal-week-event {
+      font-size: 11px; padding: 4px 6px; border-radius: 6px; color: white; margin-bottom: 4px; cursor: pointer;
+    }
+    .cal-week-event:hover { opacity: 0.85; }
+    .cal-week-event-time { font-size: 10px; opacity: 0.85; }
+    .cal-week-event-name { font-weight: 600; }
+
+    /* Day */
+    .cal-day-detail { padding: 4px 0; }
+    .cal-day-lesson {
+      display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+      border-radius: 8px; border: 1px solid var(--border); border-inline-start: 4px solid var(--primary);
+      margin-bottom: 8px; background: white;
+    }
+    .cal-day-lesson-time { font-size: 14px; font-weight: 600; color: var(--text-muted); min-width: 46px; }
+    .cal-day-lesson-info { flex: 1; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+    .cal-day-lesson-actions { display: flex; gap: 4px; }
+    .cal-add-day-btn {
+      margin-top: 10px; padding: 10px; width: 100%; background: transparent;
+      border: 2px dashed var(--border); border-radius: 8px; cursor: pointer;
+      color: var(--text-muted); font-size: 13px; font-family: inherit; transition: all 0.15s;
+    }
+    .cal-add-day-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+
+/* Quick action popup */
+.cal-popup {
+  position: fixed; background: white; border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15); padding: 14px 16px;
+  z-index: 600; min-width: 210px; border: 1px solid var(--border);
+}
+.cal-popup-name { font-weight: 700; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.cal-popup-detail { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+.cal-popup-btns { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+
+/* Search */
+.search-wrapper { position: relative; }
+.search-input {
+  padding: 6px 12px; border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 8px; background: rgba(255,255,255,0.15);
+  color: white; font-size: 13px; font-family: inherit; width: 160px; direction: rtl;
+}
+.search-input::placeholder { color: rgba(255,255,255,0.6); }
+.search-input:focus { outline: none; background: rgba(255,255,255,0.25); }
+.search-results {
+  position: absolute; top: calc(100% + 6px); left: 0;
+  background: white; border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  border: 1px solid var(--border); width: 300px; max-height: 320px;
+  overflow-y: auto; z-index: 600; display: none;
+}
+.search-results.show { display: block; }
+.search-result-item {
+  padding: 9px 14px; cursor: pointer; border-bottom: 1px solid var(--border);
+  font-size: 13px; display: flex; align-items: center; gap: 8px;
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background: var(--bg); }
+.search-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+/* Stat delta */
+.stat-delta { font-size: 11px; margin-top: 4px; font-weight: 500; }
+.stat-delta.up { color: var(--success); }
+.stat-delta.down { color: var(--danger); }
+.stat-delta.flat { color: var(--text-muted); }
+
+/* Cal filter */
+.cal-filter-select {
+  padding: 5px 10px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 13px; font-family: inherit; background: white; color: var(--text);
+}
+
+    /* ===== NEXT LESSON WIDGET ===== */
+    .next-lesson-widget {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white; border-radius: var(--radius); padding: 16px 20px;
+      margin-bottom: 20px; display: flex; align-items: center; gap: 16px;
+      box-shadow: 0 4px 12px rgba(79,70,229,0.3);
+    }
+    .next-lesson-icon { font-size: 28px; flex-shrink: 0; }
+    .next-lesson-label { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .next-lesson-main { font-size: 17px; font-weight: 700; }
+    .next-lesson-sub { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+    .next-lesson-btn { margin-right: auto; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: inherit; white-space: nowrap; flex-shrink: 0; }
+    .next-lesson-btn:hover { background: rgba(255,255,255,0.3); }
+
+    /* ===== INCOME CHART ===== */
+    .chart-bar-wrap { display: flex; align-items: flex-end; gap: 6px; height: 80px; padding-top: 8px; }
+    .chart-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+    .chart-bar { width: 100%; background: var(--primary-light); border-radius: 4px 4px 0 0; min-height: 3px; transition: height 0.4s ease; position: relative; }
+    .chart-bar.current { background: var(--primary); }
+    .chart-bar-label { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+    .chart-bar-val { font-size: 9px; color: var(--text-muted); }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .page.active-anim > * { animation: fadeInUp 0.22s ease both; }
+    .page.active-anim > *:nth-child(2) { animation-delay: 0.05s; }
+    .page.active-anim > *:nth-child(3) { animation-delay: 0.1s; }
+
+    /* ===== BOTTOM NAV ===== */
+    .bottom-nav {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0; width: 100%;
+      background: white; border-top: 1px solid var(--border);
+      z-index: 200;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.07);
+    }
+    .bottom-nav-inner {
+      display: flex; flex-direction: row; width: 100%;
+      direction: ltr; /* מונע היפוך RTL */
+    }
+    .bottom-nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 8px 4px 6px; border: none; background: none; cursor: pointer;
+      color: var(--text-muted); font-family: inherit; font-size: 10px; font-weight: 500;
+      gap: 2px; transition: color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bottom-nav-item .bn-icon { font-size: 22px; line-height: 1; transition: transform 0.15s; }
+    .bottom-nav-item.active { color: var(--primary); }
+    .bottom-nav-item.active .bn-icon { transform: scale(1.15); }
+
+    /* ===== FAB (mobile add button) ===== */
+    .fab {
+      display: none;
+      position: fixed; left: 20px; bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--primary); color: white; border: none;
+      font-size: 26px; cursor: pointer; box-shadow: 0 4px 14px rgba(79,70,229,0.4);
+      align-items: center; justify-content: center;
+      z-index: 190; transition: transform 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fab:active { transform: scale(0.93); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .dash-grid { display: none; }         /* מסתיר את הגריד התחתון בדשבורד */
+      .main { padding: 12px 12px 80px; }
+      .nav-tabs { display: none; }
+      .bottom-nav { display: block; }
+      .fab { display: flex; }
+
+      /* HEADER — פס מלא + מינימליסטי */
+      .app-header { height: 52px; padding: 0 14px; width: 100%; left: 0; right: 0; }
+      .app-title { font-size: 15px; }
+      .search-wrapper { display: none; }    /* חיפוש נסתר בנייד */
+      .btn-import { padding: 6px 10px; font-size: 12px; }
+
+      /* STATS */
+      .stat-card { padding: 12px 14px; }
+      .stat-label { font-size: 11px; }
+      .stat-value { font-size: 18px; }
+
+      /* CALENDAR */
+      .cal-day-cell { height: 56px; }
+      .cal-week-grid { grid-template-columns: repeat(7, 1fr); }
+      .cal-week-event-time { display: none; }
+      .cal-toolbar { gap: 6px; flex-wrap: nowrap; align-items: center; }
+      .cal-filter-select { display: none; } /* מסתיר פילטר תלמיד בנייד */
+      .cal-title { font-size: 13px; }
+      .cal-view-btn { padding: 4px 7px; font-size: 11px; }
+
+      .modal-handle { display: block; }
+      /* MODAL — עולה מלמטה כמו iOS */
+      .modal-overlay { align-items: flex-end; padding: 0; }
+      .modal {
+        border-radius: 20px 20px 0 0;
+        max-height: 88vh;
+        max-width: 100%;
+        width: 100%;
+      }
+      .modal-header { padding: 16px 20px 12px; border-radius: 20px 20px 0 0; }
+      .modal-body { padding: 16px 20px; }
+      .modal-footer { padding: 12px 16px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+      .modal-footer .btn { flex: 1; justify-content: center; min-height: 44px; font-size: 15px; }
+
+      /* BUTTONS */
+      .btn { min-height: 42px; }
+      .btn-sm { min-height: 36px; }
+
+      /* TOAST */
+      .toast { bottom: calc(72px + env(safe-area-inset-bottom, 0px)); font-size: 13px; white-space: normal; text-align: center; max-width: 92vw; }
+
+      /* NEXT LESSON */
+      .next-lesson-widget { padding: 12px 14px; gap: 10px; margin-bottom: 14px; }
+      .next-lesson-main { font-size: 15px; }
+      .next-lesson-btn { padding: 5px 10px; font-size: 12px; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .cal-day-cell { height: 46px; }
+      .cal-event { font-size: 10px; padding: 1px 4px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <!-- HEADER -->
+  <!-- AUTH OVERLAY -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-logo">📚</div>
+      <div class="auth-title">שיעורים פרטיים</div>
+      <div class="auth-subtitle">מערכת ניהול למורים פרטיים</div>
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" id="auth-tab-login" onclick="showAuthTab('login')">כניסה</button>
+        <button class="auth-tab-btn" id="auth-tab-register" onclick="showAuthTab('register')">הרשמה</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="auth-form-login">
+        <div class="form-group">
+          <label>אימייל</label>
+          <input type="email" id="auth-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div class="form-group">
+          <label>סיסמה</label>
+          <input type="password" id="auth-password" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="doLogin()">כניסה למערכת</button>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="auth-form-register" style="display:none">
+        <div class="form-group">
+          <label>שם</label>
+          <input type="text" id="auth-name" placeholder="שם מלא" onkeydown="if(event.key==='Enter')doRegister()">
+        </div>
+        <div class="form-group">
+          <label>אימייל</label>
+          <input type="email" id="auth-email-reg" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doRegister()">
+        </div>
+        <div class="form-group">
+          <label>סיסמה (לפחות 6 תווים)</label>
+          <input type="password" id="auth-password-reg" placeholder="••••••" onkeydown="if(event.key==='Enter')doRegister()">
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="doRegister()">יצירת חשבון</button>
+      </div>
+
+      <div id="auth-error" class="auth-error"></div>
+    </div>
+  </div>
+
+  <header class="app-header">
+    <span class="app-title">📚 שיעורים פרטיים</span>
+    <div class="header-actions">
+      <div class="search-wrapper">
+        <input class="search-input" id="search-input" placeholder="🔍 חיפוש..." oninput="onSearch(this.value)" onblur="setTimeout(()=>document.getElementById('search-results').classList.remove('show'),200)">
+        <div class="search-results" id="search-results"></div>
+      </div>
+      <span id="user-display" style="color:rgba(255,255,255,0.85);font-size:13px;white-space:nowrap;display:none"></span>
+      <button class="btn-import" onclick="document.getElementById('excel-input').click()">
+        ⬆ ייבוא מאקסל
+      </button>
+      <button class="btn-import" id="logout-btn" onclick="doLogout()" style="display:none">יציאה</button>
+    </div>
+  </header>
+
+  <!-- NAV -->
+  <nav class="nav-tabs">
+    <button class="nav-tab" data-page="dashboard">דשבורד</button>
+    <button class="nav-tab" data-page="students">תלמידים</button>
+    <button class="nav-tab" data-page="lessons">שיעורים</button>
+    <button class="nav-tab" data-page="payments">תשלומים</button>
+  </nav>
+
+  <main class="main">
+
+    <!-- PAGE: DASHBOARD -->
+    <div id="page-dashboard" class="page">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">הכנסות החודש</div>
+          <div class="stat-value" id="stat-income">₪0</div>
+          <div class="stat-delta" id="stat-income-delta"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">תלמידים פעילים</div>
+          <div class="stat-value" id="stat-active">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">שיעורים החודש</div>
+          <div class="stat-value" id="stat-lessons">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">תשלומים פתוחים</div>
+          <div class="stat-value" id="stat-debt">₪0</div>
+        </div>
+      </div>
+
+      <!-- NEXT LESSON -->
+      <div id="next-lesson-widget"></div>
+
+      <!-- CALENDAR -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="cal-toolbar">
+          <div class="cal-nav">
+            <button class="btn btn-ghost btn-sm" onclick="calNav(-1)">→</button>
+            <button class="btn btn-ghost btn-sm" onclick="calToday()">היום</button>
+            <button class="btn btn-ghost btn-sm" onclick="calNav(1)">←</button>
+          </div>
+          <div class="cal-title" id="cal-title"></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select class="cal-filter-select" id="cal-student-filter" onchange="calStudentFilter=this.value;renderCalendar()">
+              <option value="">כל התלמידים</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="openAddLessonModal(null)">+ הוסף שיעור</button>
+            <div class="cal-views">
+              <button class="cal-view-btn" id="cvb-month" onclick="setCalView('month')">חודש</button>
+              <button class="cal-view-btn" id="cvb-week" onclick="setCalView('week')">שבוע</button>
+              <button class="cal-view-btn" id="cvb-day" onclick="setCalView('day')">יום</button>
+            </div>
+          </div>
+        </div>
+        <div id="cal-body"></div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="card">
+          <div class="dash-card-title">סיכום תלמידים</div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>תלמיד</th>
+                  <th>שיעורים החודש</th>
+                  <th>יתרה</th>
+                  <th>שיעור אחרון</th>
+                </tr>
+              </thead>
+              <tbody id="student-summary-tbody">
+                <tr><td colspan="4" class="empty-cell">אין נתונים</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="dash-card-title">הכנסות — 6 חודשים אחרונים</div>
+          <div id="income-chart"></div>
+          <div class="dash-card-title" style="margin-top:14px">שיעורים אחרונים</div>
+          <div id="recent-lessons">
+            <p class="empty-cell">אין שיעורים עדיין</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: STUDENTS -->
+    <div id="page-students" class="page">
+      <div class="page-header">
+        <h2 class="page-title">תלמידים</h2>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" id="toggle-inactive-btn" onclick="toggleInactiveStudents()">הצג לא פעילים</button>
+          <button class="btn btn-primary" onclick="openAddStudentModal()">+ הוסף תלמיד</button>
+        </div>
+      </div>
+      <div id="inactive-notice" style="display:none;margin-bottom:12px;font-size:13px;color:var(--text-muted)"></div>
+      <div class="students-grid" id="students-grid">
+        <div class="empty-state-card">
+          <p>אין תלמידים עדיין</p>
+          <p>לחץ "הוסף תלמיד" או ייבא מאקסל</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: LESSONS -->
+    <div id="page-lessons" class="page">
+      <div class="page-header">
+        <h2 class="page-title">שיעורים</h2>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="showCalSubscribeInfo()">🔗 מנוי לוח שנה</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportToICS()">📅 ייצוא ללוח שנה</button>
+          <button class="btn btn-primary" onclick="openAddLessonModal(null)">+ הוסף שיעור</button>
+        </div>
+      </div>
+      <div class="filters-bar">
+        <select id="filter-student" onchange="applyLessonFilter()">
+          <option value="">כל התלמידים</option>
+        </select>
+        <input type="month" id="filter-month" onchange="applyLessonFilter()" placeholder="חודש">
+        <select id="filter-paid" onchange="applyLessonFilter()">
+          <option value="">כל הסטטוסים</option>
+          <option value="paid">שולם</option>
+          <option value="partial">שולם חלקית</option>
+          <option value="unpaid">ממתין</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="clearLessonFilters()">נקה סינון</button>
+      </div>
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>תאריך</th>
+                <th>תלמיד</th>
+                <th>משך</th>
+                <th>סכום</th>
+                <th>סטטוס</th>
+                <th>הערות</th>
+                <th>פעולות</th>
+              </tr>
+            </thead>
+            <tbody id="lessons-tbody">
+              <tr><td colspan="7" class="empty-cell">אין שיעורים עדיין</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="lessons-summary" id="lessons-total"></div>
+      </div>
+    </div>
+
+    <!-- PAGE: PAYMENTS -->
+    <div id="page-payments" class="page">
+      <div class="page-header">
+        <h2 class="page-title">תשלומים</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="exportReport()">📊 ייצוא לאקסל</button>
+          <button class="btn btn-primary" onclick="openAddPaymentModal(null)">+ הוסף תשלום</button>
+        </div>
+      </div>
+      <div class="balance-grid" id="balance-cards"></div>
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>תאריך</th>
+                <th>תלמיד</th>
+                <th>סכום</th>
+                <th>הערות</th>
+                <th>פעולות</th>
+              </tr>
+            </thead>
+            <tbody id="payments-tbody">
+              <tr><td colspan="5" class="empty-cell">אין תשלומים עדיין</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bottom-nav-item" data-page="payments" onclick="showPage('payments')">
+      <span class="bn-icon">💰</span>תשלומים
+    </button>
+    <button class="bottom-nav-item" data-page="lessons" onclick="showPage('lessons')">
+      <span class="bn-icon">📚</span>שיעורים
+    </button>
+    <button class="bottom-nav-item" data-page="students" onclick="showPage('students')">
+      <span class="bn-icon">👥</span>תלמידים
+    </button>
+    <button class="bottom-nav-item" data-page="dashboard" onclick="showPage('dashboard')">
+      <span class="bn-icon">🏠</span>דשבורד
+    </button>
+  </div>
+</nav>
+
+<!-- FAB -->
+<button class="fab" onclick="openAddLessonModal(null)" title="הוסף שיעור">+</button>
+
+<!-- CAL POPUP -->
+<div id="cal-popup" class="cal-popup" style="display:none"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <div class="modal-handle" id="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title"></span>
+      <button class="modal-close" id="modal-close">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">ביטול</button>
+      <button class="btn btn-primary" id="modal-save-btn">שמור</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- Hidden file input -->
+<input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none">
+
+<script>
+// ===== CONSTANTS =====
+const STUDENT_COLORS = ['#4f46e5','#10b981','#f59e0b','#ef4444','#0891b2','#8b5cf6'];
+const DAY_NAMES = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+let showInactiveStudents = false;
+let calStudentFilter = '';
+
+// ===== STORAGE (in-memory cache + REST API) =====
+let _students = [], _lessons = [], _payments = [];
+const getStudents = () => _students;
+const getLessons  = () => _lessons;
+const getPayments = () => _payments;
+
+async function loadData() {
+  const [s, l, p] = await Promise.all([
+    fetch('/api/students').then(r => { if (r.status === 401) { showAuthOverlay(); throw new Error('unauth'); } return r.json(); }),
+    fetch('/api/lessons').then(r => r.json()),
+    fetch('/api/payments').then(r => r.json()),
+  ]);
+  _students = s; _lessons = l; _payments = p;
+}
+async function apiCall(method, url, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  if (r.status === 401) { showAuthOverlay(); throw new Error('Unauthorized'); }
+  if (!r.ok) throw new Error(`${method} ${url} → ${r.status}`);
+  return r.status !== 204 ? r.json() : null;
+}
+
+// ===== AUTH =====
+function showAuthOverlay() {
+  document.getElementById('auth-overlay').classList.add('visible');
+  document.getElementById('user-display').style.display = 'none';
+  document.getElementById('logout-btn').style.display = 'none';
+}
+function hideAuthOverlay(userName) {
+  document.getElementById('auth-overlay').classList.remove('visible');
+  if (userName) {
+    const el = document.getElementById('user-display');
+    el.textContent = '👤 ' + userName;
+    el.style.display = '';
+    document.getElementById('logout-btn').style.display = '';
+  }
+}
+function showAuthTab(tab) {
+  document.getElementById('auth-form-login').style.display    = tab === 'login'    ? '' : 'none';
+  document.getElementById('auth-form-register').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('auth-tab-login').classList.toggle('active',    tab === 'login');
+  document.getElementById('auth-tab-register').classList.toggle('active', tab === 'register');
+  document.getElementById('auth-error').classList.remove('visible');
+}
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+async function doLogin() {
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { showAuthError('נא למלא אימייל וסיסמה'); return; }
+  const r = await fetch('/api/auth/login', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({email, password})
+  });
+  const data = await r.json();
+  if (!r.ok) { showAuthError(data.error || 'שגיאה בהתחברות'); return; }
+  hideAuthOverlay(data.name || data.email);
+  await loadData();
+  showPage('dashboard');
+}
+async function doRegister() {
+  const name     = document.getElementById('auth-name').value.trim();
+  const email    = document.getElementById('auth-email-reg').value.trim();
+  const password = document.getElementById('auth-password-reg').value;
+  if (!email || !password) { showAuthError('נא למלא אימייל וסיסמה'); return; }
+  const r = await fetch('/api/auth/register', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name, email, password})
+  });
+  const data = await r.json();
+  if (!r.ok) { showAuthError(data.error || 'שגיאה בהרשמה'); return; }
+  hideAuthOverlay(data.name || data.email);
+  await loadData();
+  showPage('dashboard');
+}
+async function doLogout() {
+  await fetch('/api/auth/logout', {method: 'POST'});
+  _students = []; _lessons = []; _payments = [];
+  showAuthOverlay();
+  showAuthTab('login');
+}
+
+// ===== UTILS =====
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+function formatDate(iso) {
+  if (!iso) return '—';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function formatCurrency(n) {
+  return '₪' + Number(n || 0).toLocaleString('he-IL');
+}
+function getDayName(n) { return DAY_NAMES[n] || ''; }
+function getStudentById(id) { return getStudents().find(s => s.id === id); }
+function getStudentBalance(studentId) {
+  const lessons        = getLessons().filter(l => l.studentId === studentId);
+  const totalLessons   = lessons.reduce((s,l) => s + (l.amount||0), 0);
+  const totalPayments  = getPayments().filter(p => p.studentId === studentId).reduce((s,p) => s + (p.amount||0), 0);
+  const totalLessonPaid = lessons.reduce((s,l) => s + (l.paidAmount||0), 0);
+  return totalPayments + totalLessonPaid - totalLessons; // positive = credit, negative = debt
+}
+function getLessonPayStatus(l) {
+  if (l.isPaid) return 'paid';
+  const p = l.paidAmount || 0;
+  if (p > 0 && p < (l.amount || 0)) return 'partial';
+  return 'unpaid';
+}
+function lessonBadge(l) {
+  const s = getLessonPayStatus(l);
+  if (s === 'paid')    return '<span class="badge badge-success">שולם</span>';
+  if (s === 'partial') return `<span class="badge badge-partial">חלקי: ${formatCurrency(l.paidAmount)}</span>`;
+  return '<span class="badge badge-warning">ממתין</span>';
+}
+function toggleBtnLabel(l) {
+  return getLessonPayStatus(l) === 'paid' ? '↩' : '✓';
+}
+
+// ===== TOAST =====
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.className = `toast toast-${type} show`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+function buildWhatsAppMsg(lesson, student) {
+  const dateStr = formatDate(lesson.date);
+  const time = lesson.time || '16:00';
+  const name = student?.name || '';
+  const count = lesson.durationHours || 1;
+  const msg = `היי ${name} 😊\nנקבע לנו שיעור${count > 1 ? ` (${count} שיעורים)` : ''} בתאריך ${dateStr} בשעה ${time}.\nמחכה לך! 📚`;
+  return msg;
+}
+
+function sendWhatsApp(lesson) {
+  const s = getStudentById(lesson.studentId);
+  const phone = s?.phone?.replace(/\D/g, '');
+  if (!phone) { showToast('אין מספר טלפון לתלמיד זה', 'warning'); return; }
+  const intl = phone.startsWith('0') ? '972' + phone.slice(1) : phone;
+  const msg = buildWhatsAppMsg(lesson, s);
+  window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function showToastWithCalendar(lesson) {
+  const s = getStudentById(lesson.studentId);
+  const hasPhone = !!s?.phone;
+  const t = document.getElementById('toast');
+  const btnStyle = 'background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);color:white;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;margin-right:4px';
+  t.innerHTML = `שיעור נוסף! &nbsp;
+    <button onclick="exportSingleLesson(window._lastLesson)" style="${btnStyle}">📅 לוח שנה</button>
+    ${hasPhone ? `<button onclick="sendWhatsApp(window._lastLesson)" style="${btnStyle}">💬 ווצאפ</button>` : ''}
+    ${hasPhone ? `<button onclick="exportSingleLesson(window._lastLesson);sendWhatsApp(window._lastLesson)" style="${btnStyle}">📅+💬 הכל</button>` : ''}`;
+  t.className = 'toast toast-success show';
+  window._lastLesson = lesson;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = 'toast'; }, 7000);
+}
+
+// ===== MODAL =====
+function openModal(title, bodyHTML, onSave) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHTML;
+  document.getElementById('modal-overlay').classList.add('active');
+  // reset footer to default structure
+  const footer = document.getElementById('modal-footer');
+  footer.innerHTML = '<button class="btn btn-ghost" onclick="closeModal()">ביטול</button><button class="btn btn-primary" id="modal-save-btn">שמור</button>';
+  const saveBtn = document.getElementById('modal-save-btn');
+  saveBtn.style.display = onSave ? '' : 'none';
+  if (onSave) saveBtn.onclick = onSave;
+  footer.style.display = (onSave === null) ? 'none' : '';
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('active');
+}
+
+// ===== NAVIGATION =====
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; p.classList.remove('active-anim'); });
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-item').forEach(t => t.classList.remove('active'));
+  const pg = document.getElementById(`page-${name}`);
+  pg.style.display = 'block';
+  setTimeout(() => pg.classList.add('active-anim'), 10);
+  const topTab = document.querySelector(`.nav-tab[data-page="${name}"]`);
+  if (topTab) topTab.classList.add('active');
+  document.querySelectorAll(`.bottom-nav-item[data-page="${name}"]`).forEach(t => t.classList.add('active'));
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'students')  renderStudents();
+  if (name === 'lessons')   renderLessons();
+  if (name === 'payments')  renderPayments();
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const students = getStudents();
+  const lessons  = getLessons();
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const thisYear  = now.getFullYear();
+
+  const monthLessons = lessons.filter(l => {
+    const d = new Date(l.date);
+    return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+  });
+
+  const activeStudents = students.filter(s => s.isActive !== false);
+  const monthIncome   = monthLessons.reduce((s,l) => s + (l.amount||0), 0);
+  const activeThisMonth = new Set(monthLessons.map(l => l.studentId)).size;
+  const totalDebt     = activeStudents.reduce((s, st) => {
+    const b = getStudentBalance(st.id);
+    return b < 0 ? s + Math.abs(b) : s;
+  }, 0);
+
+  document.getElementById('stat-income').textContent  = formatCurrency(monthIncome);
+  document.getElementById('stat-active').textContent  = activeStudents.length;
+  document.getElementById('stat-lessons').textContent = monthLessons.length;
+  document.getElementById('stat-debt').textContent    = formatCurrency(totalDebt);
+
+  // Monthly comparison
+  const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+  const lastYear  = thisMonth === 0 ? thisYear - 1 : thisYear;
+  const lastMonthIncome = lessons
+    .filter(l => { const d = new Date(l.date); return d.getMonth() === lastMonth && d.getFullYear() === lastYear; })
+    .reduce((s,l) => s + (l.amount||0), 0);
+  const deltaEl = document.getElementById('stat-income-delta');
+  if (deltaEl) {
+    if (lastMonthIncome > 0) {
+      const pct = Math.round((monthIncome - lastMonthIncome) / lastMonthIncome * 100);
+      const cls = pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat';
+      deltaEl.className = `stat-delta ${cls}`;
+      deltaEl.textContent = `${pct > 0 ? '↑' : pct < 0 ? '↓' : '–'}${Math.abs(pct)}% מחודש שעבר`;
+    } else {
+      deltaEl.textContent = '';
+    }
+  }
+
+  renderCalendar();
+
+  // Next lesson widget
+  const today = isoDate(new Date());
+  const upcoming = [...lessons]
+    .filter(l => l.date >= today)
+    .sort((a,b) => a.date.localeCompare(b.date) || (a.time||'').localeCompare(b.time||''));
+  const nlEl = document.getElementById('next-lesson-widget');
+  if (nlEl) {
+    if (upcoming.length > 0) {
+      const nl = upcoming[0];
+      const ns = getStudentById(nl.studentId);
+      const tomorrow = isoDate(new Date(Date.now() + 86400000));
+      const dayLabel = nl.date === today ? 'היום' : nl.date === tomorrow ? 'מחר' : formatDate(nl.date);
+      nlEl.innerHTML = `<div class="next-lesson-widget">
+        <div class="next-lesson-icon">📅</div>
+        <div style="flex:1;min-width:0">
+          <div class="next-lesson-label">השיעור הבא</div>
+          <div class="next-lesson-main">${ns?.name||'?'} — ${dayLabel}</div>
+          <div class="next-lesson-sub">${nl.time||''} · ${nl.durationHours} שיעור${nl.durationHours>1?'ים':''} · ${formatCurrency(nl.amount)}</div>
+        </div>
+        <button class="next-lesson-btn" onclick="calGoDay('${nl.date}')">→ לוח שנה</button>
+      </div>`;
+    } else {
+      nlEl.innerHTML = '';
+    }
+  }
+
+  // Income chart — last 6 months
+  const chartEl = document.getElementById('income-chart');
+  if (chartEl) {
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(thisYear, thisMonth - i, 1);
+      const y = d.getFullYear(), m = d.getMonth();
+      const inc = lessons.filter(l => { const ld = new Date(l.date); return ld.getFullYear()===y && ld.getMonth()===m; }).reduce((s,l) => s+(l.amount||0), 0);
+      months.push({ label: HE_MONTHS[m].slice(0,3), inc, current: i===0 });
+    }
+    const maxInc = Math.max(...months.map(x => x.inc), 1);
+    chartEl.innerHTML = `<div class="chart-bar-wrap">${
+      months.map(x => `<div class="chart-bar-col">
+        <div class="chart-bar-val">${x.inc>0?'₪'+(x.inc/1000).toFixed(1)+'k':''}</div>
+        <div class="chart-bar${x.current?' current':''}" style="height:${Math.round((x.inc/maxInc)*56)+4}px"></div>
+        <div class="chart-bar-label">${x.label}</div>
+      </div>`).join('')
+    }</div>`;
+  }
+
+  // Student summary table — active only
+  const tbody = document.getElementById('student-summary-tbody');
+  if (activeStudents.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-cell">אין תלמידים פעילים עדיין</td></tr>';
+  } else {
+    tbody.innerHTML = activeStudents.map(s => {
+      const sMonthLessons = monthLessons.filter(l => l.studentId === s.id);
+      const balance = getStudentBalance(s.id);
+      const lastLesson = lessons.filter(l => l.studentId === s.id).sort((a,b) => b.date.localeCompare(a.date))[0];
+      return `<tr>
+        <td><span class="student-dot" style="background:${s.color}"></span>${s.name}</td>
+        <td>${sMonthLessons.length}</td>
+        <td class="${balance < 0 ? 'text-danger' : balance > 0 ? 'text-success' : 'text-muted'}">
+          ${balance < 0 ? `לתשלום ${formatCurrency(Math.abs(balance))}` : balance > 0 ? `זכות ${formatCurrency(balance)}` : 'מאוזן'}
+        </td>
+        <td>${lastLesson ? formatDate(lastLesson.date) : '—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Recent lessons
+  const recentLessons = [...lessons].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 6);
+  const recentEl = document.getElementById('recent-lessons');
+  if (recentLessons.length === 0) {
+    recentEl.innerHTML = '<p class="empty-cell">אין שיעורים עדיין</p>';
+  } else {
+    recentEl.innerHTML = recentLessons.map(l => {
+      const s = getStudentById(l.studentId);
+      return `<div class="recent-item">
+        <span class="badge" style="background:${s?.color||'#4f46e5'}">${s?.name||'?'}</span>
+        <span>${formatDate(l.date)}</span>
+        <span class="text-muted">${l.durationHours} שיעור${l.durationHours>1?'ים':''}</span>
+        <span>${formatCurrency(l.amount)}</span>
+        ${lessonBadge(l)}
+      </div>`;
+    }).join('');
+  }
+}
+
+// ===== STUDENTS =====
+function toggleInactiveStudents() {
+  showInactiveStudents = !showInactiveStudents;
+  const btn = document.getElementById('toggle-inactive-btn');
+  btn.textContent = showInactiveStudents ? 'הסתר לא פעילים' : 'הצג לא פעילים';
+  renderStudents();
+}
+
+function renderStudents() {
+  const allStudents = getStudents();
+  const inactiveCount = allStudents.filter(s => s.isActive === false).length;
+  const notice = document.getElementById('inactive-notice');
+  const btn = document.getElementById('toggle-inactive-btn');
+
+  if (inactiveCount > 0) {
+    btn.style.display = '';
+    notice.style.display = showInactiveStudents ? '' : '';
+    notice.textContent = showInactiveStudents
+      ? `מציג ${inactiveCount} תלמיד${inactiveCount > 1 ? 'ים' : ''} לא פעיל${inactiveCount > 1 ? 'ים' : ''}`
+      : `${inactiveCount} תלמיד${inactiveCount > 1 ? 'ים' : ''} לא פעיל${inactiveCount > 1 ? 'ים' : ''} מוסתר${inactiveCount > 1 ? 'ים' : ''}`;
+    notice.style.display = '';
+  } else {
+    btn.style.display = 'none';
+    notice.style.display = 'none';
+  }
+
+  const students = showInactiveStudents ? allStudents : allStudents.filter(s => s.isActive !== false);
+  const el = document.getElementById('students-grid');
+
+  if (students.length === 0) {
+    el.innerHTML = '<div class="empty-state-card"><p>אין תלמידים עדיין</p><p>לחץ "הוסף תלמיד" או ייבא מאקסל</p></div>';
+    return;
+  }
+  el.innerHTML = students.map(s => {
+    const inactive = s.isActive === false;
+    const balance = getStudentBalance(s.id);
+    const lessonCount = getLessons().filter(l => l.studentId === s.id).length;
+    const days = (s.scheduledDays || []).map(d => DAY_NAMES[d]).join(', ');
+    const balClass = balance < 0 ? 'badge-danger' : balance > 0 ? 'badge-success' : 'badge-muted';
+    const balText  = balance < 0 ? `לתשלום ${formatCurrency(Math.abs(balance))}` : balance > 0 ? `זכות ${formatCurrency(balance)}` : 'מאוזן';
+    return `<div class="student-card" style="border-top-color:${s.color};${inactive ? 'opacity:0.6' : ''}">
+      <div class="student-card-header">
+        <h3>${s.name} ${inactive ? '<span style="font-size:11px;font-weight:400;color:var(--text-muted);background:var(--border);padding:2px 7px;border-radius:10px;margin-right:4px">לא פעיל</span>' : ''}</h3>
+        <span class="badge ${balClass}">${balText}</span>
+      </div>
+      <div class="student-info">
+        <span>💰 ${formatCurrency(s.hourlyRate)}/שיעור</span>
+        <span>📅 ${days || 'ימים לא הוגדרו'}</span>
+        <span>📚 ${lessonCount} שיעורים סה"כ</span>
+      </div>
+      ${s.notes ? `<p class="student-notes">${s.notes}</p>` : ''}
+      <div class="student-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openEditStudentModal('${s.id}')">ערוך</button>
+        ${!inactive ? `<button class="btn btn-primary btn-sm" onclick="openAddLessonModal('${s.id}')">+ שיעור</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="viewStudentHistory('${s.id}')">היסטוריה</button>
+        ${balance < 0 ? `<button class="btn btn-warning btn-sm" onclick="openDebtReport('${s.id}')">📄 דוח תשלום</button>` : ''}
+        ${balance < 0 ? `<button class="btn btn-success btn-sm" onclick="markAllLessonsPaid('${s.id}')">✓ סמן הכל שולם</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildStudentForm(s) {
+  const colors = STUDENT_COLORS;
+  const currentColor = s?.color || colors[0];
+  return `
+    <div class="form-group">
+      <label>שם תלמיד</label>
+      <input type="text" id="f-name" value="${s?.name || ''}" placeholder="שם מלא">
+    </div>
+    <div class="form-group">
+      <label>מחיר לשיעור (₪)</label>
+      <input type="number" id="f-rate" value="${s?.hourlyRate || 150}" min="0" step="10">
+    </div>
+    <div class="form-group">
+      <label>ימי שיעור</label>
+      <div class="days-checkboxes">
+        ${DAY_NAMES.map((d,i) => `<label class="day-checkbox">
+          <input type="checkbox" value="${i}" ${(s?.scheduledDays||[]).includes(i) ? 'checked' : ''}> ${d}
+        </label>`).join('')}
+      </div>
+    </div>
+    <div class="form-group">
+      <label>צבע</label>
+      <div class="color-options">
+        ${colors.map(c => `<span class="color-dot${currentColor===c?' selected':''}" style="background:${c}" data-color="${c}" onclick="selectColor(this)"></span>`).join('')}
+      </div>
+    </div>
+    <div class="form-group">
+      <label>טלפון תלמיד</label>
+      <input type="tel" id="f-phone" value="${s?.phone || ''}" placeholder="05X-XXXXXXX" style="direction:ltr;text-align:right">
+    </div>
+    <div class="form-group" style="background:var(--primary-light);border-radius:10px;padding:12px;margin-top:4px">
+      <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px">📲 פרטי הורה (לדוח תשלום)</div>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1">
+          <label style="font-size:12px">שם הורה</label>
+          <input type="text" id="f-parent-name" value="${s?.parentName || ''}" placeholder="שם אמא / אבא">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:12px">טלפון הורה</label>
+          <input type="tel" id="f-parent-phone" value="${s?.parentPhone || ''}" placeholder="05X-XXXXXXX" style="direction:ltr;text-align:right">
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>הערות</label>
+      <textarea id="f-notes" rows="2">${s?.notes || ''}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="f-active" ${s?.isActive === false ? '' : 'checked'}> תלמיד פעיל
+      </label>
+    </div>`;
+}
+
+function selectColor(el) {
+  document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function openAddStudentModal() {
+  openModal('הוסף תלמיד', buildStudentForm(null), async () => {
+    const name = document.getElementById('f-name').value.trim();
+    if (!name) { showToast('נא להזין שם תלמיד', 'error'); return; }
+    const days  = [...document.querySelectorAll('.days-checkboxes input:checked')].map(i => parseInt(i.value));
+    const color = document.querySelector('.color-dot.selected')?.dataset.color || STUDENT_COLORS[0];
+    const student = {
+      id: generateId(), name,
+      hourlyRate: parseFloat(document.getElementById('f-rate').value) || 150,
+      scheduledDays: days, color,
+      notes: document.getElementById('f-notes').value.trim(),
+      isActive: document.getElementById('f-active').checked,
+      phone: document.getElementById('f-phone').value.trim(),
+      parentName: document.getElementById('f-parent-name').value.trim(),
+      parentPhone: document.getElementById('f-parent-phone').value.trim(),
+      createdAt: new Date().toISOString()
+    };
+    await apiCall('POST', '/api/students', student);
+    _students.push(student);
+    closeModal();
+    renderStudents();
+    showToast(`תלמיד "${name}" נוסף בהצלחה`);
+  });
+}
+
+function openEditStudentModal(id) {
+  const s = getStudentById(id);
+  if (!s) return;
+  const deleteBtn = `<hr style="margin:14px 0"><button class="btn btn-ghost btn-sm text-danger" style="border-color:var(--danger)" onclick="deleteStudent('${id}')">🗑 מחק תלמיד</button>`;
+  openModal('ערוך תלמיד', buildStudentForm(s) + deleteBtn, async () => {
+    const name = document.getElementById('f-name').value.trim();
+    if (!name) { showToast('נא להזין שם תלמיד', 'error'); return; }
+    const days  = [...document.querySelectorAll('.days-checkboxes input:checked')].map(i => parseInt(i.value));
+    const color = document.querySelector('.color-dot.selected')?.dataset.color || s.color;
+    const updated = { ...s, name, hourlyRate: parseFloat(document.getElementById('f-rate').value) || s.hourlyRate,
+      scheduledDays: days, color, notes: document.getElementById('f-notes').value.trim(),
+      isActive: document.getElementById('f-active').checked,
+      phone: document.getElementById('f-phone').value.trim(),
+      parentName: document.getElementById('f-parent-name').value.trim(),
+      parentPhone: document.getElementById('f-parent-phone').value.trim() };
+    await apiCall('PUT', `/api/students/${id}`, updated);
+    _students = _students.map(st => st.id === id ? updated : st);
+    closeModal();
+    renderStudents();
+    showToast('פרטי תלמיד עודכנו');
+  });
+}
+
+async function deleteStudent(id) {
+  const s = getStudentById(id);
+  if (!confirm(`למחוק את ${s?.name}?\nכל השיעורים והתשלומים שלו יימחקו גם כן.`)) return;
+  await apiCall('DELETE', `/api/students/${id}`);
+  _students = _students.filter(st => st.id !== id);
+  _lessons  = _lessons.filter(l => l.studentId !== id);
+  _payments = _payments.filter(p => p.studentId !== id);
+  closeModal();
+  renderStudents();
+  showToast('תלמיד נמחק');
+}
+
+function viewStudentHistory(id) {
+  const s = getStudentById(id);
+  const lessons  = getLessons().filter(l => l.studentId === id).sort((a,b) => b.date.localeCompare(a.date));
+  const payments = getPayments().filter(p => p.studentId === id).sort((a,b) => b.date.localeCompare(a.date));
+  const balance  = getStudentBalance(id);
+
+  const html = `
+    <div style="margin-bottom:14px;padding:12px;background:var(--bg);border-radius:8px">
+      <strong>יתרה: </strong>
+      <span class="${balance < 0 ? 'text-danger' : 'text-success'}" style="font-size:16px;font-weight:700">
+        ${balance < 0 ? `לתשלום ${formatCurrency(Math.abs(balance))}` : balance > 0 ? `זכות ${formatCurrency(balance)}` : 'מאוזן ✓'}
+      </span>
+    </div>
+    <div style="font-weight:600;margin-bottom:8px">שיעורים (${lessons.length})</div>
+    <div class="history-list">
+      ${lessons.length ? lessons.map(l => `<div class="history-item">
+        <span>${formatDate(l.date)}</span>
+        <span class="text-muted">${l.durationHours} שיעור${l.durationHours>1?'ים':''}</span>
+        <span>${formatCurrency(l.amount)}</span>
+        ${lessonBadge(l)}
+      </div>`).join('') : '<p class="text-muted" style="font-size:13px">אין שיעורים</p>'}
+    </div>
+    <div style="font-weight:600;margin:14px 0 8px">תשלומים (${payments.length})</div>
+    <div class="history-list">
+      ${payments.length ? payments.map(p => `<div class="history-item">
+        <span>${formatDate(p.date)}</span>
+        <span class="text-success" style="font-weight:600">${formatCurrency(p.amount)}</span>
+        <span class="text-muted">${p.notes || ''}</span>
+      </div>`).join('') : '<p class="text-muted" style="font-size:13px">אין תשלומים</p>'}
+    </div>`;
+
+  openModal(`היסטוריה — ${s?.name}`, html, null);
+  document.getElementById('modal-footer').style.display = 'flex';
+  document.getElementById('modal-save-btn').style.display = 'none';
+}
+
+// ===== PAYMENT REPORT =====
+function openDebtReport(id) {
+  const s = getStudentById(id);
+  if (!s) return;
+  const allLessons    = getLessons().filter(l => l.studentId === id).sort((a,b) => a.date.localeCompare(b.date));
+  const pendingLessons = allLessons.filter(l => getLessonPayStatus(l) !== 'paid');
+  const totalOwed     = pendingLessons.reduce((sum,l) => sum + (l.amount||0) - (l.paidAmount||0), 0);
+
+  const today = new Date().toLocaleDateString('he-IL', { year:'numeric', month:'long', day:'numeric' });
+
+  const lessonsRows = pendingLessons.map(l => {
+    const isPartial = getLessonPayStatus(l) === 'partial';
+    const remaining = (l.amount||0) - (l.paidAmount||0);
+    return '<tr>' +
+    '<td style="padding:9px 12px;border-bottom:1px solid #f1f5f9">' + formatDate(l.date) + '</td>' +
+    '<td style="padding:9px 12px;border-bottom:1px solid #f1f5f9">' + (l.durationHours||1) + ' שיעור' + ((l.durationHours||1)>1?'ים':'') + (l.time ? ' · ' + l.time : '') + '</td>' +
+    '<td style="padding:9px 12px;border-bottom:1px solid #f1f5f9;color:#64748b">' + (isPartial ? `שולם חלקית (${formatCurrency(l.paidAmount)}) · ` : '') + (l.notes||'') + '</td>' +
+    '<td style="padding:9px 12px;border-bottom:1px solid #f1f5f9;font-weight:600">' + (isPartial ? `<span style="color:#ea580c">${formatCurrency(remaining)}</span>` : formatCurrency(l.amount||0)) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  const reportHtml =
+    '<div style="font-family:-apple-system,Arial,sans-serif;direction:rtl;color:#1e293b;padding:4px 0">' +
+    '<div style="text-align:center;margin-bottom:20px">' +
+    '<div style="font-size:12px;color:#64748b;margin-bottom:4px">' + today + '</div>' +
+    '<h2 style="font-size:20px;font-weight:700;margin:0 0 4px">סיכום שיעורים</h2>' +
+    '<div style="font-size:16px;font-weight:600;color:#4f46e5">' + s.name + '</div>' +
+    '</div>' +
+    (pendingLessons.length === 0
+      ? '<div style="text-align:center;padding:32px;color:#10b981;font-size:16px">✅ אין שיעורים ממתינים לתשלום</div>'
+      : '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:14px">' +
+        '<thead><tr style="background:#f1f5f9">' +
+        '<th style="padding:9px 12px;text-align:right;font-weight:600;border-bottom:2px solid #e2e8f0">תאריך</th>' +
+        '<th style="padding:9px 12px;text-align:right;font-weight:600;border-bottom:2px solid #e2e8f0">פרטים</th>' +
+        '<th style="padding:9px 12px;text-align:right;font-weight:600;border-bottom:2px solid #e2e8f0">הערה</th>' +
+        '<th style="padding:9px 12px;text-align:right;font-weight:600;border-bottom:2px solid #e2e8f0">סכום</th>' +
+        '</tr></thead><tbody>' + lessonsRows + '</tbody></table>' +
+        '<div style="background:#fff5f5;border-radius:10px;padding:14px 16px;border:1px solid #fecaca;display:flex;justify-content:space-between;align-items:center">' +
+        '<span style="font-size:15px;font-weight:600">סה"כ לתשלום</span>' +
+        '<span style="font-size:20px;font-weight:700;color:#ef4444">' + formatCurrency(totalOwed) + '</span>' +
+        '</div>'
+    ) +
+    '</div>';
+
+  // העדפה: טלפון הורה > טלפון תלמיד
+  const recipientPhone = s.parentPhone || s.phone || '';
+  const recipientName  = s.parentPhone ? (s.parentName || 'שלום') : s.name;
+
+  const whatsappText = 'שלום ' + recipientName + ' 😊\n' +
+    'שיעורים הממתינים לתשלום עבור ' + s.name + ':\n\n' +
+    pendingLessons.map(l => '• ' + formatDate(l.date) + ' — ' + formatCurrency(l.amount||0)).join('\n') +
+    '\n\n*סה"כ לתשלום: ' + formatCurrency(totalOwed) + '*';
+
+  openModal('דוח תשלום — ' + s.name, reportHtml, null);
+  const footer = document.getElementById('modal-footer');
+  const phone972 = recipientPhone ? recipientPhone.replace(/^\+972/,'').replace(/^0/,'').replace(/[^0-9]/g,'') : '';
+  const waUrl = 'https://wa.me/972' + phone972 + '?text=' + encodeURIComponent(whatsappText);
+  const waLabel = s.parentPhone
+    ? '💬 ווצאפ להורה' + (s.parentName ? ' (' + s.parentName + ')' : '')
+    : '💬 שלח בווצאפ';
+  footer.innerHTML =
+    '<button class="btn btn-ghost" onclick="closeModal()">סגור</button>' +
+    '<button class="btn btn-ghost" onclick="window.print()">🖨️ הדפסה</button>' +
+    (recipientPhone ? '<button class="btn btn-success" onclick="window.open(\'' + waUrl + '\',\'_blank\')">' + waLabel + '</button>' : '');
+  footer.style.display = 'flex';
+}
+
+// ===== LESSONS =====
+let lessonFilters = { studentId: '', month: '', paid: '' };
+
+function applyLessonFilter() {
+  lessonFilters.studentId = document.getElementById('filter-student').value;
+  lessonFilters.month     = document.getElementById('filter-month').value;
+  lessonFilters.paid      = document.getElementById('filter-paid').value;
+  renderLessonsTable();
+}
+
+function clearLessonFilters() {
+  lessonFilters = { studentId: '', month: '', paid: '' };
+  document.getElementById('filter-student').value = '';
+  document.getElementById('filter-month').value   = '';
+  document.getElementById('filter-paid').value    = '';
+  renderLessons();
+}
+
+function renderLessons() {
+  // Always repopulate student filter dropdown
+  const sf = document.getElementById('filter-student');
+  while (sf.options.length > 1) sf.remove(1);
+  getStudents().forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.id; o.textContent = s.name;
+    sf.appendChild(o);
+  });
+  if (lessonFilters.studentId) sf.value = lessonFilters.studentId;
+  renderLessonsTable();
+}
+
+function renderLessonsTable() {
+  let lessons = getLessons();
+  if (lessonFilters.studentId) lessons = lessons.filter(l => l.studentId === lessonFilters.studentId);
+  if (lessonFilters.month) {
+    const [y, m] = lessonFilters.month.split('-');
+    lessons = lessons.filter(l => { const d = new Date(l.date); return d.getFullYear() == y && d.getMonth()+1 == m; });
+  }
+  if (lessonFilters.paid === 'paid')    lessons = lessons.filter(l => getLessonPayStatus(l) === 'paid');
+  if (lessonFilters.paid === 'partial') lessons = lessons.filter(l => getLessonPayStatus(l) === 'partial');
+  if (lessonFilters.paid === 'unpaid')  lessons = lessons.filter(l => getLessonPayStatus(l) === 'unpaid');
+  lessons.sort((a,b) => b.date.localeCompare(a.date));
+
+  const tbody = document.getElementById('lessons-tbody');
+  if (lessons.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">אין שיעורים להצגה</td></tr>';
+    document.getElementById('lessons-total').textContent = '';
+    return;
+  }
+  tbody.innerHTML = lessons.map(l => {
+    const s = getStudentById(l.studentId);
+    return `<tr>
+      <td>${formatDate(l.date)}</td>
+      <td><span class="student-dot" style="background:${s?.color||'#4f46e5'}"></span>${s?.name||'?'}</td>
+      <td>${l.durationHours} שיעור${l.durationHours>1?'ים':''}</td>
+      <td>${formatCurrency(l.amount)}</td>
+      <td>${lessonBadge(l)}</td>
+      <td class="text-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.notes||''}</td>
+      <td><div class="actions-cell">
+        <button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}')" title="${getLessonPayStatus(l) === 'paid' ? 'בטל סימון' : 'סמן שולם'}">${toggleBtnLabel(l)}</button>
+        <button class="btn btn-ghost btn-xs" onclick="openEditLessonModal('${l.id}')">ערוך</button>
+        <button class="btn btn-ghost btn-xs text-danger" onclick="deleteLesson('${l.id}')">מחק</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  const total   = lessons.reduce((s,l) => s + (l.amount||0), 0);
+  const paid    = lessons.filter(l => getLessonPayStatus(l) === 'paid').reduce((s,l) => s + (l.amount||0), 0);
+  const partial = lessons.filter(l => getLessonPayStatus(l) === 'partial').reduce((s,l) => s + (l.paidAmount||0), 0);
+  const partialCount = lessons.filter(l => getLessonPayStatus(l) === 'partial').length;
+  document.getElementById('lessons-total').textContent =
+    `${lessons.length} שיעורים | סה"כ: ${formatCurrency(total)} | שולם: ${formatCurrency(paid)}${partialCount ? ` | חלקי: ${formatCurrency(partial)}` : ''} | ממתין: ${formatCurrency(total - paid - partial)}`;
+}
+
+function buildLessonForm(l, defaultStudentId, defaultDate) {
+  const students = getStudents().filter(s => s.isActive !== false || s.id === l?.studentId);
+  const sid = l?.studentId || defaultStudentId || '';
+  const today = defaultDate || new Date().toISOString().split('T')[0];
+  return `
+    <div class="form-group">
+      <label>תלמיד</label>
+      <select id="f-student" onchange="updateLessonAmount()">
+        <option value="">בחר תלמיד...</option>
+        ${students.map(s => `<option value="${s.id}" ${s.id===sid ? 'selected' : ''}>${s.name}</option>`).join('')}
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>תאריך</label>
+        <input type="date" id="f-date" value="${l?.date || today}">
+      </div>
+      <div class="form-group">
+        <label>שעת התחלה</label>
+        <input type="time" id="f-time" value="${l?.time || '16:00'}">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>מספר שיעורים</label>
+        <select id="f-duration" onchange="updateLessonAmount()">
+          ${[1,2,3,4].map(n => `<option value="${n}" ${(l?.durationHours||1)==n ? 'selected' : ''}>${n} שיעור${n>1?'ים':''}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>סכום (₪)</label>
+        <input type="number" id="f-amount" value="${l?.amount || ''}" placeholder="אוטומטי" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>הערות</label>
+      <textarea id="f-notes" rows="2">${l?.notes || ''}</textarea>
+    </div>
+    <div class="form-group">
+      <label>סטטוס תשלום</label>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:6px">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="radio" name="f-pay-status" value="unpaid" ${!l?.isPaid && !(l?.paidAmount > 0) ? 'checked' : ''} onchange="updatePayStatusUI()"> לא שולם
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="radio" name="f-pay-status" value="partial" ${!l?.isPaid && (l?.paidAmount > 0) ? 'checked' : ''} onchange="updatePayStatusUI()"> שולם חלקית
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="radio" name="f-pay-status" value="paid" ${l?.isPaid ? 'checked' : ''} onchange="updatePayStatusUI()"> שולם במלואו
+        </label>
+      </div>
+      <div id="f-partial-group" style="display:${!l?.isPaid && (l?.paidAmount > 0) ? '' : 'none'};margin-top:10px">
+        <label style="font-size:13px;color:var(--text-muted)">כמה שולם? (₪)</label>
+        <input type="number" id="f-paid-amount" min="0" value="${l?.paidAmount || ''}" placeholder="0" style="width:160px;margin-top:4px">
+      </div>
+    </div>
+    ${!l ? '<div class="form-group"><label class="checkbox-label"><input type="checkbox" id="f-recurring" onchange="document.getElementById(\'recurring-weeks-group\').style.display=this.checked?\'\':\' none\'"> חזרה שבועית</label></div><div class="form-group" id="recurring-weeks-group" style="display:none"><label>כמה שבועות?</label><select id="f-recurring-count"><option value="2">2 שבועות</option><option value="3">3 שבועות</option><option value="4">4 שבועות</option><option value="6">6 שבועות</option><option value="8">8 שבועות</option><option value="10">10 שבועות</option><option value="12">12 שבועות</option></select></div>' : ''}`;
+}
+
+function updatePayStatusUI() {
+  const v = document.querySelector('input[name="f-pay-status"]:checked')?.value;
+  document.getElementById('f-partial-group').style.display = v === 'partial' ? '' : 'none';
+}
+
+function updateLessonAmount() {
+  const sid      = document.getElementById('f-student')?.value;
+  const duration = parseFloat(document.getElementById('f-duration')?.value || 1);
+  if (sid) {
+    const s = getStudentById(sid);
+    if (s) document.getElementById('f-amount').value = s.hourlyRate * duration;
+  }
+}
+
+function openAddLessonModal(defaultStudentId, defaultDate) {
+  openModal('הוסף שיעור', buildLessonForm(null, defaultStudentId, defaultDate), async () => {
+    const sid  = document.getElementById('f-student').value;
+    const date = document.getElementById('f-date').value;
+    if (!sid)  { showToast('נא לבחור תלמיד', 'error'); return; }
+    if (!date) { showToast('נא לבחור תאריך', 'error'); return; }
+    const duration = parseFloat(document.getElementById('f-duration').value) || 1;
+    const s = getStudentById(sid);
+    const amount = parseFloat(document.getElementById('f-amount').value) || (s ? s.hourlyRate * duration : 0);
+    const payStatus = document.querySelector('input[name="f-pay-status"]:checked')?.value || 'unpaid';
+    const paidAmount = payStatus === 'paid' ? amount : payStatus === 'partial' ? (parseFloat(document.getElementById('f-paid-amount').value) || 0) : 0;
+    const lesson = {
+      id: generateId(), studentId: sid, date,
+      time: document.getElementById('f-time').value || '16:00',
+      durationHours: duration, amount,
+      isPaid: payStatus === 'paid',
+      paidAmount,
+      notes: document.getElementById('f-notes').value.trim()
+    };
+    const isRecurring = document.getElementById('f-recurring')?.checked;
+    const recurCount  = parseInt(document.getElementById('f-recurring-count')?.value || 1);
+    const allLessons  = [lesson];
+    if (isRecurring) {
+      for (let i = 1; i < recurCount; i++) {
+        const d = new Date(date + 'T00:00:00');
+        d.setDate(d.getDate() + i * 7);
+        allLessons.push({ ...lesson, id: generateId(), date: d.toISOString().split('T')[0] });
+      }
+    }
+    for (const l of allLessons) {
+      await apiCall('POST', '/api/lessons', l);
+      _lessons.push(l);
+    }
+    closeModal();
+    renderLessonsTable();
+    if (isRecurring) {
+      showToast(`${allLessons.length} שיעורים נוספו! 🔄`);
+    } else {
+      showToastWithCalendar(lesson);
+    }
+  });
+  if (defaultStudentId) setTimeout(updateLessonAmount, 50);
+}
+
+function openEditLessonModal(id) {
+  const l = getLessons().find(x => x.id === id);
+  if (!l) return;
+  openModal('ערוך שיעור', buildLessonForm(l, null), async () => {
+    const sid  = document.getElementById('f-student').value;
+    const date = document.getElementById('f-date').value;
+    if (!sid || !date) { showToast('נא למלא שדות חובה', 'error'); return; }
+    const duration = parseFloat(document.getElementById('f-duration').value) || 1;
+    const s = getStudentById(sid);
+    const amount = parseFloat(document.getElementById('f-amount').value) || (s ? s.hourlyRate * duration : 0);
+    const payStatus = document.querySelector('input[name="f-pay-status"]:checked')?.value || 'unpaid';
+    const paidAmount = payStatus === 'paid' ? amount : payStatus === 'partial' ? (parseFloat(document.getElementById('f-paid-amount').value) || 0) : 0;
+    const updated = { ...l, studentId: sid, date,
+      time: document.getElementById('f-time').value || l.time || '16:00',
+      durationHours: duration, amount,
+      isPaid: payStatus === 'paid',
+      paidAmount,
+      notes: document.getElementById('f-notes').value.trim() };
+    await apiCall('PUT', `/api/lessons/${id}`, updated);
+    _lessons = _lessons.map(x => x.id === id ? updated : x);
+    closeModal();
+    renderLessonsTable();
+    showToast('שיעור עודכן');
+  });
+}
+
+async function markAllLessonsPaid(studentId) {
+  const pending = _lessons.filter(l => l.studentId === studentId && !l.isPaid);
+  if (pending.length === 0) { showToast('אין שיעורים ממתינים'); return; }
+  if (!confirm(`לסמן ${pending.length} שיעורים כשולמו?`)) return;
+  for (const l of pending) {
+    const updated = { ...l, isPaid: true, paidAmount: l.amount };
+    await apiCall('PUT', `/api/lessons/${l.id}`, updated);
+    _lessons = _lessons.map(x => x.id === l.id ? updated : x);
+  }
+  renderStudents();
+  if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
+  showToast(`${pending.length} שיעורים סומנו כשולמו ✓`);
+}
+
+async function toggleLessonPaid(id) {
+  const lesson = _lessons.find(l => l.id === id);
+  if (!lesson) return;
+  const status = getLessonPayStatus(lesson);
+  if (status === 'paid') {
+    const updated = { ...lesson, isPaid: false, paidAmount: 0 };
+    await apiCall('PUT', `/api/lessons/${id}`, updated);
+    _lessons = _lessons.map(l => l.id === id ? updated : l);
+    if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
+    return Promise.resolve();
+  }
+  const s = getStudentById(lesson.studentId);
+  const existing = lesson.paidAmount || '';
+  openModal('סמן תשלום', `
+    <p style="margin-bottom:16px;color:var(--text-muted)">${s?.name||''} · ${formatDate(lesson.date)} · ${formatCurrency(lesson.amount)}</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-success" onclick="setLessonFullPaid('${id}')">✓ שולם במלואו (${formatCurrency(lesson.amount)})</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="partial-pay-input" min="0" max="${lesson.amount}" placeholder="סכום חלקי..." style="flex:1" value="${existing}">
+        <button class="btn btn-primary" onclick="setLessonPartialPaid('${id}')">שולם חלקית</button>
+      </div>
+    </div>
+  `, null);
+  return Promise.resolve();
+}
+
+async function setLessonFullPaid(id) {
+  const lesson = _lessons.find(l => l.id === id);
+  const updated = { ...lesson, isPaid: true, paidAmount: lesson.amount };
+  await apiCall('PUT', `/api/lessons/${id}`, updated);
+  _lessons = _lessons.map(l => l.id === id ? updated : l);
+  closeModal();
+  if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
+  if (document.getElementById('page-dashboard')?.style.display !== 'none') renderCalendar();
+  showToast('שולם במלואו ✓');
+}
+
+async function setLessonPartialPaid(id) {
+  const amount = parseFloat(document.getElementById('partial-pay-input').value) || 0;
+  if (amount <= 0) { showToast('נא להזין סכום', 'error'); return; }
+  const lesson = _lessons.find(l => l.id === id);
+  const isPaid = amount >= (lesson.amount || 0);
+  const updated = { ...lesson, isPaid, paidAmount: amount };
+  await apiCall('PUT', `/api/lessons/${id}`, updated);
+  _lessons = _lessons.map(l => l.id === id ? updated : l);
+  closeModal();
+  if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
+  if (document.getElementById('page-dashboard')?.style.display !== 'none') renderCalendar();
+  showToast(isPaid ? 'שולם במלואו ✓' : `שולם חלקית: ${formatCurrency(amount)}`);
+}
+
+async function deleteLesson(id) {
+  if (!confirm('למחוק שיעור זה?')) return;
+  await apiCall('DELETE', `/api/lessons/${id}`);
+  _lessons = _lessons.filter(l => l.id !== id);
+  if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
+  showToast('שיעור נמחק');
+}
+
+// ===== PAYMENTS =====
+function renderPayments() {
+  const students = getStudents();
+  // Balance cards
+  const balanceEl = document.getElementById('balance-cards');
+  const visibleStudents = students.filter(s => {
+    if (s.isActive !== false) return true; // active — always show
+    return getStudentBalance(s.id) !== 0;  // inactive — show only if not balanced
+  });
+  balanceEl.innerHTML = visibleStudents.length === 0
+    ? '<p class="text-muted">אין תלמידים עדיין</p>'
+    : visibleStudents.map(s => {
+        const balance = getStudentBalance(s.id);
+        return `<div class="balance-card" style="border-inline-start-color:${s.color}">
+          <div class="balance-name">${s.name}${s.isActive === false ? ' <span style="font-size:11px;color:var(--text-muted)">(לא פעיל)</span>' : ''}</div>
+          <div class="balance-amount ${balance < 0 ? 'text-danger' : balance > 0 ? 'text-success' : 'text-muted'}">
+            ${balance < 0 ? `לתשלום: ${formatCurrency(Math.abs(balance))}` : balance > 0 ? `זכות: ${formatCurrency(balance)}` : 'מאוזן ✓'}
+          </div>
+        </div>`;
+      }).join('');
+
+  const payments = [...getPayments()].sort((a,b) => b.date.localeCompare(a.date));
+  const tbody = document.getElementById('payments-tbody');
+  if (payments.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">אין תשלומים עדיין</td></tr>';
+    return;
+  }
+  tbody.innerHTML = payments.map(p => {
+    const s = getStudentById(p.studentId);
+    return `<tr>
+      <td>${formatDate(p.date)}</td>
+      <td><span class="student-dot" style="background:${s?.color||'#4f46e5'}"></span>${s?.name||'?'}</td>
+      <td class="text-success" style="font-weight:600">${formatCurrency(p.amount)}</td>
+      <td class="text-muted">${p.notes || ''}</td>
+      <td><button class="btn btn-ghost btn-xs text-danger" onclick="deletePayment('${p.id}')">מחק</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function openAddPaymentModal(defaultStudentId) {
+  const students = getStudents();
+  const today    = new Date().toISOString().split('T')[0];
+  const html = `
+    <div class="form-group">
+      <label>תלמיד</label>
+      <select id="f-student" onchange="showStudentBalance()">
+        <option value="">בחר תלמיד...</option>
+        ${students.map(s => `<option value="${s.id}" ${s.id===defaultStudentId ? 'selected' : ''}>${s.name}</option>`).join('')}
+      </select>
+      <div id="balance-hint" class="form-hint"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>תאריך</label>
+        <input type="date" id="f-date" value="${today}">
+      </div>
+      <div class="form-group">
+        <label>סכום (₪)</label>
+        <input type="number" id="f-amount" placeholder="0" min="0" step="10">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>הערות</label>
+      <textarea id="f-notes" rows="2"></textarea>
+    </div>`;
+
+  openModal('הוסף תשלום', html, async () => {
+    const sid    = document.getElementById('f-student').value;
+    const date   = document.getElementById('f-date').value;
+    const amount = parseFloat(document.getElementById('f-amount').value);
+    if (!sid)              { showToast('נא לבחור תלמיד', 'error'); return; }
+    if (!amount || amount <= 0) { showToast('נא להזין סכום חוקי', 'error'); return; }
+    const payment = { id: generateId(), studentId: sid, date, amount, notes: document.getElementById('f-notes').value.trim() };
+    await apiCall('POST', '/api/payments', payment);
+    _payments.push(payment);
+    closeModal();
+    renderPayments();
+    showToast('תשלום נוסף בהצלחה');
+  });
+  if (defaultStudentId) setTimeout(showStudentBalance, 50);
+}
+
+function showStudentBalance() {
+  const sid  = document.getElementById('f-student')?.value;
+  const hint = document.getElementById('balance-hint');
+  if (sid && hint) {
+    const balance = getStudentBalance(sid);
+    hint.textContent = balance < 0 ? `לתשלום: ${formatCurrency(Math.abs(balance))}` : balance > 0 ? `זכות: ${formatCurrency(balance)}` : 'מאוזן';
+    hint.style.color = balance < 0 ? 'var(--danger)' : 'var(--success)';
+  }
+}
+
+async function deletePayment(id) {
+  if (!confirm('למחוק תשלום זה?')) return;
+  await apiCall('DELETE', `/api/payments/${id}`);
+  _payments = _payments.filter(p => p.id !== id);
+  renderPayments();
+  showToast('תשלום נמחק');
+}
+
+// ===== EXCEL IMPORT =====
+let pendingImport = null;
+
+function handleExcelImport(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      const results = { students: [], lessons: [], payments: [] };
+
+      wb.SheetNames.forEach(sheetName => {
+        if (sheetName === 'דשבורד') return;
+
+        // Extract student name: everything before last "-YYYY" suffix
+        let studentName = sheetName;
+        const match = sheetName.match(/^(.+)-(\d{4})$/);
+        if (match) studentName = match[1];
+
+        const ws   = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+        if (rows.length < 3) return;
+
+        // Row index 1 = row 2: config [0, day1, day2, duration, hourlyRate]
+        const configRow = rows[1] || [];
+        let hourlyRate = 150;
+        // Hourly rate: last column that's 100-350
+        for (let i = configRow.length - 1; i >= 0; i--) {
+          const n = parseFloat(configRow[i]);
+          if (n >= 100 && n <= 350) { hourlyRate = n; break; }
+        }
+
+        // Scheduled days from cols B,C (indices 1,2): Israeli 1-7 → JS 0-6
+        const scheduledDays = [];
+        for (let i = 1; i <= 3; i++) {
+          const val = parseFloat(configRow[i]);
+          if (!isNaN(val) && val >= 1 && val <= 7) {
+            const jsDay = ((val - 1) + 7) % 7; // Israeli 1=Sun→JS 0, ..., 7=Sat→JS 6
+            if (!scheduledDays.includes(jsDay)) scheduledDays.push(jsDay);
+          }
+        }
+
+        // Find or create student (merge same-name students from different year sheets)
+        let student = results.students.find(s => s.name === studentName);
+        if (!student) {
+          student = {
+            id: generateId(), name: studentName, hourlyRate, scheduledDays,
+            color: STUDENT_COLORS[results.students.length % STUDENT_COLORS.length],
+            notes: '', createdAt: new Date().toISOString()
+          };
+          results.students.push(student);
+        } else {
+          student.hourlyRate = hourlyRate; // update to latest year's rate
+        }
+
+        // Parse lesson rows (index 2 onwards)
+        for (let i = 2; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || row.every(c => c === null || c === undefined || c === '')) continue;
+
+          let date = null;
+          const cell0 = row[0];
+          if (cell0 instanceof Date) {
+            date = cell0.toISOString().split('T')[0];
+          } else if (typeof cell0 === 'string' && /^\d{4}-\d{2}-\d{2}/.test(cell0)) {
+            date = cell0.split('T')[0];
+          } else {
+            const serial = parseFloat(cell0);
+            if (!isNaN(serial) && serial > 40000 && serial < 60000) {
+              date = excelSerialToISO(serial);
+            }
+          }
+          if (!date) continue;
+
+          // Col B (index 1): if 1 or 2, use as duration hours; else default 1
+          const colB = parseFloat(row[1]);
+          const durationHours = (colB >= 1 && colB <= 4) ? colB : 1;
+
+          results.lessons.push({
+            id: generateId(), studentId: student.id, date,
+            time: '16:00', durationHours,
+            amount: Math.round(student.hourlyRate * durationHours),
+            isPaid: false, notes: ''
+          });
+        }
+      });
+
+      if (results.students.length === 0 && results.lessons.length === 0) {
+        showToast('לא נמצאו נתונים בקובץ', 'warning');
+        return;
+      }
+
+      pendingImport = results;
+      const existingCount = getStudents().length + getLessons().length;
+      const html = `
+        <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:16px">
+          <strong>נמצאו בקובץ:</strong>
+          <ul style="margin:8px 0 0 20px;line-height:2;font-size:14px">
+            <li>${results.students.length} תלמידים: <strong>${results.students.map(s=>s.name).join(', ')}</strong></li>
+            <li>${results.lessons.length} שיעורים</li>
+          </ul>
+        </div>
+        <p style="margin-bottom:14px;font-size:14px">כיצד לייבא?</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="doImport('merge')">מזג עם נתונים קיימים</button>
+          ${existingCount > 0 ? `<button class="btn btn-danger" onclick="doImport('replace')">החלף הכל</button>` : ''}
+        </div>`;
+      openModal('אישור ייבוא מאקסל', html, null);
+      document.getElementById('modal-footer').innerHTML = `<button class="btn btn-ghost" onclick="closeModal()">ביטול</button>`;
+    } catch (err) {
+      showToast('שגיאה בקריאת הקובץ', 'error');
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function excelSerialToISO(serial) {
+  // Excel 1900 date system (with 1900 leap year bug fix)
+  const s = serial > 60 ? serial - 1 : serial;
+  const date = new Date(1900, 0, 1);
+  date.setDate(date.getDate() + s - 1);
+  return date.toISOString().split('T')[0];
+}
+
+async function doImport(mode) {
+  if (!pendingImport) return;
+  await apiCall('POST', '/api/import', { ...pendingImport, mode });
+  pendingImport = null;
+  closeModal();
+  lessonFilters = { studentId: '', month: '', paid: '' };
+  await loadData();
+  showPage('dashboard');
+  showToast('ייבוא הושלם בהצלחה! 🎉');
+}
+
+// ===== ICS EXPORT =====
+function exportSingleLesson(lesson) {
+  const s = getStudentById(lesson.studentId);
+  const name = s?.name || 'תלמיד';
+  const now = new Date();
+  const stamp = now.toISOString().replace(/[-:.]/g,'').slice(0,15) + 'Z';
+  const time = lesson.time || '16:00';
+  const [hh, mm] = time.split(':').map(Number);
+  const startMin = hh * 60 + mm;
+  const endMin = startMin + (lesson.durationHours || 1) * 50;
+  const sh = String(Math.floor(startMin/60)).padStart(2,'0');
+  const sm = String(startMin%60).padStart(2,'0');
+  const eh = String(Math.floor(endMin/60)%24).padStart(2,'0');
+  const em = String(endMin%60).padStart(2,'0');
+  const dtBase = lesson.date.replace(/-/g,'');
+  const vevent = [
+    'BEGIN:VEVENT',
+    `UID:${lesson.id}@tutor-app`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART;TZID=Asia/Jerusalem:${dtBase}T${sh}${sm}00`,
+    `DTEND;TZID=Asia/Jerusalem:${dtBase}T${eh}${em}00`,
+    `SUMMARY:שיעור - ${name}`,
+    `DESCRIPTION:${lesson.notes || ''}`,
+    'END:VEVENT'
+  ].join('\r\n');
+  const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//ניהול שיעורים פרטיים//HE\r\nCALSCALE:GREGORIAN\r\nX-WR-CALNAME:שיעורים פרטיים\r\nX-WR-TIMEZONE:Asia/Jerusalem\r\n${vevent}\r\nEND:VCALENDAR`;
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `שיעור-${name}-${lesson.date}.ics`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportToICS() {
+  let lessons = getLessons();
+  // Apply current lesson filters
+  if (lessonFilters.studentId) lessons = lessons.filter(l => l.studentId === lessonFilters.studentId);
+  if (lessonFilters.month) {
+    const [y, m] = lessonFilters.month.split('-');
+    lessons = lessons.filter(l => { const d = new Date(l.date); return d.getFullYear() == y && d.getMonth()+1 == m; });
+  }
+  if (lessons.length === 0) { showToast('אין שיעורים לייצוא', 'warning'); return; }
+
+  const now   = new Date();
+  const stamp = now.toISOString().replace(/[-:.]/g,'').slice(0,15) + 'Z';
+
+  const vevent = lessons.map(l => {
+    const s    = getStudentById(l.studentId);
+    const name = s?.name || 'תלמיד';
+    const time = l.time || '16:00';
+    const [hh, mm] = time.split(':').map(Number);
+    const totalStartMin = hh * 60 + mm;
+    const totalEndMin   = totalStartMin + Math.round((l.durationHours || 1) * 60);
+    const sh = String(Math.floor(totalStartMin / 60)).padStart(2,'0');
+    const sm = String(totalStartMin % 60).padStart(2,'0');
+    const eh = String(Math.floor(totalEndMin / 60) % 24).padStart(2,'0');
+    const em = String(totalEndMin % 60).padStart(2,'0');
+    const dtBase = l.date.replace(/-/g,'');
+    return [
+      'BEGIN:VEVENT',
+      `UID:${l.id}@tutor-app`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;TZID=Asia/Jerusalem:${dtBase}T${sh}${sm}00`,
+      `DTEND;TZID=Asia/Jerusalem:${dtBase}T${eh}${em}00`,
+      `SUMMARY:שיעור - ${name}`,
+      `DESCRIPTION:${l.notes || ''}`,
+      'END:VEVENT'
+    ].join('\r\n');
+  }).join('\r\n');
+
+  const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//ניהול שיעורים פרטיים//HE\r\nCALSCALE:GREGORIAN\r\nX-WR-CALNAME:שיעורים פרטיים\r\nX-WR-TIMEZONE:Asia/Jerusalem\r\n${vevent}\r\nEND:VCALENDAR`;
+
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const tag  = lessonFilters.month || `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `שיעורים-${tag}.ics`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`${lessons.length} שיעורים יוצאו ללוח שנה`);
+}
+
+// ===== CALENDAR =====
+let calView = 'month';
+let calCursor = new Date();
+
+const HE_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const HE_DAYS_SHORT = ['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+
+function setCalView(v) {
+  calView = v;
+  ['month','week','day'].forEach(x => document.getElementById('cvb-'+x).classList.toggle('active', x === v));
+  renderCalendar();
+}
+
+function calNav(dir) {
+  if (calView === 'month') calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + dir, 1);
+  else if (calView === 'week') { calCursor = new Date(calCursor); calCursor.setDate(calCursor.getDate() + dir * 7); }
+  else { calCursor = new Date(calCursor); calCursor.setDate(calCursor.getDate() + dir); }
+  renderCalendar();
+}
+
+function calToday() { calCursor = new Date(); renderCalendar(); }
+
+// Swipe support for calendar
+let _swipeStartX = null;
+function initCalSwipe() {
+  const body = document.getElementById('cal-body');
+  if (!body) return;
+  body.addEventListener('touchstart', e => { _swipeStartX = e.touches[0].clientX; }, { passive: true });
+  body.addEventListener('touchend', e => {
+    if (_swipeStartX === null) return;
+    const dx = e.changedTouches[0].clientX - _swipeStartX;
+    _swipeStartX = null;
+    if (Math.abs(dx) > 50) calNav(dx > 0 ? 1 : -1);
+  }, { passive: true });
+}
+
+function calGoDay(dateStr) { calCursor = new Date(dateStr + 'T00:00:00'); setCalView('day'); }
+
+function isoDate(d) { return d.toISOString().split('T')[0]; }
+
+function lessonsForDate(dateStr) {
+  return getLessons()
+    .filter(l => l.date === dateStr && (!calStudentFilter || l.studentId === calStudentFilter))
+    .sort((a,b) => (a.time||'00:00').localeCompare(b.time||'00:00'));
+}
+
+function renderCalendar() {
+  const today = isoDate(new Date());
+  const titleEl = document.getElementById('cal-title');
+  const body = document.getElementById('cal-body');
+  if (!titleEl || !body) return;
+
+  // Populate student filter dropdown
+  const csf = document.getElementById('cal-student-filter');
+  if (csf) {
+    const prevVal = csf.value;
+    while (csf.options.length > 1) csf.remove(1);
+    getStudents().filter(s => s.isActive !== false).forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.id; o.textContent = s.name;
+      csf.appendChild(o);
+    });
+    csf.value = prevVal;
+  }
+
+  if (calView === 'month') {
+    const y = calCursor.getFullYear(), m = calCursor.getMonth();
+    titleEl.textContent = `${HE_MONTHS[m]} ${y}`;
+    const first = new Date(y, m, 1);
+    const startDay = first.getDay(); // 0=Sun
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+    let html = `<table class="cal-month"><thead><tr>`;
+    HE_DAYS_SHORT.forEach(d => html += `<th>${d}</th>`);
+    html += `</tr></thead><tbody>`;
+
+    let day = 1 - startDay; // can be negative (prev month days)
+    for (let week = 0; week < 6; week++) {
+      if (day > daysInMonth) break;
+      html += '<tr>';
+      for (let dow = 0; dow < 7; dow++, day++) {
+        const d = new Date(y, m, day);
+        const ds = isoDate(d);
+        const isToday = ds === today;
+        const otherMonth = d.getMonth() !== m;
+        const lessons = lessonsForDate(ds);
+        const maxShow = 2;
+        html += `<td class="cal-day-cell${isToday?' today':''}${otherMonth?' other-month':''}" onclick="calGoDay('${ds}')">`;
+        html += `<div class="cal-day-num"><span>${d.getDate()}</span></div>`;
+        lessons.slice(0, maxShow).forEach(l => {
+          const s = getStudentById(l.studentId);
+          const tip = `${s?.name||'?'} | ${l.time||'--:--'} | ${l.durationHours} שיעור${l.durationHours>1?'ים':''}${l.notes?' | '+l.notes:''}`;
+          html += `<div class="cal-event" style="background:${s?.color||'#4f46e5'}" onclick="showCalPopup('${l.id}',event)" title="${tip}">
+            ${l.time||''} ${s?.name||'?'}
+          </div>`;
+        });
+        if (lessons.length > maxShow) html += `<div class="cal-more">+${lessons.length - maxShow} נוספים</div>`;
+        html += '</td>';
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    body.innerHTML = html;
+
+  } else if (calView === 'week') {
+    const dow = calCursor.getDay();
+    const sunday = new Date(calCursor); sunday.setDate(calCursor.getDate() - dow);
+    const days = Array.from({length:7}, (_,i) => { const d = new Date(sunday); d.setDate(sunday.getDate()+i); return d; });
+    const [ds0, ds6] = [isoDate(days[0]), isoDate(days[6])];
+    const m0 = days[0].getMonth(), m6 = days[6].getMonth();
+    const isMobile = window.innerWidth <= 768;
+    titleEl.textContent = m0 === m6
+      ? `${days[0].getDate()}–${days[6].getDate()} ${isMobile ? HE_MONTHS[m0].slice(0,3) : HE_MONTHS[m0]} ${days[0].getFullYear()}`
+      : isMobile
+        ? `${days[0].getDate()}/${m0+1}–${days[6].getDate()}/${m6+1}`
+        : `${days[0].getDate()} ${HE_MONTHS[m0]} – ${days[6].getDate()} ${HE_MONTHS[m6]} ${days[6].getFullYear()}`;
+
+    html = '<div class="cal-week-grid">';
+    days.forEach(d => {
+      const ds = isoDate(d);
+      const isToday = ds === today;
+      const lessons = lessonsForDate(ds);
+      html += `<div class="cal-week-col${isToday?' today':''}">
+        <div class="cal-week-header" onclick="calGoDay('${ds}')">
+          <div class="cal-week-day-name">${HE_DAYS_SHORT[d.getDay()]}</div>
+          <div class="cal-week-day-num${isToday?' today-num':''}">${d.getDate()}</div>
+        </div>
+        <div class="cal-week-events" onclick="openAddLessonModal(null)">`;
+      lessons.forEach(l => {
+        const s = getStudentById(l.studentId);
+        html += `<div class="cal-week-event" style="background:${s?.color||'#4f46e5'}" onclick="showCalPopup('${l.id}',event)">
+          <div class="cal-week-event-time">${l.time||''}</div>
+          <div class="cal-week-event-name">${s?.name||'?'}</div>
+        </div>`;
+      });
+      html += `</div></div>`;
+    });
+    html += '</div>';
+    body.innerHTML = html;
+
+  } else { // day
+    const ds = isoDate(calCursor);
+    const d = calCursor;
+    titleEl.textContent = `${HE_DAYS_SHORT[d.getDay()]} ${d.getDate()} ${HE_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    const lessons = lessonsForDate(ds);
+    let html = '<div class="cal-day-detail">';
+    if (lessons.length === 0) {
+      html += `<p class="text-muted" style="padding:16px 0;text-align:center">אין שיעורים ביום זה</p>`;
+    } else {
+      lessons.forEach(l => {
+        const s = getStudentById(l.studentId);
+        html += `<div class="cal-day-lesson" style="border-inline-start-color:${s?.color||'#4f46e5'}">
+          <div class="cal-day-lesson-time">${l.time||'--:--'}</div>
+          <div class="cal-day-lesson-info">
+            <span class="badge" style="background:${s?.color||'#4f46e5'}">${s?.name||'?'}</span>
+            <span>${l.durationHours} שיעור${l.durationHours>1?'ים':''}</span>
+            <span>${formatCurrency(l.amount)}</span>
+            ${lessonBadge(l)}
+            ${l.notes ? `<span class="text-muted">${l.notes}</span>` : ''}
+          </div>
+          <div class="cal-day-lesson-actions">
+            <button class="btn btn-ghost btn-xs" onclick="openEditLessonModal('${l.id}')">ערוך</button>
+            <button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}').then(()=>renderCalendar())">${toggleBtnLabel(l)}</button>
+          </div>
+        </div>`;
+      });
+    }
+    html += `<button class="cal-add-day-btn" onclick="openAddLessonModal(null,'${ds}')">+ הוסף שיעור ל-${d.getDate()} ${HE_MONTHS[d.getMonth()]}</button>`;
+    html += '</div>';
+    body.innerHTML = html;
+  }
+  setTimeout(initCalSwipe, 0);
+}
+
+// ===== CAL POPUP =====
+function showCalPopup(lessonId, e) {
+  e.stopPropagation();
+  const l = getLessons().find(x => x.id === lessonId);
+  if (!l) return;
+  const s = getStudentById(l.studentId);
+  const p = document.getElementById('cal-popup');
+  p.innerHTML = `
+    <div class="cal-popup-name">
+      <span class="student-dot" style="background:${s?.color||'#4f46e5'}"></span>${s?.name||'?'}
+    </div>
+    <div class="cal-popup-detail">🕐 ${l.time||'--:--'} &nbsp;·&nbsp; ${l.durationHours} שיעור${l.durationHours>1?'ים':''}</div>
+    <div class="cal-popup-detail">${formatCurrency(l.amount)} &nbsp;·&nbsp; ${lessonBadge(l)}</div>
+    ${l.notes ? `<div class="cal-popup-detail" style="font-style:italic">${l.notes}</div>` : ''}
+    <div class="cal-popup-btns">
+      <button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}').then(()=>{hideCalPopup();renderCalendar()})">${getLessonPayStatus(l)==='paid'?'↩ בטל':'✓ שולם'}</button>
+      <button class="btn btn-primary btn-xs" onclick="hideCalPopup();openEditLessonModal('${l.id}')">ערוך</button>
+      <button class="btn btn-ghost btn-xs text-danger" onclick="hideCalPopup();deleteLesson('${l.id}').then(()=>renderCalendar())">מחק</button>
+    </div>`;
+  p.style.display = 'block';
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let x = e.clientX, y = e.clientY + 10;
+  const pw = p.offsetWidth || 210, ph = p.offsetHeight || 140;
+  if (x + pw > vw - 10) x = vw - pw - 10;
+  if (y + ph > vh - 10) y = e.clientY - ph - 10;
+  if (x < 4) x = 4;
+  p.style.left = x + 'px';
+  p.style.top = y + 'px';
+}
+function hideCalPopup() { document.getElementById('cal-popup').style.display = 'none'; }
+
+// ===== SEARCH =====
+function onSearch(q) {
+  const res = document.getElementById('search-results');
+  if (!q.trim()) { res.classList.remove('show'); return; }
+  const lessons = getLessons().filter(l => {
+    const s = getStudentById(l.studentId);
+    return (s?.name||'').includes(q) || l.date.includes(q) || (l.notes||'').includes(q);
+  }).slice(0, 7);
+  const students = getStudents().filter(s => s.name.includes(q)).slice(0, 3);
+  if (lessons.length === 0 && students.length === 0) {
+    res.innerHTML = '<div class="search-empty">אין תוצאות</div>';
+  } else {
+    res.innerHTML = [
+      ...students.map(s => `<div class="search-result-item" onclick="showPage('students');document.getElementById('search-input').value='';document.getElementById('search-results').classList.remove('show')">
+        <span class="student-dot" style="background:${s.color}"></span>
+        <strong>${s.name}</strong>
+        <span class="text-muted" style="margin-right:auto">${formatCurrency(s.hourlyRate)}/שיעור</span>
+      </div>`),
+      ...lessons.map(l => {
+        const s = getStudentById(l.studentId);
+        return `<div class="search-result-item" onclick="calGoDay('${l.date}');document.getElementById('search-input').value='';document.getElementById('search-results').classList.remove('show')">
+          <span class="student-dot" style="background:${s?.color||'#4f46e5'}"></span>
+          <span>${s?.name||'?'}</span>
+          <span class="text-muted">${formatDate(l.date)} ${l.time||''}</span>
+          ${lessonBadge(l)}
+        </div>`;
+      })
+    ].join('');
+  }
+  res.classList.add('show');
+}
+
+// ===== CAL SUBSCRIBE =====
+function showCalSubscribeInfo() {
+  const url = `http://${location.hostname}:8080/calendar.ics`;
+  const html = `
+    <p style="font-size:14px;margin-bottom:14px">המנוי מתעדכן אוטומטית בכל שיעור שמוסיפים.</p>
+    <div style="background:var(--bg);padding:10px 12px;border-radius:8px;font-size:13px;direction:ltr;text-align:left;word-break:break-all;margin-bottom:16px;user-select:all">${url}</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div>
+        <strong style="font-size:13px">📱 iPhone / iPad (Apple Calendar):</strong>
+        <ol style="margin:6px 0 0 18px;font-size:13px;line-height:1.9">
+          <li>הגדרות → לוח שנה → חשבונות → הוסף חשבון</li>
+          <li>בחר "אחר" → הוסף לוח שנה מנוי</li>
+          <li>הדבק את הכתובת ולחץ הבא</li>
+        </ol>
+      </div>
+      <div>
+        <strong style="font-size:13px">🗓 Google Calendar:</strong>
+        <ol style="margin:6px 0 0 18px;font-size:13px;line-height:1.9">
+          <li>לוחות שנה אחרים ← הוסף לפי כתובת URL</li>
+          <li>הדבק את הכתובת ולחץ הוסף לוח שנה</li>
+        </ol>
+      </div>
+      <button class="btn btn-primary" onclick="navigator.clipboard.writeText('${url}').then(()=>showToast('הועתק ✓'))">העתק כתובת</button>
+    </div>`;
+  openModal('🔗 מנוי לוח שנה', html, null);
+  document.getElementById('modal-footer').style.display = 'flex';
+  document.getElementById('modal-save-btn').style.display = 'none';
+}
+
+// ===== EXCEL EXPORT =====
+function exportReport() {
+  const students = getStudents();
+  const lessons  = getLessons();
+  const payments = getPayments();
+
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: lessons
+  const lessonRows = [['תאריך','תלמיד','מספר שיעורים','סכום','שולם','הערות']];
+  [...lessons].sort((a,b) => a.date.localeCompare(b.date)).forEach(l => {
+    const s = getStudentById(l.studentId);
+    lessonRows.push([l.date, s?.name||'?', l.durationHours, l.amount, l.isPaid?'כן':'לא', l.notes||'']);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lessonRows), 'שיעורים');
+
+  // Sheet 2: payments
+  const payRows = [['תאריך','תלמיד','סכום','הערות']];
+  [...payments].sort((a,b) => a.date.localeCompare(b.date)).forEach(p => {
+    const s = getStudentById(p.studentId);
+    payRows.push([p.date, s?.name||'?', p.amount, p.notes||'']);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(payRows), 'תשלומים');
+
+  // Sheet 3: summary
+  const sumRows = [['תלמיד','סה״כ שיעורים','סה״כ חיובים','סה״כ תשלומים','יתרה']];
+  students.forEach(s => {
+    const sLessons  = lessons.filter(l => l.studentId === s.id);
+    const sPayments = payments.filter(p => p.studentId === s.id);
+    const charged = sLessons.reduce((t,l) => t + (l.amount||0), 0);
+    const paid    = sPayments.reduce((t,p) => t + (p.amount||0), 0);
+    sumRows.push([s.name, sLessons.length, charged, paid, paid - charged]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumRows), 'סיכום');
+
+  const now = new Date();
+  XLSX.writeFile(wb, `דוח-שיעורים-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.xlsx`);
+  showToast('דוח יוצא בהצלחה 📊');
+}
+
+// ===== SEED DATA (removed - data lives in data.json) =====
+function seedInitialData() { return; }
+const _unused_seed_delete_me ={"students":[{"id":"s-noam","name":"נועם","color":"#4f46e5","isActive":false,"hourlyRate":150,"scheduledDays":[],"notes":"","createdAt":"2024-09-01T00:00:00.000Z"},{"id":"s-shari","name":"שרי","color":"#10b981","isActive":false,"hourlyRate":150,"scheduledDays":[],"notes":"","createdAt":"2024-09-01T00:00:00.000Z"},{"id":"s-shchaf","name":"שחף","color":"#f59e0b","isActive":true,"hourlyRate":170,"scheduledDays":[],"notes":"","createdAt":"2024-09-01T00:00:00.000Z"},{"id":"s-alon","name":"אלון","color":"#ef4444","isActive":true,"hourlyRate":200,"scheduledDays":[],"notes":"","createdAt":"2024-09-01T00:00:00.000Z"}],"lessons":[{"id":"ggco2llxsq","studentId":"s-shchaf","date":"2024-09-15","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"e6qu7vxt1a","studentId":"s-shari","date":"2024-09-20","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"spwtef4lyu","studentId":"s-shchaf","date":"2024-09-20","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"69j7t9gh0j","studentId":"s-noam","date":"2024-09-23","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"0j9o6eh73q","studentId":"s-shchaf","date":"2024-09-24","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"ax10vi0pvp","studentId":"s-noam","date":"2024-10-09","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"zk0mlh7bte","studentId":"s-shchaf","date":"2024-10-13","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"37sus0bkuh","studentId":"s-shchaf","date":"2024-10-14","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"l77vet1dfj","studentId":"s-shari","date":"2024-10-15","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"hte2ueogyh","studentId":"s-noam","date":"2024-10-20","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"la3b414gev","studentId":"s-shchaf","date":"2024-10-20","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"iewe2eb8l9","studentId":"s-shari","date":"2024-10-21","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"4et2l82p73","studentId":"s-shari","date":"2024-10-27","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"o63ltwzljd","studentId":"s-shchaf","date":"2024-10-28","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"dr55pkwzho","studentId":"s-shchaf","date":"2024-11-04","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"1epgakys0j","studentId":"s-noam","date":"2024-11-05","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"90z7rbwv9f","studentId":"s-shchaf","date":"2024-11-05","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"qc9xv9gwoz","studentId":"s-shari","date":"2024-11-06","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"2vsnitoj4h","studentId":"s-noam","date":"2024-11-08","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"ta0qttizf8","studentId":"s-shchaf","date":"2024-11-10","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"0hilifumft","studentId":"s-shchaf","date":"2024-11-14","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"p91a2goex6","studentId":"s-shari","date":"2024-11-15","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"bh9f1eir0g","studentId":"s-shchaf","date":"2024-11-18","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"sk0424vqfb","studentId":"s-noam","date":"2024-11-21","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"2g2ek0p3m1","studentId":"s-shchaf","date":"2024-11-21","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"8pvkf83poo","studentId":"s-noam","date":"2024-11-22","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"d7pq57h2vh","studentId":"s-shari","date":"2024-11-22","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"w8lfl6lbwr","studentId":"s-shchaf","date":"2024-11-25","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"bkqk0x8siv","studentId":"s-noam","date":"2024-11-26","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"idwk3jwz4k","studentId":"s-shchaf","date":"2024-11-26","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"pigdvikkqp","studentId":"s-noam","date":"2024-11-29","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"dmlpxizx0g","studentId":"s-shari","date":"2024-11-29","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"s9wdsby4zy","studentId":"s-noam","date":"2024-12-02","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"n30142vwmf","studentId":"s-shchaf","date":"2024-12-02","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"7koigsrntg","studentId":"s-noam","date":"2024-12-06","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"wqvxsz8dy1","studentId":"s-shchaf","date":"2024-12-10","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"n725ayf6bq","studentId":"s-shari","date":"2024-12-12","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"jlxv4b3ve9","studentId":"s-noam","date":"2024-12-13","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"zkf7lje58e","studentId":"s-noam","date":"2024-12-16","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"rwtzp7ch7h","studentId":"s-shchaf","date":"2024-12-16","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"0j6msv429w","studentId":"s-shchaf","date":"2024-12-19","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"5en0ixoomv","studentId":"s-noam","date":"2024-12-20","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"sxbvr0r0p9","studentId":"s-shchaf","date":"2024-12-22","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"ohppqjqhil","studentId":"s-noam","date":"2024-12-23","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"4da9grp7et","studentId":"s-shchaf","date":"2024-12-23","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"c43fkzahkn","studentId":"s-shari","date":"2024-12-26","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"wuxldhrkwm","studentId":"s-noam","date":"2024-12-27","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"gvy7wpzomf","studentId":"s-noam","date":"2024-12-30","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"wkxmux5yvx","studentId":"s-shchaf","date":"2024-12-30","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"29vplc29xw","studentId":"s-noam","date":"2025-01-03","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"fd1wykadhy","studentId":"s-noam","date":"2025-01-06","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"ceo1oaoc23","studentId":"s-shchaf","date":"2025-01-06","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"f5bs8giq4o","studentId":"s-noam","date":"2025-01-10","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"qj3ken48o2","studentId":"s-noam","date":"2025-01-13","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"n6nad7i8hk","studentId":"s-shchaf","date":"2025-01-13","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"oxntcgk4vj","studentId":"s-noam","date":"2025-01-17","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"vid1n4hnsf","studentId":"s-noam","date":"2025-01-24","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"uz6g2vih2w","studentId":"s-noam","date":"2025-01-27","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"60tq03duhh","studentId":"s-shchaf","date":"2025-01-27","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"mgxtlya239","studentId":"s-shchaf","date":"2025-01-30","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"erj223bljl","studentId":"s-noam","date":"2025-01-31","time":"16:00","durationHours":1,"amount":150,"isPaid":false,"notes":"בוטל"},{"id":"xuo0jreytj","studentId":"s-noam","date":"2025-02-04","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"6bb0bnp6o3","studentId":"s-shchaf","date":"2025-02-04","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"ndl3pfo79m","studentId":"s-shchaf","date":"2025-02-06","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"tnghc4hcef","studentId":"s-noam","date":"2025-02-07","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"25a7k6odf5","studentId":"s-noam","date":"2025-02-14","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"385vxutktc","studentId":"s-shchaf","date":"2025-02-16","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"73vys4ws0m","studentId":"s-noam","date":"2025-02-18","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"euje8nogep","studentId":"s-shchaf","date":"2025-02-18","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"2dku5m4ne1","studentId":"s-noam","date":"2025-02-21","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"ujsxgja3n8","studentId":"s-shchaf","date":"2025-02-25","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"6d2fwmmq1y","studentId":"s-shchaf","date":"2025-03-02","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"xcbo71gr30","studentId":"s-noam","date":"2025-03-07","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"gsadw5ywoh","studentId":"s-shchaf","date":"2025-03-09","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"qiyt88sh43","studentId":"s-shchaf","date":"2025-03-12","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"iuv4idnes3","studentId":"s-shchaf","date":"2025-03-18","time":"16:00","durationHours":2,"amount":340,"isPaid":true,"notes":""},{"id":"sbhc22z96w","studentId":"s-noam","date":"2025-03-21","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"egv598vvvn","studentId":"s-shchaf","date":"2025-03-23","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"whztqj40x2","studentId":"s-shchaf","date":"2025-03-25","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"so6psg8xt5","studentId":"s-noam","date":"2025-04-04","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"zkwxakj608","studentId":"s-noam","date":"2025-04-08","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"kx0gcfy8hn","studentId":"s-noam","date":"2025-04-11","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"q6jl332p8c","studentId":"s-shchaf","date":"2025-04-15","time":"16:00","durationHours":2,"amount":340,"isPaid":true,"notes":""},{"id":"5m1oprt002","studentId":"s-noam","date":"2025-04-17","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"1y0thpxjxs","studentId":"s-noam","date":"2025-04-18","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"gtagfcr49x","studentId":"s-shchaf","date":"2025-04-20","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"v6zeway2y5","studentId":"s-shari","date":"2025-04-22","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"5uitqkre8b","studentId":"s-shchaf","date":"2025-04-22","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"flbqd13mhr","studentId":"s-shchaf","date":"2025-04-24","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"div7vmphv3","studentId":"s-noam","date":"2025-04-25","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"uu0javmndt","studentId":"s-shari","date":"2025-04-25","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"8b7x5rzt1e","studentId":"s-shari","date":"2025-05-06","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"fv4e7gk6jw","studentId":"s-noam","date":"2025-05-09","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"up17tr31a2","studentId":"s-shari","date":"2025-05-11","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"2nskud6vhw","studentId":"s-shchaf","date":"2025-05-14","time":"16:00","durationHours":2,"amount":340,"isPaid":true,"notes":""},{"id":"26l6v7uduo","studentId":"s-shchaf","date":"2025-05-20","time":"16:00","durationHours":2,"amount":340,"isPaid":true,"notes":""},{"id":"g2hwbu3mgm","studentId":"s-shchaf","date":"2025-06-03","time":"16:00","durationHours":2,"amount":340,"isPaid":true,"notes":""},{"id":"1fqviy7ngl","studentId":"s-shchaf","date":"2025-06-04","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"thlal15fpd","studentId":"s-shchaf","date":"2025-06-10","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"ls4u5wa3lx","studentId":"s-shchaf","date":"2025-07-15","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"jh9i8gz23f","studentId":"s-shchaf","date":"2025-07-23","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"998ks5j9wh","studentId":"s-shchaf","date":"2025-08-12","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"ft569g9u11","studentId":"s-shchaf","date":"2025-08-19","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"xrvp1vqgmq","studentId":"s-shchaf","date":"2025-08-26","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"5xhrmdaatw","studentId":"s-shchaf","date":"2025-09-02","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"1qb8brin92","studentId":"s-shchaf","date":"2025-10-14","time":"16:00","durationHours":2,"amount":340,"isPaid":true,"notes":""},{"id":"brrh7822d9","studentId":"s-shchaf","date":"2025-10-23","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"j8c152kkvr","studentId":"s-shchaf","date":"2025-12-21","time":"16:00","durationHours":1,"amount":170,"isPaid":false,"notes":""},{"id":"tze4kjouol","studentId":"s-shchaf","date":"2025-12-23","time":"16:00","durationHours":1,"amount":170,"isPaid":false,"notes":""},{"id":"hrzrggnq7r","studentId":"s-shchaf","date":"2025-12-30","time":"16:00","durationHours":1,"amount":170,"isPaid":false,"notes":""},{"id":"azoqhxy8le","studentId":"s-alon","date":"2026-01-30","time":"16:00","durationHours":1,"amount":200,"isPaid":true,"notes":""},{"id":"lkjonssdk6","studentId":"s-alon","date":"2026-02-04","time":"16:00","durationHours":1.5,"amount":300,"isPaid":true,"notes":""},{"id":"u9lvqplcfp","studentId":"s-alon","date":"2026-02-13","time":"16:00","durationHours":1,"amount":200,"isPaid":true,"notes":""},{"id":"c7hzvc2vi2","studentId":"s-alon","date":"2026-02-20","time":"16:00","durationHours":1,"amount":200,"isPaid":true,"notes":""},{"id":"hl5q6w6uxw","studentId":"s-alon","date":"2026-02-27","time":"16:00","durationHours":2,"amount":400,"isPaid":true,"notes":"בוטל (שולם)"},{"id":"1wscpld68f","studentId":"s-shchaf","date":"2026-04-05","time":"16:00","durationHours":2,"amount":340,"isPaid":false,"notes":""},{"id":"jlx87emqnb","studentId":"s-shchaf","date":"2026-04-06","time":"16:00","durationHours":2,"amount":340,"isPaid":false,"notes":""},{"id":"bd5w7aekj9","studentId":"s-alon","date":"2026-04-07","time":"16:00","durationHours":1,"amount":200,"isPaid":false,"notes":""},{"id":"yxj5u1adj3","studentId":"s-shchaf","date":"2026-04-07","time":"16:00","durationHours":2,"amount":340,"isPaid":false,"notes":""},{"id":"d5k499vjae","studentId":"s-shchaf","date":"2026-04-08","time":"16:00","durationHours":2,"amount":340,"isPaid":false,"notes":""},{"id":"1u05b944ox","studentId":"s-alon","date":"2026-04-10","time":"16:00","durationHours":2,"amount":400,"isPaid":true,"notes":"שולם על חשבון בוטל 27/02"},{"id":"6ejgg2x8e6","studentId":"s-alon","date":"2026-04-12","time":"16:00","durationHours":1,"amount":200,"isPaid":false,"notes":""},{"id":"t66t7gpq3i","studentId":"s-shchaf","date":"2026-04-12","time":"16:00","durationHours":1,"amount":170,"isPaid":false,"notes":""},{"id":"mjr6ykbq7b","studentId":"s-shchaf","date":"2026-04-13","time":"16:00","durationHours":2,"amount":340,"isPaid":false,"notes":""},{"id":"w8e51wokz5","studentId":"s-alon","date":"2026-04-14","time":"16:00","durationHours":2,"amount":400,"isPaid":false,"notes":""},{"id":"ddz6thh9rh","studentId":"s-alon","date":"2026-04-15","time":"16:00","durationHours":2,"amount":400,"isPaid":false,"notes":""}],"payments":[{"id":"pay-noam","studentId":"s-noam","date":"2025-05-09","amount":6900,"notes":"תשלומים היסטוריים (יובא מאקסל)"},{"id":"pay-shari","studentId":"s-shari","date":"2025-05-11","amount":4200,"notes":"תשלומים היסטוריים (יובא מאקסל)"},{"id":"pay-shchaf","studentId":"s-shchaf","date":"2025-10-23","amount":9700,"notes":"תשלומים היסטוריים (יובא מאקסל)"},{"id":"pay-alon","studentId":"s-alon","date":"2026-04-10","amount":1700,"notes":"תשלומים היסטוריים (יובא מאקסל)"}]};
+// ===== INIT =====
+async function initApp() {
+  document.getElementById('modal-close').onclick = closeModal;
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#cal-popup')) hideCalPopup();
+  });
+  document.getElementById('modal-overlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+  document.getElementById('excel-input').onchange = (e) => {
+    const f = e.target.files[0];
+    if (f) { handleExcelImport(f); e.target.value = ''; }
+  };
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => showPage(tab.dataset.page));
+  });
+
+  // Check if already logged in
+  try {
+    const r = await fetch('/api/auth/me');
+    if (r.ok) {
+      const user = await r.json();
+      hideAuthOverlay(user.name || user.email);
+    } else {
+      showAuthOverlay();
+      return;
+    }
+  } catch(e) {
+    showToast('לא ניתן להתחבר לשרת — הרץ את server.py', 'error');
+    return;
+  }
+
+  try {
+    await loadData();
+  } catch(e) {
+    if (e.message !== 'unauth') showToast('שגיאה בטעינת הנתונים', 'error');
+    return;
+  }
+  if (window.innerWidth <= 768) {
+    calView = 'week';
+    document.getElementById('cvb-week').classList.add('active');
+  } else {
+    document.getElementById('cvb-month').classList.add('active');
+  }
+  showPage('dashboard');
+}
+
+document.addEventListener('DOMContentLoaded', initApp);
+</script>
+</body>
+</html>

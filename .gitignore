@@ -1,0 +1,21 @@
+# Data files – contain private student data, never commit
+data.json
+data_*.json
+
+# Auth & secrets
+users.db
+.secret_key
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
