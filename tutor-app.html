@@ -334,6 +334,215 @@
       .auth-title { font-size: 21px; }
     }
 
+    /* ===== LOADING OVERLAY ===== */
+    #loading-overlay {
+      position: fixed; inset: 0;
+      background: rgba(255,255,255,0.82);
+      z-index: 9000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px;
+    }
+    #loading-overlay.show { display: flex; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid var(--primary-light);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner-text { font-size: 14px; color: var(--text-muted); font-weight: 500; }
+
+    /* ===== CONFIRM MODAL ===== */
+    #confirm-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15,23,42,0.55);
+      z-index: 5000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #confirm-overlay.show { display: flex; }
+    #confirm-box {
+      background: white;
+      border-radius: 16px;
+      padding: 28px 24px 22px;
+      max-width: 360px;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+      animation: fadeInUp 0.2s ease both;
+    }
+    #confirm-icon { font-size: 34px; text-align: center; margin-bottom: 10px; }
+    #confirm-msg { font-size: 15px; font-weight: 600; text-align: center; margin-bottom: 18px; color: var(--text); line-height: 1.5; }
+    #confirm-btns { display: flex; gap: 10px; justify-content: center; }
+
+    /* ===== BULK TOOLBAR ===== */
+    #bulk-toolbar {
+      display: none;
+      background: var(--primary);
+      color: white;
+      padding: 10px 16px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    #bulk-toolbar.show { display: flex; }
+    #bulk-count { font-weight: 600; font-size: 14px; flex: 1; }
+    #bulk-toolbar .btn-bulk {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.4);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    #bulk-toolbar .btn-bulk:hover { background: rgba(255,255,255,0.3); }
+    #bulk-toolbar .btn-bulk.danger { background: rgba(239,68,68,0.7); border-color: rgba(239,68,68,0.9); }
+    #bulk-toolbar .btn-bulk.danger:hover { background: rgba(239,68,68,0.9); }
+
+    /* ===== UNDO TOAST ===== */
+    .toast-undo-btn {
+      background: rgba(255,255,255,0.25);
+      border: 1px solid rgba(255,255,255,0.5);
+      color: white;
+      padding: 3px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+      margin-right: 6px;
+    }
+
+    /* ===== DARK MODE ===== */
+    [data-theme="dark"] {
+      --primary: #6d67f0;
+      --primary-light: #1e1b4b;
+      --primary-dark: #4f46e5;
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --shadow: 0 1px 3px rgba(0,0,0,0.4);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    [data-theme="dark"] .auth-overlay,
+    [data-theme="dark"] .auth-card { background: #1e293b; color: #f1f5f9; }
+    [data-theme="dark"] .auth-input-wrap input { background: #0f172a; border-color: #334155; color: #f1f5f9; }
+    [data-theme="dark"] tr:hover td { background: #273344; }
+    [data-theme="dark"] .search-results { background: #1e293b; }
+    [data-theme="dark"] .search-result-item:hover { background: #273344; }
+    [data-theme="dark"] .cal-popup { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .bottom-nav { background: #1e293b; border-top-color: #334155; }
+    [data-theme="dark"] #confirm-box { background: #1e293b; }
+    [data-theme="dark"] #loading-overlay { background: rgba(15,23,42,0.88); }
+    [data-theme="dark"] .form-group input,
+    [data-theme="dark"] .form-group select,
+    [data-theme="dark"] .form-group textarea { background: #0f172a; color: #f1f5f9; border-color: #334155; }
+    [data-theme="dark"] .filters-bar select,
+    [data-theme="dark"] .filters-bar input { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+    [data-theme="dark"] th { background: #0f172a; }
+    [data-theme="dark"] .cal-filter-select { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+    [data-theme="dark"] .day-checkbox { background: #1e293b; border-color: #334155; }
+    [data-theme="dark"] .auth-tabs { background: #0f172a; }
+    [data-theme="dark"] .auth-tab-btn.active { background: #1e293b; }
+
+    /* ===== DEBT BANNER ===== */
+    #debt-banner {
+      display: none;
+      background: linear-gradient(135deg, #fef3c7, #fee2e2);
+      border: 1px solid #fca5a5;
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #92400e;
+    }
+    [data-theme="dark"] #debt-banner { background: linear-gradient(135deg, #451a03, #450a0a); border-color: #7f1d1d; color: #fca5a5; }
+    #debt-banner.show { display: block; }
+    #debt-banner strong { font-weight: 700; }
+
+    /* ===== KEYBOARD SHORTCUTS TOOLTIP ===== */
+    .kb-hint-btn {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      position: relative;
+    }
+    .kb-hint-btn .kb-tooltip {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: #f1f5f9;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      white-space: nowrap;
+      box-shadow: var(--shadow-md);
+      z-index: 300;
+      line-height: 1.8;
+      text-align: right;
+    }
+    .kb-hint-btn:hover .kb-tooltip { display: block; }
+
+    /* ===== CANVAS CHART ===== */
+    #income-canvas-wrap {
+      margin-bottom: 14px;
+      position: relative;
+    }
+    #income-canvas-wrap canvas {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    /* ===== AVATAR ===== */
+    .student-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: white;
+      flex-shrink: 0;
+    }
+    .student-card { transition: box-shadow 0.18s, transform 0.18s; }
+    .student-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.12); transform: translateY(-2px); }
+
+    /* ===== DASHBOARD MONTH FILTER ===== */
+    #dash-month-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    #dash-month { padding: 7px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; background: var(--card); color: var(--text); }
+
+    /* ===== YEARLY REPORT TABLE ===== */
+    .yearly-report-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .yearly-report-table th, .yearly-report-table td { padding: 8px 10px; border: 1px solid var(--border); text-align: center; }
+    .yearly-report-table th { background: var(--bg); font-weight: 600; }
+    .yearly-report-table tr:last-child td { font-weight: 700; background: var(--primary-light); }
+
+    /* ===== MOBILE IMPROVEMENTS ===== */
+    @media (max-width: 768px) {
+      .students-grid { grid-template-columns: 1fr; }
+      .btn { min-height: 44px; }
+      .btn-sm { min-height: 38px; }
+      table { font-size: 12px; }
+      td, th { padding: 8px 8px; }
+    }
+
     /* ===== STUDENT DOT ===== */
     .student-dot {
       display: inline-block;
@@ -944,6 +1153,16 @@
         <div class="search-results" id="search-results"></div>
       </div>
       <span id="user-display" style="color:rgba(255,255,255,0.85);font-size:13px;white-space:nowrap;display:none"></span>
+      <button class="kb-hint-btn" id="kb-hint-btn" title="קיצורי מקלדת">⌨️
+        <div class="kb-tooltip">
+          <strong>קיצורי מקלדת:</strong><br>
+          N / נ — הוסף שיעור<br>
+          S / ד — תלמידים<br>
+          L / כ — שיעורים<br>
+          D / ג — דשבורד
+        </div>
+      </button>
+      <button class="btn-import" id="dark-mode-btn" onclick="toggleDarkMode()">🌙</button>
       <button class="btn-import" onclick="document.getElementById('excel-input').click()">
         ⬆ ייבוא מאקסל
       </button>
@@ -963,6 +1182,13 @@
 
     <!-- PAGE: DASHBOARD -->
     <div id="page-dashboard" class="page">
+      <!-- Debt Banner -->
+      <div id="debt-banner"></div>
+      <!-- Month Filter -->
+      <div id="dash-month-wrap">
+        <label style="font-size:13px;font-weight:500;color:var(--text-muted)">תקופה:</label>
+        <select id="dash-month" onchange="renderDashboard()"></select>
+      </div>
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-label">הכנסות החודש</div>
@@ -1081,11 +1307,19 @@
         </select>
         <button class="btn btn-ghost btn-sm" onclick="clearLessonFilters()">נקה סינון</button>
       </div>
+      <!-- Bulk Toolbar -->
+      <div id="bulk-toolbar">
+        <span id="bulk-count">0 שיעורים נבחרו</span>
+        <button class="btn-bulk" onclick="bulkMarkPaid()">✓ סמן שולם</button>
+        <button class="btn-bulk danger" onclick="bulkDelete()">🗑 מחק</button>
+        <button class="btn-bulk" onclick="clearBulkSelection()">✕ בטל בחירה</button>
+      </div>
       <div class="card">
         <div class="table-wrapper">
           <table>
             <thead>
               <tr>
+                <th><input type="checkbox" id="select-all-cb" onclick="toggleSelectAll(this)" title="בחר הכל"></th>
                 <th>תאריך</th>
                 <th>תלמיד</th>
                 <th>משך</th>
@@ -1096,7 +1330,7 @@
               </tr>
             </thead>
             <tbody id="lessons-tbody">
-              <tr><td colspan="7" class="empty-cell">אין שיעורים עדיין</td></tr>
+              <tr><td colspan="8" class="empty-cell">אין שיעורים עדיין</td></tr>
             </tbody>
           </table>
         </div>
@@ -1108,8 +1342,9 @@
     <div id="page-payments" class="page">
       <div class="page-header">
         <h2 class="page-title">תשלומים</h2>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-ghost btn-sm" onclick="exportReport()">📊 ייצוא לאקסל</button>
+          <button class="btn btn-ghost btn-sm" onclick="openYearlyReport()">📊 דוח שנתי</button>
           <button class="btn btn-primary" onclick="openAddPaymentModal(null)">+ הוסף תשלום</button>
         </div>
       </div>
@@ -1180,6 +1415,27 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="spinner-text">טוען נתונים...</div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <div id="confirm-icon">🗑️</div>
+    <div id="confirm-msg"></div>
+    <div id="confirm-btns">
+      <button class="btn btn-ghost" id="confirm-cancel-btn">ביטול</button>
+      <button class="btn btn-danger" id="confirm-ok-btn">מחק</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEBT BANNER -->
+<div id="debt-banner"></div>
+
 <!-- Hidden file input -->
 <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none">
 
@@ -1197,12 +1453,17 @@ const getLessons  = () => _lessons;
 const getPayments = () => _payments;
 
 async function loadData() {
-  const [s, l, p] = await Promise.all([
-    fetch('/api/students').then(r => { if (r.status === 401) { showAuthOverlay(); throw new Error('unauth'); } return r.json(); }),
-    fetch('/api/lessons').then(r => r.json()),
-    fetch('/api/payments').then(r => r.json()),
-  ]);
-  _students = s; _lessons = l; _payments = p;
+  showLoading();
+  try {
+    const [s, l, p] = await Promise.all([
+      fetch('/api/students').then(r => { if (r.status === 401) { showAuthOverlay(); throw new Error('unauth'); } return r.json(); }),
+      fetch('/api/lessons').then(r => r.json()),
+      fetch('/api/payments').then(r => r.json()),
+    ]);
+    _students = s; _lessons = l; _payments = p;
+  } finally {
+    hideLoading();
+  }
 }
 async function apiCall(method, url, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
@@ -1332,6 +1593,33 @@ function toggleBtnLabel(l) {
   return getLessonPayStatus(l) === 'paid' ? '↩' : '✓';
 }
 
+// ===== LOADING =====
+function showLoading() { document.getElementById('loading-overlay').classList.add('show'); }
+function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
+
+// ===== CONFIRM ACTION =====
+function confirmAction(msg, onConfirm, icon = '🗑️', okLabel = 'מחק') {
+  const overlay = document.getElementById('confirm-overlay');
+  document.getElementById('confirm-icon').textContent = icon;
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-ok-btn').textContent = okLabel;
+  overlay.classList.add('show');
+  const okBtn = document.getElementById('confirm-ok-btn');
+  const cancelBtn = document.getElementById('confirm-cancel-btn');
+  const close = () => overlay.classList.remove('show');
+  okBtn.onclick = () => { close(); onConfirm(); };
+  cancelBtn.onclick = close;
+  overlay.onclick = (e) => { if (e.target === overlay) close(); };
+}
+
+// ===== DARK MODE =====
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+  localStorage.setItem('theme', isDark ? '' : 'dark');
+  document.getElementById('dark-mode-btn').textContent = isDark ? '🌙' : '☀️';
+}
+
 // ===== TOAST =====
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
@@ -1339,6 +1627,26 @@ function showToast(msg, type = 'success') {
   t.className = `toast toast-${type} show`;
   clearTimeout(t._timer);
   t._timer = setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+// ===== UNDO DELETE =====
+window._lastDeleted = null;
+function showUndoToast(label, restoreFn) {
+  const t = document.getElementById('toast');
+  const btnStyle = 'background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);color:white;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;margin-right:6px';
+  t.innerHTML = `${label} <button onclick="undoDelete()" style="${btnStyle}">↩ בטל</button>`;
+  t.className = 'toast toast-success show';
+  window._undoRestoreFn = restoreFn;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = 'toast'; window._undoRestoreFn = null; }, 5000);
+}
+async function undoDelete() {
+  if (window._undoRestoreFn) {
+    await window._undoRestoreFn();
+    window._undoRestoreFn = null;
+    document.getElementById('toast').className = 'toast';
+    showToast('הפעולה בוטלה ✓');
+  }
 }
 
 function buildWhatsAppMsg(lesson, student) {
@@ -1409,12 +1717,35 @@ function showPage(name) {
 }
 
 // ===== DASHBOARD =====
+function populateDashMonthFilter() {
+  const sel = document.getElementById('dash-month');
+  if (!sel || sel.options.length > 1) return;
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = i === 0 ? `${HE_MONTHS[d.getMonth()]} ${d.getFullYear()} (החודש)` : `${HE_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = label;
+    sel.appendChild(opt);
+  }
+}
+
 function renderDashboard() {
+  populateDashMonthFilter();
   const students = getStudents();
   const lessons  = getLessons();
   const now = new Date();
-  const thisMonth = now.getMonth();
-  const thisYear  = now.getFullYear();
+
+  // Get selected month from filter
+  const dashMonthSel = document.getElementById('dash-month');
+  let selYear = now.getFullYear(), selMonth = now.getMonth();
+  if (dashMonthSel && dashMonthSel.value) {
+    const [sy, sm] = dashMonthSel.value.split('-');
+    selYear = parseInt(sy); selMonth = parseInt(sm) - 1;
+  }
+  const thisMonth = selMonth;
+  const thisYear  = selYear;
 
   const monthLessons = lessons.filter(l => {
     const d = new Date(l.date);
@@ -1480,24 +1811,80 @@ function renderDashboard() {
     }
   }
 
-  // Income chart — last 6 months
+  // Debt banner
+  const debtStudents = activeStudents.filter(st => getStudentBalance(st.id) < 0);
+  const debtBanner = document.getElementById('debt-banner');
+  if (debtBanner) {
+    if (debtStudents.length > 0) {
+      const debtList = debtStudents.map(st => `${st.name}: ${formatCurrency(Math.abs(getStudentBalance(st.id)))}`).join(', ');
+      debtBanner.innerHTML = `⚠️ <strong>${debtStudents.length} תלמיד${debtStudents.length>1?'ים':''} עם חוב</strong> — ${debtList}`;
+      debtBanner.classList.add('show');
+    } else {
+      debtBanner.classList.remove('show');
+    }
+  }
+
+  // Income chart — last 6 months (canvas)
   const chartEl = document.getElementById('income-chart');
   if (chartEl) {
     const months = [];
+    const nowReal = new Date();
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(thisYear, thisMonth - i, 1);
+      const d = new Date(nowReal.getFullYear(), nowReal.getMonth() - i, 1);
       const y = d.getFullYear(), m = d.getMonth();
       const inc = lessons.filter(l => { const ld = new Date(l.date); return ld.getFullYear()===y && ld.getMonth()===m; }).reduce((s,l) => s+(l.amount||0), 0);
       months.push({ label: HE_MONTHS[m].slice(0,3), inc, current: i===0 });
     }
-    const maxInc = Math.max(...months.map(x => x.inc), 1);
-    chartEl.innerHTML = `<div class="chart-bar-wrap">${
-      months.map(x => `<div class="chart-bar-col">
-        <div class="chart-bar-val">${x.inc>0?'₪'+(x.inc/1000).toFixed(1)+'k':''}</div>
-        <div class="chart-bar${x.current?' current':''}" style="height:${Math.round((x.inc/maxInc)*56)+4}px"></div>
-        <div class="chart-bar-label">${x.label}</div>
-      </div>`).join('')
-    }</div>`;
+    // Try canvas, fallback to bars
+    chartEl.innerHTML = '<div id="income-canvas-wrap"><canvas id="income-canvas" height="120"></canvas></div>';
+    const canvas = document.getElementById('income-canvas');
+    if (canvas && canvas.getContext) {
+      canvas.width = chartEl.clientWidth || 400;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = 120;
+      const maxInc = Math.max(...months.map(x => x.inc), 1);
+      const pad = { top: 14, bottom: 28, left: 10, right: 10 };
+      const chartW = W - pad.left - pad.right;
+      const chartH = H - pad.top - pad.bottom;
+      const step = chartW / (months.length - 1);
+      const pts = months.map((m, i) => ({ x: pad.left + i * step, y: pad.top + chartH - (m.inc / maxInc) * chartH }));
+      // Gradient fill
+      const grad = ctx.createLinearGradient(0, pad.top, 0, H);
+      grad.addColorStop(0, 'rgba(79,70,229,0.25)');
+      grad.addColorStop(1, 'rgba(79,70,229,0)');
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, H - pad.bottom);
+      pts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(pts[pts.length-1].x, H - pad.bottom);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+      // Line
+      ctx.beginPath();
+      ctx.strokeStyle = '#4f46e5';
+      ctx.lineWidth = 2.5;
+      ctx.lineJoin = 'round';
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+      // Dots + labels
+      pts.forEach((p, i) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = months[i].current ? '#4f46e5' : '#a5b4fc';
+        ctx.fill();
+        // month label
+        ctx.fillStyle = '#64748b';
+        ctx.font = '10px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(months[i].label, p.x, H - 8);
+        // value
+        if (months[i].inc > 0) {
+          ctx.fillStyle = '#4f46e5';
+          ctx.font = '9px system-ui';
+          ctx.fillText('₪'+(months[i].inc/1000).toFixed(1)+'k', p.x, p.y - 7);
+        }
+      });
+    }
   }
 
   // Student summary table — active only
@@ -1569,25 +1956,42 @@ function renderStudents() {
   const el = document.getElementById('students-grid');
 
   if (students.length === 0) {
-    el.innerHTML = '<div class="empty-state-card"><p>אין תלמידים עדיין</p><p>לחץ "הוסף תלמיד" או ייבא מאקסל</p></div>';
+    el.innerHTML = `<div class="empty-state-card">
+      <div style="font-size:48px;margin-bottom:12px">🎓</div>
+      <p>עדיין אין תלמידים</p>
+      <p style="margin-bottom:16px">לחץ "הוסף תלמיד" להתחיל</p>
+      <button class="btn btn-primary" onclick="openAddStudentModal()">+ הוסף תלמיד</button>
+    </div>`;
     return;
   }
   el.innerHTML = students.map(s => {
     const inactive = s.isActive === false;
     const balance = getStudentBalance(s.id);
-    const lessonCount = getLessons().filter(l => l.studentId === s.id).length;
+    const allLessons = getLessons().filter(l => l.studentId === s.id);
+    const lessonCount = allLessons.length;
+    const paidCount = allLessons.filter(l => getLessonPayStatus(l) === 'paid').length;
+    const pendingCount = allLessons.filter(l => getLessonPayStatus(l) !== 'paid').length;
     const days = (s.scheduledDays || []).map(d => DAY_NAMES[d]).join(', ');
     const balClass = balance < 0 ? 'badge-danger' : balance > 0 ? 'badge-success' : 'badge-muted';
     const balText  = balance < 0 ? `לתשלום ${formatCurrency(Math.abs(balance))}` : balance > 0 ? `זכות ${formatCurrency(balance)}` : 'מאוזן';
+    const avatarLetter = (s.name || '?')[0];
     return `<div class="student-card" style="border-top-color:${s.color};${inactive ? 'opacity:0.6' : ''}">
       <div class="student-card-header">
-        <h3>${s.name} ${inactive ? '<span style="font-size:11px;font-weight:400;color:var(--text-muted);background:var(--border);padding:2px 7px;border-radius:10px;margin-right:4px">לא פעיל</span>' : ''}</h3>
-        <span class="badge ${balClass}">${balText}</span>
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+          <div class="student-avatar" style="background:${s.color}">${avatarLetter}</div>
+          <h3 style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name} ${inactive ? '<span style="font-size:11px;font-weight:400;color:var(--text-muted);background:var(--border);padding:2px 7px;border-radius:10px;margin-right:4px">לא פעיל</span>' : ''}</h3>
+        </div>
+        <span class="badge ${balClass}" style="flex-shrink:0">${balText}</span>
       </div>
       <div class="student-info">
         <span>💰 ${formatCurrency(s.hourlyRate)}/שיעור</span>
         <span>📅 ${days || 'ימים לא הוגדרו'}</span>
-        <span>📚 ${lessonCount} שיעורים סה"כ</span>
+        ${s.phone ? `<span>📞 <a href="tel:${s.phone}" style="color:var(--primary);text-decoration:none">${s.phone}</a></span>` : ''}
+        <span style="display:flex;gap:10px;flex-wrap:wrap">
+          <span>📊 ${lessonCount} שיעורים</span>
+          <span class="text-success">✅ ${paidCount} שולמו</span>
+          ${pendingCount > 0 ? `<span class="text-warning">⏳ ${pendingCount} ממתינים</span>` : ''}
+        </span>
       </div>
       ${s.notes ? `<p class="student-notes">${s.notes}</p>` : ''}
       <div class="student-actions">
@@ -1710,14 +2114,22 @@ function openEditStudentModal(id) {
 
 async function deleteStudent(id) {
   const s = getStudentById(id);
-  if (!confirm(`למחוק את ${s?.name}?\nכל השיעורים והתשלומים שלו יימחקו גם כן.`)) return;
-  await apiCall('DELETE', `/api/students/${id}`);
-  _students = _students.filter(st => st.id !== id);
-  _lessons  = _lessons.filter(l => l.studentId !== id);
-  _payments = _payments.filter(p => p.studentId !== id);
-  closeModal();
-  renderStudents();
-  showToast('תלמיד נמחק');
+  confirmAction(`למחוק את ${s?.name}?\nכל השיעורים והתשלומים שלו יימחקו גם כן.`, async () => {
+    const deleted = { student: s, lessons: _lessons.filter(l => l.studentId === id), payments: _payments.filter(p => p.studentId === id) };
+    await apiCall('DELETE', `/api/students/${id}`);
+    _students = _students.filter(st => st.id !== id);
+    _lessons  = _lessons.filter(l => l.studentId !== id);
+    _payments = _payments.filter(p => p.studentId !== id);
+    closeModal();
+    renderStudents();
+    showUndoToast(`תלמיד "${s?.name}" נמחק`, async () => {
+      await apiCall('POST', '/api/students', deleted.student);
+      _students.push(deleted.student);
+      for (const l of deleted.lessons) { await apiCall('POST', '/api/lessons', l); _lessons.push(l); }
+      for (const p of deleted.payments) { await apiCall('POST', '/api/payments', p); _payments.push(p); }
+      renderStudents();
+    });
+  });
 }
 
 function viewStudentHistory(id) {
@@ -1868,13 +2280,20 @@ function renderLessonsTable() {
 
   const tbody = document.getElementById('lessons-tbody');
   if (lessons.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">אין שיעורים להצגה</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="8"><div style="text-align:center;padding:40px 20px;color:var(--text-muted)">
+      <div style="font-size:40px;margin-bottom:10px">📚</div>
+      <div style="font-size:16px;font-weight:600;margin-bottom:6px">אין שיעורים להצגה</div>
+      <div style="font-size:13px;margin-bottom:14px">הוסף שיעור חדש או שנה את הסינון</div>
+      <button class="btn btn-primary btn-sm" onclick="openAddLessonModal(null)">+ הוסף שיעור</button>
+    </div></td></tr>`;
     document.getElementById('lessons-total').textContent = '';
+    document.getElementById('bulk-toolbar').classList.remove('show');
     return;
   }
   tbody.innerHTML = lessons.map(l => {
     const s = getStudentById(l.studentId);
     return `<tr>
+      <td style="text-align:center"><input type="checkbox" class="lesson-cb" data-id="${l.id}" onchange="updateBulkToolbar()"></td>
       <td>${formatDate(l.date)}</td>
       <td><span class="student-dot" style="background:${s?.color||'#4f46e5'}"></span>${s?.name||'?'}</td>
       <td>${l.durationHours} שיעור${l.durationHours>1?'ים':''}</td>
@@ -2043,15 +2462,16 @@ function openEditLessonModal(id) {
 async function markAllLessonsPaid(studentId) {
   const pending = _lessons.filter(l => l.studentId === studentId && !l.isPaid);
   if (pending.length === 0) { showToast('אין שיעורים ממתינים'); return; }
-  if (!confirm(`לסמן ${pending.length} שיעורים כשולמו?`)) return;
-  for (const l of pending) {
-    const updated = { ...l, isPaid: true, paidAmount: l.amount };
-    await apiCall('PUT', `/api/lessons/${l.id}`, updated);
-    _lessons = _lessons.map(x => x.id === l.id ? updated : x);
-  }
-  renderStudents();
-  if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
-  showToast(`${pending.length} שיעורים סומנו כשולמו ✓`);
+  confirmAction(`לסמן ${pending.length} שיעורים כשולמו?`, async () => {
+    for (const l of pending) {
+      const updated = { ...l, isPaid: true, paidAmount: l.amount };
+      await apiCall('PUT', `/api/lessons/${l.id}`, updated);
+      _lessons = _lessons.map(x => x.id === l.id ? updated : x);
+    }
+    renderStudents();
+    if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
+    showToast(`${pending.length} שיעורים סומנו כשולמו ✓`);
+  }, '✓', 'סמן שולם');
 }
 
 async function toggleLessonPaid(id) {
@@ -2106,11 +2526,85 @@ async function setLessonPartialPaid(id) {
 }
 
 async function deleteLesson(id) {
-  if (!confirm('למחוק שיעור זה?')) return;
-  await apiCall('DELETE', `/api/lessons/${id}`);
-  _lessons = _lessons.filter(l => l.id !== id);
-  if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
-  showToast('שיעור נמחק');
+  const lesson = _lessons.find(l => l.id === id);
+  confirmAction('למחוק שיעור זה?', async () => {
+    await apiCall('DELETE', `/api/lessons/${id}`);
+    _lessons = _lessons.filter(l => l.id !== id);
+    if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
+    if (document.getElementById('page-dashboard')?.style.display !== 'none') renderCalendar();
+    showUndoToast('שיעור נמחק', async () => {
+      await apiCall('POST', '/api/lessons', lesson);
+      _lessons.push(lesson);
+      if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
+      if (document.getElementById('page-dashboard')?.style.display !== 'none') renderCalendar();
+    });
+  });
+}
+
+// ===== BULK SELECTION =====
+function updateBulkToolbar() {
+  const cbs = [...document.querySelectorAll('.lesson-cb:checked')];
+  const toolbar = document.getElementById('bulk-toolbar');
+  if (cbs.length === 0) {
+    toolbar.classList.remove('show');
+  } else {
+    toolbar.classList.add('show');
+    document.getElementById('bulk-count').textContent = `${cbs.length} שיעורים נבחרו`;
+  }
+  const allCbs = document.querySelectorAll('.lesson-cb');
+  const selAll = document.getElementById('select-all-cb');
+  if (selAll) selAll.indeterminate = cbs.length > 0 && cbs.length < allCbs.length;
+  if (selAll) selAll.checked = allCbs.length > 0 && cbs.length === allCbs.length;
+}
+
+function toggleSelectAll(el) {
+  document.querySelectorAll('.lesson-cb').forEach(cb => cb.checked = el.checked);
+  updateBulkToolbar();
+}
+
+function clearBulkSelection() {
+  document.querySelectorAll('.lesson-cb').forEach(cb => cb.checked = false);
+  const sel = document.getElementById('select-all-cb');
+  if (sel) sel.checked = false;
+  document.getElementById('bulk-toolbar').classList.remove('show');
+}
+
+async function bulkMarkPaid() {
+  const ids = [...document.querySelectorAll('.lesson-cb:checked')].map(cb => cb.dataset.id);
+  if (!ids.length) return;
+  confirmAction(`לסמן ${ids.length} שיעורים כשולמו?`, async () => {
+    for (const id of ids) {
+      const lesson = _lessons.find(l => l.id === id);
+      if (!lesson || lesson.isPaid) continue;
+      const updated = { ...lesson, isPaid: true, paidAmount: lesson.amount };
+      await apiCall('PUT', `/api/lessons/${id}`, updated);
+      _lessons = _lessons.map(l => l.id === id ? updated : l);
+    }
+    clearBulkSelection();
+    renderLessonsTable();
+    showToast(`${ids.length} שיעורים סומנו כשולמו ✓`);
+  }, '✓', 'סמן שולם');
+}
+
+async function bulkDelete() {
+  const ids = [...document.querySelectorAll('.lesson-cb:checked')].map(cb => cb.dataset.id);
+  if (!ids.length) return;
+  const deleted = ids.map(id => _lessons.find(l => l.id === id)).filter(Boolean);
+  confirmAction(`למחוק ${ids.length} שיעורים?`, async () => {
+    for (const id of ids) {
+      await apiCall('DELETE', `/api/lessons/${id}`);
+      _lessons = _lessons.filter(l => l.id !== id);
+    }
+    clearBulkSelection();
+    renderLessonsTable();
+    showUndoToast(`${ids.length} שיעורים נמחקו`, async () => {
+      for (const lesson of deleted) {
+        await apiCall('POST', '/api/lessons', lesson);
+        _lessons.push(lesson);
+      }
+      renderLessonsTable();
+    });
+  });
 }
 
 // ===== PAYMENTS =====
@@ -2206,11 +2700,17 @@ function showStudentBalance() {
 }
 
 async function deletePayment(id) {
-  if (!confirm('למחוק תשלום זה?')) return;
-  await apiCall('DELETE', `/api/payments/${id}`);
-  _payments = _payments.filter(p => p.id !== id);
-  renderPayments();
-  showToast('תשלום נמחק');
+  const payment = _payments.find(p => p.id === id);
+  confirmAction('למחוק תשלום זה?', async () => {
+    await apiCall('DELETE', `/api/payments/${id}`);
+    _payments = _payments.filter(p => p.id !== id);
+    renderPayments();
+    showUndoToast('תשלום נמחק', async () => {
+      await apiCall('POST', '/api/payments', payment);
+      _payments.push(payment);
+      renderPayments();
+    });
+  });
 }
 
 // ===== EXCEL IMPORT =====
@@ -2638,28 +3138,55 @@ function showCalPopup(lessonId, e) {
 function hideCalPopup() { document.getElementById('cal-popup').style.display = 'none'; }
 
 // ===== SEARCH =====
+function highlight(text, q) {
+  if (!q || !text) return text;
+  const idx = text.indexOf(q);
+  if (idx === -1) return text;
+  return `${text.slice(0, idx)}<strong style="color:var(--primary)">${text.slice(idx, idx + q.length)}</strong>${text.slice(idx + q.length)}`;
+}
+
 function onSearch(q) {
   const res = document.getElementById('search-results');
-  if (!q.trim()) { res.classList.remove('show'); return; }
+  const trimQ = q.trim();
+  if (!trimQ) { res.classList.remove('show'); return; }
+
+  // Amount search: ₪200 or 200
+  const amountMatch = trimQ.match(/^₪?(\d+)$/);
+  const searchAmount = amountMatch ? parseInt(amountMatch[1]) : null;
+
+  // Date search: dd/mm
+  const dateMatch = trimQ.match(/^(\d{1,2})\/(\d{1,2})$/);
+  const searchDate = dateMatch ? { d: dateMatch[1].padStart(2,'0'), m: dateMatch[2].padStart(2,'0') } : null;
+
   const lessons = getLessons().filter(l => {
     const s = getStudentById(l.studentId);
-    return (s?.name||'').includes(q) || l.date.includes(q) || (l.notes||'').includes(q);
+    if (searchAmount !== null) return (l.amount || 0) === searchAmount;
+    if (searchDate) return l.date.slice(5,7) === searchDate.m && l.date.slice(8,10) === searchDate.d;
+    return (s?.name||'').includes(trimQ) || l.date.includes(trimQ) || (l.notes||'').includes(trimQ);
   }).slice(0, 7);
-  const students = getStudents().filter(s => s.name.includes(q)).slice(0, 3);
+
+  const students = getStudents().filter(s => {
+    if (searchAmount !== null) return false;
+    if (searchDate) return false;
+    return s.name.includes(trimQ);
+  }).slice(0, 3);
+
+  const clearSearch = `document.getElementById('search-input').value='';document.getElementById('search-results').classList.remove('show')`;
+
   if (lessons.length === 0 && students.length === 0) {
     res.innerHTML = '<div class="search-empty">אין תוצאות</div>';
   } else {
     res.innerHTML = [
-      ...students.map(s => `<div class="search-result-item" onclick="showPage('students');document.getElementById('search-input').value='';document.getElementById('search-results').classList.remove('show')">
+      ...students.map(s => `<div class="search-result-item" onclick="showPage('students');${clearSearch}">
         <span class="student-dot" style="background:${s.color}"></span>
-        <strong>${s.name}</strong>
+        <strong>${highlight(s.name, trimQ)}</strong>
         <span class="text-muted" style="margin-right:auto">${formatCurrency(s.hourlyRate)}/שיעור</span>
       </div>`),
       ...lessons.map(l => {
         const s = getStudentById(l.studentId);
-        return `<div class="search-result-item" onclick="calGoDay('${l.date}');document.getElementById('search-input').value='';document.getElementById('search-results').classList.remove('show')">
+        return `<div class="search-result-item" onclick="calGoDay('${l.date}');${clearSearch}">
           <span class="student-dot" style="background:${s?.color||'#4f46e5'}"></span>
-          <span>${s?.name||'?'}</span>
+          <span>${highlight(s?.name||'?', trimQ)}</span>
           <span class="text-muted">${formatDate(l.date)} ${l.time||''}</span>
           ${lessonBadge(l)}
         </div>`;
@@ -2738,11 +3265,97 @@ function exportReport() {
   showToast('דוח יוצא בהצלחה 📊');
 }
 
+// ===== YEARLY REPORT =====
+function openYearlyReport() {
+  const students = getStudents().filter(s => s.isActive !== false);
+  const lessons  = getLessons();
+  const now = new Date();
+  const year = now.getFullYear();
+
+  // Build monthly data
+  const monthTotals = Array(12).fill(null).map(() => ({}));
+  lessons.forEach(l => {
+    const d = new Date(l.date);
+    if (d.getFullYear() !== year) return;
+    const m = d.getMonth();
+    const sid = l.studentId;
+    monthTotals[m][sid] = (monthTotals[m][sid] || 0) + (l.amount || 0);
+  });
+
+  const colHeader = students.map(s => `<th style="background:${s.color};color:white">${s.name}</th>`).join('');
+  const rows = HE_MONTHS.map((mName, mi) => {
+    const cells = students.map(s => {
+      const val = monthTotals[mi][s.id] || 0;
+      return `<td>${val > 0 ? formatCurrency(val) : '—'}</td>`;
+    }).join('');
+    const rowTotal = students.reduce((t, s) => t + (monthTotals[mi][s.id] || 0), 0);
+    return `<tr><td style="font-weight:600">${mName}</td>${cells}<td style="font-weight:700">${rowTotal > 0 ? formatCurrency(rowTotal) : '—'}</td></tr>`;
+  }).join('');
+
+  const footerCells = students.map(s => {
+    const total = lessons.filter(l => l.studentId === s.id && new Date(l.date).getFullYear() === year).reduce((t,l) => t+(l.amount||0), 0);
+    return `<td>${formatCurrency(total)}</td>`;
+  }).join('');
+  const grandTotal = lessons.filter(l => new Date(l.date).getFullYear() === year).reduce((t,l) => t+(l.amount||0), 0);
+
+  const html = `
+    <div style="overflow-x:auto">
+      <table class="yearly-report-table">
+        <thead><tr>
+          <th>חודש</th>${colHeader}<th>סה"כ חודש</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr>
+          <td>סה"כ שנה</td>${footerCells}<td>${formatCurrency(grandTotal)}</td>
+        </tr></tfoot>
+      </table>
+    </div>`;
+
+  openModal(`📊 דוח שנתי ${year}`, html, null);
+  const footer = document.getElementById('modal-footer');
+  footer.innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal()">סגור</button>
+    <button class="btn btn-primary" onclick="exportYearlyExcel(${year})">📥 הורד Excel</button>`;
+  footer.style.display = 'flex';
+}
+
+function exportYearlyExcel(year) {
+  const students = getStudents().filter(s => s.isActive !== false);
+  const lessons  = getLessons();
+  const monthTotals = Array(12).fill(null).map(() => ({}));
+  lessons.forEach(l => {
+    const d = new Date(l.date);
+    if (d.getFullYear() !== year) return;
+    monthTotals[d.getMonth()][l.studentId] = (monthTotals[d.getMonth()][l.studentId] || 0) + (l.amount || 0);
+  });
+  const header = ['חודש', ...students.map(s => s.name), 'סה"כ'];
+  const rows = HE_MONTHS.map((mName, mi) => {
+    const cells = students.map(s => monthTotals[mi][s.id] || 0);
+    const total = cells.reduce((a,b) => a+b, 0);
+    return [mName, ...cells, total];
+  });
+  const totalsRow = ['סה"כ שנה', ...students.map(s =>
+    lessons.filter(l => l.studentId === s.id && new Date(l.date).getFullYear() === year).reduce((t,l) => t+(l.amount||0), 0)
+  ), lessons.filter(l => new Date(l.date).getFullYear() === year).reduce((t,l) => t+(l.amount||0), 0)];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows, totalsRow]), `דוח ${year}`);
+  XLSX.writeFile(wb, `דוח-שנתי-${year}.xlsx`);
+  showToast(`דוח שנתי ${year} יוצא בהצלחה`);
+}
+
 // ===== SEED DATA (removed - data lives in data.json) =====
 function seedInitialData() { return; }
 const _unused_seed_delete_me ={"students":[{"id":"s-noam","name":"נועם","color":"#4f46e5","isActive":false,"hourlyRate":150,"scheduledDays":[],"notes":"","createdAt":"2024-09-01T00:00:00.000Z"},{"id":"s-shari","name":"שרי","color":"#10b981","isActive":false,"hourlyRate":150,"scheduledDays":[],"notes":"","createdAt":"2024-09-01T00:00:00.000Z"},{"id":"s-shchaf","name":"שחף","color":"#f59e0b","isActive":true,"hourlyRate":170,"scheduledDays":[],"notes":"","createdAt":"2024-09-01T00:00:00.000Z"},{"id":"s-alon","name":"אלון","color":"#ef4444","isActive":true,"hourlyRate":200,"scheduledDays":[],"notes":"","createdAt":"2024-09-01T00:00:00.000Z"}],"lessons":[{"id":"ggco2llxsq","studentId":"s-shchaf","date":"2024-09-15","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"e6qu7vxt1a","studentId":"s-shari","date":"2024-09-20","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"spwtef4lyu","studentId":"s-shchaf","date":"2024-09-20","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"69j7t9gh0j","studentId":"s-noam","date":"2024-09-23","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"0j9o6eh73q","studentId":"s-shchaf","date":"2024-09-24","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"ax10vi0pvp","studentId":"s-noam","date":"2024-10-09","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"zk0mlh7bte","studentId":"s-shchaf","date":"2024-10-13","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"37sus0bkuh","studentId":"s-shchaf","date":"2024-10-14","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"l77vet1dfj","studentId":"s-shari","date":"2024-10-15","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"hte2ueogyh","studentId":"s-noam","date":"2024-10-20","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"la3b414gev","studentId":"s-shchaf","date":"2024-10-20","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"iewe2eb8l9","studentId":"s-shari","date":"2024-10-21","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"4et2l82p73","studentId":"s-shari","date":"2024-10-27","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"o63ltwzljd","studentId":"s-shchaf","date":"2024-10-28","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"dr55pkwzho","studentId":"s-shchaf","date":"2024-11-04","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"1epgakys0j","studentId":"s-noam","date":"2024-11-05","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"90z7rbwv9f","studentId":"s-shchaf","date":"2024-11-05","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"qc9xv9gwoz","studentId":"s-shari","date":"2024-11-06","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"2vsnitoj4h","studentId":"s-noam","date":"2024-11-08","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"ta0qttizf8","studentId":"s-shchaf","date":"2024-11-10","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"0hilifumft","studentId":"s-shchaf","date":"2024-11-14","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"p91a2goex6","studentId":"s-shari","date":"2024-11-15","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"bh9f1eir0g","studentId":"s-shchaf","date":"2024-11-18","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"sk0424vqfb","studentId":"s-noam","date":"2024-11-21","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"2g2ek0p3m1","studentId":"s-shchaf","date":"2024-11-21","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"8pvkf83poo","studentId":"s-noam","date":"2024-11-22","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"d7pq57h2vh","studentId":"s-shari","date":"2024-11-22","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"w8lfl6lbwr","studentId":"s-shchaf","date":"2024-11-25","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"bkqk0x8siv","studentId":"s-noam","date":"2024-11-26","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"idwk3jwz4k","studentId":"s-shchaf","date":"2024-11-26","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"pigdvikkqp","studentId":"s-noam","date":"2024-11-29","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"dmlpxizx0g","studentId":"s-shari","date":"2024-11-29","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"s9wdsby4zy","studentId":"s-noam","date":"2024-12-02","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"n30142vwmf","studentId":"s-shchaf","date":"2024-12-02","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"7koigsrntg","studentId":"s-noam","date":"2024-12-06","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"wqvxsz8dy1","studentId":"s-shchaf","date":"2024-12-10","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"n725ayf6bq","studentId":"s-shari","date":"2024-12-12","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"jlxv4b3ve9","studentId":"s-noam","date":"2024-12-13","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"zkf7lje58e","studentId":"s-noam","date":"2024-12-16","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"rwtzp7ch7h","studentId":"s-shchaf","date":"2024-12-16","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"0j6msv429w","studentId":"s-shchaf","date":"2024-12-19","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"5en0ixoomv","studentId":"s-noam","date":"2024-12-20","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"sxbvr0r0p9","studentId":"s-shchaf","date":"2024-12-22","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"ohppqjqhil","studentId":"s-noam","date":"2024-12-23","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"4da9grp7et","studentId":"s-shchaf","date":"2024-12-23","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"c43fkzahkn","studentId":"s-shari","date":"2024-12-26","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"wuxldhrkwm","studentId":"s-noam","date":"2024-12-27","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"gvy7wpzomf","studentId":"s-noam","date":"2024-12-30","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"wkxmux5yvx","studentId":"s-shchaf","date":"2024-12-30","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"29vplc29xw","studentId":"s-noam","date":"2025-01-03","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"fd1wykadhy","studentId":"s-noam","date":"2025-01-06","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"ceo1oaoc23","studentId":"s-shchaf","date":"2025-01-06","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"f5bs8giq4o","studentId":"s-noam","date":"2025-01-10","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"qj3ken48o2","studentId":"s-noam","date":"2025-01-13","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"n6nad7i8hk","studentId":"s-shchaf","date":"2025-01-13","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"oxntcgk4vj","studentId":"s-noam","date":"2025-01-17","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"vid1n4hnsf","studentId":"s-noam","date":"2025-01-24","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"uz6g2vih2w","studentId":"s-noam","date":"2025-01-27","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"60tq03duhh","studentId":"s-shchaf","date":"2025-01-27","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"mgxtlya239","studentId":"s-shchaf","date":"2025-01-30","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"erj223bljl","studentId":"s-noam","date":"2025-01-31","time":"16:00","durationHours":1,"amount":150,"isPaid":false,"notes":"בוטל"},{"id":"xuo0jreytj","studentId":"s-noam","date":"2025-02-04","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"6bb0bnp6o3","studentId":"s-shchaf","date":"2025-02-04","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"ndl3pfo79m","studentId":"s-shchaf","date":"2025-02-06","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"tnghc4hcef","studentId":"s-noam","date":"2025-02-07","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"25a7k6odf5","studentId":"s-noam","date":"2025-02-14","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"385vxutktc","studentId":"s-shchaf","date":"2025-02-16","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"73vys4ws0m","studentId":"s-noam","date":"2025-02-18","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"euje8nogep","studentId":"s-shchaf","date":"2025-02-18","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"2dku5m4ne1","studentId":"s-noam","date":"2025-02-21","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"ujsxgja3n8","studentId":"s-shchaf","date":"2025-02-25","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"6d2fwmmq1y","studentId":"s-shchaf","date":"2025-03-02","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"xcbo71gr30","studentId":"s-noam","date":"2025-03-07","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"gsadw5ywoh","studentId":"s-shchaf","date":"2025-03-09","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"qiyt88sh43","studentId":"s-shchaf","date":"2025-03-12","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"iuv4idnes3","studentId":"s-shchaf","date":"2025-03-18","time":"16:00","durationHours":2,"amount":340,"isPaid":true,"notes":""},{"id":"sbhc22z96w","studentId":"s-noam","date":"2025-03-21","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"egv598vvvn","studentId":"s-shchaf","date":"2025-03-23","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"whztqj40x2","studentId":"s-shchaf","date":"2025-03-25","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"so6psg8xt5","studentId":"s-noam","date":"2025-04-04","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"zkwxakj608","studentId":"s-noam","date":"2025-04-08","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"kx0gcfy8hn","studentId":"s-noam","date":"2025-04-11","time":"16:00","durationHours":1,"amount":150,"isPaid":true,"notes":""},{"id":"q6jl332p8c","studentId":"s-shchaf","date":"2025-04-15","time":"16:00","durationHours":2,"amount":340,"isPaid":true,"notes":""},{"id":"5m1oprt002","studentId":"s-noam","date":"2025-04-17","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"1y0thpxjxs","studentId":"s-noam","date":"2025-04-18","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"gtagfcr49x","studentId":"s-shchaf","date":"2025-04-20","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"v6zeway2y5","studentId":"s-shari","date":"2025-04-22","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"5uitqkre8b","studentId":"s-shchaf","date":"2025-04-22","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"flbqd13mhr","studentId":"s-shchaf","date":"2025-04-24","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"div7vmphv3","studentId":"s-noam","date":"2025-04-25","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"uu0javmndt","studentId":"s-shari","date":"2025-04-25","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"8b7x5rzt1e","studentId":"s-shari","date":"2025-05-06","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"fv4e7gk6jw","studentId":"s-noam","date":"2025-05-09","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"up17tr31a2","studentId":"s-shari","date":"2025-05-11","time":"16:00","durationHours":2,"amount":300,"isPaid":true,"notes":""},{"id":"2nskud6vhw","studentId":"s-shchaf","date":"2025-05-14","time":"16:00","durationHours":2,"amount":340,"isPaid":true,"notes":""},{"id":"26l6v7uduo","studentId":"s-shchaf","date":"2025-05-20","time":"16:00","durationHours":2,"amount":340,"isPaid":true,"notes":""},{"id":"g2hwbu3mgm","studentId":"s-shchaf","date":"2025-06-03","time":"16:00","durationHours":2,"amount":340,"isPaid":true,"notes":""},{"id":"1fqviy7ngl","studentId":"s-shchaf","date":"2025-06-04","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"thlal15fpd","studentId":"s-shchaf","date":"2025-06-10","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"ls4u5wa3lx","studentId":"s-shchaf","date":"2025-07-15","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"jh9i8gz23f","studentId":"s-shchaf","date":"2025-07-23","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"998ks5j9wh","studentId":"s-shchaf","date":"2025-08-12","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"ft569g9u11","studentId":"s-shchaf","date":"2025-08-19","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"xrvp1vqgmq","studentId":"s-shchaf","date":"2025-08-26","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"5xhrmdaatw","studentId":"s-shchaf","date":"2025-09-02","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"1qb8brin92","studentId":"s-shchaf","date":"2025-10-14","time":"16:00","durationHours":2,"amount":340,"isPaid":true,"notes":""},{"id":"brrh7822d9","studentId":"s-shchaf","date":"2025-10-23","time":"16:00","durationHours":1,"amount":170,"isPaid":true,"notes":""},{"id":"j8c152kkvr","studentId":"s-shchaf","date":"2025-12-21","time":"16:00","durationHours":1,"amount":170,"isPaid":false,"notes":""},{"id":"tze4kjouol","studentId":"s-shchaf","date":"2025-12-23","time":"16:00","durationHours":1,"amount":170,"isPaid":false,"notes":""},{"id":"hrzrggnq7r","studentId":"s-shchaf","date":"2025-12-30","time":"16:00","durationHours":1,"amount":170,"isPaid":false,"notes":""},{"id":"azoqhxy8le","studentId":"s-alon","date":"2026-01-30","time":"16:00","durationHours":1,"amount":200,"isPaid":true,"notes":""},{"id":"lkjonssdk6","studentId":"s-alon","date":"2026-02-04","time":"16:00","durationHours":1.5,"amount":300,"isPaid":true,"notes":""},{"id":"u9lvqplcfp","studentId":"s-alon","date":"2026-02-13","time":"16:00","durationHours":1,"amount":200,"isPaid":true,"notes":""},{"id":"c7hzvc2vi2","studentId":"s-alon","date":"2026-02-20","time":"16:00","durationHours":1,"amount":200,"isPaid":true,"notes":""},{"id":"hl5q6w6uxw","studentId":"s-alon","date":"2026-02-27","time":"16:00","durationHours":2,"amount":400,"isPaid":true,"notes":"בוטל (שולם)"},{"id":"1wscpld68f","studentId":"s-shchaf","date":"2026-04-05","time":"16:00","durationHours":2,"amount":340,"isPaid":false,"notes":""},{"id":"jlx87emqnb","studentId":"s-shchaf","date":"2026-04-06","time":"16:00","durationHours":2,"amount":340,"isPaid":false,"notes":""},{"id":"bd5w7aekj9","studentId":"s-alon","date":"2026-04-07","time":"16:00","durationHours":1,"amount":200,"isPaid":false,"notes":""},{"id":"yxj5u1adj3","studentId":"s-shchaf","date":"2026-04-07","time":"16:00","durationHours":2,"amount":340,"isPaid":false,"notes":""},{"id":"d5k499vjae","studentId":"s-shchaf","date":"2026-04-08","time":"16:00","durationHours":2,"amount":340,"isPaid":false,"notes":""},{"id":"1u05b944ox","studentId":"s-alon","date":"2026-04-10","time":"16:00","durationHours":2,"amount":400,"isPaid":true,"notes":"שולם על חשבון בוטל 27/02"},{"id":"6ejgg2x8e6","studentId":"s-alon","date":"2026-04-12","time":"16:00","durationHours":1,"amount":200,"isPaid":false,"notes":""},{"id":"t66t7gpq3i","studentId":"s-shchaf","date":"2026-04-12","time":"16:00","durationHours":1,"amount":170,"isPaid":false,"notes":""},{"id":"mjr6ykbq7b","studentId":"s-shchaf","date":"2026-04-13","time":"16:00","durationHours":2,"amount":340,"isPaid":false,"notes":""},{"id":"w8e51wokz5","studentId":"s-alon","date":"2026-04-14","time":"16:00","durationHours":2,"amount":400,"isPaid":false,"notes":""},{"id":"ddz6thh9rh","studentId":"s-alon","date":"2026-04-15","time":"16:00","durationHours":2,"amount":400,"isPaid":false,"notes":""}],"payments":[{"id":"pay-noam","studentId":"s-noam","date":"2025-05-09","amount":6900,"notes":"תשלומים היסטוריים (יובא מאקסל)"},{"id":"pay-shari","studentId":"s-shari","date":"2025-05-11","amount":4200,"notes":"תשלומים היסטוריים (יובא מאקסל)"},{"id":"pay-shchaf","studentId":"s-shchaf","date":"2025-10-23","amount":9700,"notes":"תשלומים היסטוריים (יובא מאקסל)"},{"id":"pay-alon","studentId":"s-alon","date":"2026-04-10","amount":1700,"notes":"תשלומים היסטוריים (יובא מאקסל)"}]};
 // ===== INIT =====
 async function initApp() {
+  // Restore dark mode
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    const dmBtn = document.getElementById('dark-mode-btn');
+    if (dmBtn) dmBtn.textContent = '☀️';
+  }
+
   document.getElementById('modal-close').onclick = closeModal;
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#cal-popup')) hideCalPopup();
@@ -2758,6 +3371,18 @@ async function initApp() {
     tab.addEventListener('click', () => showPage(tab.dataset.page));
   });
 
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'n' || e.key === 'נ') openAddLessonModal(null);
+    if (e.key === 's' || e.key === 'ד') showPage('students');
+    if (e.key === 'l' || e.key === 'כ') showPage('lessons');
+    if (e.key === 'd' || e.key === 'ג') showPage('dashboard');
+    if (e.key === 'Escape') closeModal();
+  });
+
+  showLoading();
   // Check if already logged in
   try {
     const r = await fetch('/api/auth/me');
@@ -2765,10 +3390,12 @@ async function initApp() {
       const user = await r.json();
       hideAuthOverlay(user.name || user.email);
     } else {
+      hideLoading();
       showAuthOverlay();
       return;
     }
   } catch(e) {
+    hideLoading();
     showToast('לא ניתן להתחבר לשרת — הרץ את server.py', 'error');
     return;
   }
@@ -2776,9 +3403,11 @@ async function initApp() {
   try {
     await loadData();
   } catch(e) {
+    hideLoading();
     if (e.message !== 'unauth') showToast('שגיאה בטעינת הנתונים', 'error');
     return;
   }
+  hideLoading();
   if (window.innerWidth <= 768) {
     calView = 'week';
     document.getElementById('cvb-week').classList.add('active');
