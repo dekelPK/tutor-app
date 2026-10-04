@@ -941,8 +941,12 @@
 
 /* Search */
 .search-wrapper { position: relative; }
+.search-icon {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: rgba(255,255,255,0.6); pointer-events: none;
+}
 .search-input {
-  padding: 6px 12px; border: 1px solid rgba(255,255,255,0.3);
+  padding: 6px 32px 6px 12px; border: 1px solid rgba(255,255,255,0.3);
   border-radius: 8px; background: rgba(255,255,255,0.15);
   color: white; font-size: 13px; font-family: inherit; width: 160px; direction: rtl;
 }
@@ -1198,7 +1202,8 @@
     <span class="app-title">📚 שיעורים פרטיים</span>
     <div class="header-actions">
       <div class="search-wrapper">
-        <input class="search-input" id="search-input" placeholder="🔍 חיפוש..." oninput="onSearch(this.value)" onblur="setTimeout(()=>document.getElementById('search-results').classList.remove('show'),200)">
+        <svg class="icon icon-sm search-icon"><use href="#icon-search"/></svg>
+        <input class="search-input" id="search-input" placeholder="חיפוש..." oninput="onSearch(this.value)" onblur="setTimeout(()=>document.getElementById('search-results').classList.remove('show'),200)">
         <div class="search-results" id="search-results"></div>
       </div>
       <span id="user-display" style="color:rgba(255,255,255,0.85);font-size:13px;white-space:nowrap;display:none"></span>
