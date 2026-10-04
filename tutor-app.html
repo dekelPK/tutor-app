@@ -6,14 +6,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="שיעורים פרטיים">
-  <meta name="theme-color" content="#0d9488">
+  <meta name="theme-color" content="#2563eb">
   <title>ניהול שיעורים פרטיים</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
-      --primary: #0d9488;
-      --primary-light: #ccfbf1;
-      --primary-dark: #0f766e;
+      --primary: #2563eb;
+      --primary-light: #dbeafe;
+      --primary-dark: #1d4ed8;
       --success: #10b981;
       --success-light: #d1fae5;
       --warning: #f59e0b;
@@ -51,7 +51,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 2px 8px rgba(13,148,136,0.3);
+      box-shadow: 0 2px 8px rgba(37,99,235,0.3);
     }
     .app-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
     .header-actions { display: flex; gap: 8px; align-items: center; }
@@ -211,7 +211,7 @@
     .auth-overlay {
       display: none;
       position: fixed; inset: 0;
-      background: linear-gradient(145deg, #042f2e 0%, #0d9488 55%, #2dd4bf 100%);
+      background: linear-gradient(145deg, #0f172a 0%, #2563eb 55%, #60a5fa 100%);
       z-index: 9999;
       align-items: center;
       justify-content: center;
@@ -274,7 +274,7 @@
     }
     .auth-tab-btn.active {
       background: white; color: var(--primary);
-      box-shadow: 0 2px 10px rgba(13,148,136,0.18);
+      box-shadow: 0 2px 10px rgba(37,99,235,0.18);
     }
     .auth-field { margin-bottom: 14px; }
     .auth-field label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
@@ -289,7 +289,7 @@
     }
     .auth-input-wrap input:focus {
       outline: none; border-color: var(--primary); background: white;
-      box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
     }
     .auth-input-icon {
       position: absolute; bottom: 11px; left: 13px;
@@ -309,10 +309,10 @@
       font-size: 15px; font-weight: 700; cursor: pointer;
       font-family: inherit; margin-top: 6px;
       transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-      box-shadow: 0 4px 18px rgba(13,148,136,0.38);
+      box-shadow: 0 4px 18px rgba(37,99,235,0.38);
       letter-spacing: 0.2px;
     }
-    .btn-auth:hover { background: #0f766e; box-shadow: 0 6px 24px rgba(13,148,136,0.45); }
+    .btn-auth:hover { background: #1d4ed8; box-shadow: 0 6px 24px rgba(37,99,235,0.45); }
     .btn-auth:active { transform: scale(0.98); }
     .btn-auth:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
     .auth-note { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 14px; }
@@ -425,9 +425,9 @@
 
     /* ===== DARK MODE ===== */
     [data-theme="dark"] {
-      --primary: #2dd4bf;
-      --primary-light: #134e4a;
-      --primary-dark: #0d9488;
+      --primary: #60a5fa;
+      --primary-light: #1e3a8a;
+      --primary-dark: #2563eb;
       --bg: #0f172a;
       --card: #1e293b;
       --text: #f1f5f9;
@@ -871,7 +871,7 @@
       height: 82px; cursor: pointer; transition: background 0.1s; overflow: hidden;
     }
     .cal-day-cell:hover { background: var(--primary-light); }
-    .cal-day-cell.today { background: #ccfbf1; }
+    .cal-day-cell.today { background: #dbeafe; }
     .cal-day-cell.other-month { background: #fafbfc; opacity: 0.45; pointer-events: none; }
     .cal-day-num { font-size: 12px; font-weight: 500; margin-bottom: 3px; display: flex; justify-content: flex-end; }
     .cal-day-cell.today .cal-day-num span {
@@ -892,7 +892,7 @@
       border-radius: 8px; overflow: hidden;
     }
     .cal-week-col { background: white; min-height: 180px; }
-    .cal-week-col.today { background: #ccfbf1; }
+    .cal-week-col.today { background: #dbeafe; }
     .cal-week-header {
       padding: 7px 4px; text-align: center; border-bottom: 1px solid var(--border);
       cursor: pointer; background: var(--bg);
@@ -981,7 +981,7 @@
       background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white; border-radius: var(--radius); padding: 16px 20px;
       margin-bottom: 20px; display: flex; align-items: center; gap: 16px;
-      box-shadow: 0 4px 12px rgba(13,148,136,0.3);
+      box-shadow: 0 4px 12px rgba(37,99,235,0.3);
     }
     .next-lesson-icon { font-size: 28px; flex-shrink: 0; }
     .next-lesson-label { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
@@ -1037,7 +1037,7 @@
       position: fixed; left: 20px; bottom: calc(68px + env(safe-area-inset-bottom, 0px));
       width: 52px; height: 52px; border-radius: 50%;
       background: var(--primary); color: white; border: none;
-      font-size: 26px; cursor: pointer; box-shadow: 0 4px 14px rgba(13,148,136,0.4);
+      font-size: 26px; cursor: pointer; box-shadow: 0 4px 14px rgba(37,99,235,0.4);
       align-items: center; justify-content: center;
       z-index: 190; transition: transform 0.15s;
       -webkit-tap-highlight-color: transparent;
@@ -1878,8 +1878,8 @@ function renderDashboard() {
       const pts = months.map((m, i) => ({ x: pad.left + i * step, y: pad.top + chartH - (m.inc / maxInc) * chartH }));
       // Gradient fill
       const grad = ctx.createLinearGradient(0, pad.top, 0, H);
-      grad.addColorStop(0, 'rgba(13,148,136,0.25)');
-      grad.addColorStop(1, 'rgba(13,148,136,0)');
+      grad.addColorStop(0, 'rgba(37,99,235,0.25)');
+      grad.addColorStop(1, 'rgba(37,99,235,0)');
       ctx.beginPath();
       ctx.moveTo(pts[0].x, H - pad.bottom);
       pts.forEach(p => ctx.lineTo(p.x, p.y));
@@ -1889,7 +1889,7 @@ function renderDashboard() {
       ctx.fill();
       // Line
       ctx.beginPath();
-      ctx.strokeStyle = '#0d9488';
+      ctx.strokeStyle = '#2563eb';
       ctx.lineWidth = 2.5;
       ctx.lineJoin = 'round';
       pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
@@ -1898,7 +1898,7 @@ function renderDashboard() {
       pts.forEach((p, i) => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = months[i].current ? '#0d9488' : '#99f6e4';
+        ctx.fillStyle = months[i].current ? '#2563eb' : '#93c5fd';
         ctx.fill();
         // month label
         ctx.fillStyle = '#64748b';
@@ -1907,7 +1907,7 @@ function renderDashboard() {
         ctx.fillText(months[i].label, p.x, H - 8);
         // value
         if (months[i].inc > 0) {
-          ctx.fillStyle = '#0d9488';
+          ctx.fillStyle = '#2563eb';
           ctx.font = '9px system-ui';
           ctx.fillText('₪'+(months[i].inc/1000).toFixed(1)+'k', p.x, p.y - 7);
         }
@@ -1944,7 +1944,7 @@ function renderDashboard() {
     recentEl.innerHTML = recentLessons.map(l => {
       const s = getStudentById(l.studentId);
       return `<div class="recent-item">
-        <span class="badge" style="background:${s?.color||'#0d9488'}">${s?.name||'?'}</span>
+        <span class="badge" style="background:${s?.color||'#2563eb'}">${s?.name||'?'}</span>
         <span>${formatDate(l.date)}</span>
         <span class="text-muted">${l.durationHours} שיעור${l.durationHours>1?'ים':''}</span>
         <span>${formatCurrency(l.amount)}</span>
@@ -2222,7 +2222,7 @@ function openDebtReport(id) {
     '<div style="text-align:center;margin-bottom:20px">' +
     '<div style="font-size:12px;color:#64748b;margin-bottom:4px">' + today + '</div>' +
     '<h2 style="font-size:20px;font-weight:700;margin:0 0 4px">סיכום שיעורים</h2>' +
-    '<div style="font-size:16px;font-weight:600;color:#0d9488">' + s.name + '</div>' +
+    '<div style="font-size:16px;font-weight:600;color:#2563eb">' + s.name + '</div>' +
     '</div>' +
     (pendingLessons.length === 0
       ? '<div style="text-align:center;padding:32px;color:#10b981;font-size:16px">✅ אין שיעורים ממתינים לתשלום</div>'
@@ -2323,7 +2323,7 @@ function renderLessonsTable() {
     return `<tr>
       <td style="text-align:center"><input type="checkbox" class="lesson-cb" data-id="${l.id}" onchange="updateBulkToolbar()"></td>
       <td>${formatDate(l.date)}</td>
-      <td><span class="student-dot" style="background:${s?.color||'#0d9488'}"></span>${s?.name||'?'}</td>
+      <td><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
       <td>${l.durationHours} שיעור${l.durationHours>1?'ים':''}</td>
       <td>${formatCurrency(l.amount)}</td>
       <td>${lessonBadge(l)}</td>
@@ -2666,7 +2666,7 @@ function renderPayments() {
     const s = getStudentById(p.studentId);
     return `<tr>
       <td>${formatDate(p.date)}</td>
-      <td><span class="student-dot" style="background:${s?.color||'#0d9488'}"></span>${s?.name||'?'}</td>
+      <td><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
       <td class="text-success" style="font-weight:600">${formatCurrency(p.amount)}</td>
       <td class="text-muted">${p.notes || ''}</td>
       <td><button class="btn btn-ghost btn-xs text-danger" onclick="deletePayment('${p.id}')">מחק</button></td>
@@ -3052,7 +3052,7 @@ function renderCalendar() {
         lessons.slice(0, maxShow).forEach(l => {
           const s = getStudentById(l.studentId);
           const tip = `${s?.name||'?'} | ${l.time||'--:--'} | ${l.durationHours} שיעור${l.durationHours>1?'ים':''}${l.notes?' | '+l.notes:''}`;
-          html += `<div class="cal-event" style="background:${s?.color||'#0d9488'}" onclick="showCalPopup('${l.id}',event)" title="${tip}">
+          html += `<div class="cal-event" style="background:${s?.color||'#2563eb'}" onclick="showCalPopup('${l.id}',event)" title="${tip}">
             ${l.time||''} ${s?.name||'?'}
           </div>`;
         });
@@ -3090,7 +3090,7 @@ function renderCalendar() {
         <div class="cal-week-events" onclick="openAddLessonModal(null)">`;
       lessons.forEach(l => {
         const s = getStudentById(l.studentId);
-        html += `<div class="cal-week-event" style="background:${s?.color||'#0d9488'}" onclick="showCalPopup('${l.id}',event)">
+        html += `<div class="cal-week-event" style="background:${s?.color||'#2563eb'}" onclick="showCalPopup('${l.id}',event)">
           <div class="cal-week-event-time">${l.time||''}</div>
           <div class="cal-week-event-name">${s?.name||'?'}</div>
         </div>`;
@@ -3111,10 +3111,10 @@ function renderCalendar() {
     } else {
       lessons.forEach(l => {
         const s = getStudentById(l.studentId);
-        html += `<div class="cal-day-lesson" style="border-inline-start-color:${s?.color||'#0d9488'}">
+        html += `<div class="cal-day-lesson" style="border-inline-start-color:${s?.color||'#2563eb'}">
           <div class="cal-day-lesson-time">${l.time||'--:--'}</div>
           <div class="cal-day-lesson-info">
-            <span class="badge" style="background:${s?.color||'#0d9488'}">${s?.name||'?'}</span>
+            <span class="badge" style="background:${s?.color||'#2563eb'}">${s?.name||'?'}</span>
             <span>${l.durationHours} שיעור${l.durationHours>1?'ים':''}</span>
             <span>${formatCurrency(l.amount)}</span>
             ${lessonBadge(l)}
@@ -3143,7 +3143,7 @@ function showCalPopup(lessonId, e) {
   const p = document.getElementById('cal-popup');
   p.innerHTML = `
     <div class="cal-popup-name">
-      <span class="student-dot" style="background:${s?.color||'#0d9488'}"></span>${s?.name||'?'}
+      <span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}
     </div>
     <div class="cal-popup-detail">🕐 ${l.time||'--:--'} &nbsp;·&nbsp; ${l.durationHours} שיעור${l.durationHours>1?'ים':''}</div>
     <div class="cal-popup-detail">${formatCurrency(l.amount)} &nbsp;·&nbsp; ${lessonBadge(l)}</div>
@@ -3213,7 +3213,7 @@ function onSearch(q) {
       ...lessons.map(l => {
         const s = getStudentById(l.studentId);
         return `<div class="search-result-item" onclick="calGoDay('${l.date}');${clearSearch}">
-          <span class="student-dot" style="background:${s?.color||'#0d9488'}"></span>
+          <span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>
           <span>${highlight(s?.name||'?', trimQ)}</span>
           <span class="text-muted">${formatDate(l.date)} ${l.time||''}</span>
           ${lessonBadge(l)}
