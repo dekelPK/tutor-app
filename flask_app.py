@@ -7,6 +7,11 @@ flask_app.py — PythonAnywhere WSGI entry point
 from flask import Flask, jsonify, request, session
 import sqlite3, json, os, hashlib, secrets, uuid
 from datetime import datetime, timedelta
+try:
+    from zoneinfo import ZoneInfo
+    ISRAEL_TZ = ZoneInfo('Asia/Jerusalem')
+except Exception:
+    ISRAEL_TZ = None  # falls back to naive UTC date — a few hours off around midnight
 
 BASE_DIR = '/home/DekelPA/mysite'
 DB_PATH  = os.path.join(BASE_DIR, 'tutor.db')
@@ -16,6 +21,26 @@ app.permanent_session_lifetime = timedelta(days=30)
 
 # ── Set to True only when you want to allow new registrations ─────────────────
 REGISTRATION_OPEN = False
+
+# ── Push notifications (Web Push / VAPID) ──────────────────────────────────────
+# Public key only — safe to hardcode, it's meant to be public. The matching
+# PRIVATE key never lives on this server; it's kept as a GitHub Actions secret
+# and used only by the scheduled job that actually sends the push (see
+# .github/workflows/daily-lesson-reminders.yml and scripts/send_reminders.py).
+# This keeps PythonAnywhere's free-tier outbound-internet whitelist out of the
+# picture entirely — this server only ever stores subscriptions and answers
+# "who needs a reminder today", it never calls out to Apple's push service.
+VAPID_PUBLIC_KEY = 'BItvzT-o_02tFQo_a61eRWe3lZ29jS6X6jKtWtwx3nFKJbzmslGFG9IKKiMCxuPfew88jBDeWefZMjv9XJIzczQ'
+
+# Shared secret the scheduled GitHub Actions job presents to /api/push/due-today.
+# Must match the CRON_SECRET GitHub Actions secret exactly. Generated once and
+# persisted to disk (same pattern as .secret_key) so it survives restarts.
+_cs_file = os.path.join(BASE_DIR, '.cron_secret')
+if os.path.exists(_cs_file):
+    CRON_SECRET = open(_cs_file).read().strip()
+else:
+    CRON_SECRET = secrets.token_hex(24)
+    open(_cs_file, 'w').write(CRON_SECRET)
 
 # ── Secret key (persist across restarts) ──────────────────────────────────────
 _sk_file = os.path.join(BASE_DIR, '.secret_key')
@@ -59,6 +84,14 @@ def init_db():
                 studentId TEXT NOT NULL,
                 date      TEXT NOT NULL,
                 data      TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+                id         TEXT PRIMARY KEY,
+                user_id    TEXT NOT NULL,
+                endpoint   TEXT NOT NULL UNIQUE,
+                p256dh     TEXT NOT NULL,
+                auth       TEXT NOT NULL,
+                created_at TEXT
             );
         ''')
         # Add user_id column to existing tables if missing (safe to run multiple times)
@@ -168,6 +201,86 @@ def auth_register():
 @app.route('/api/auth/logout', methods=['POST'])
 def auth_logout():
     session.clear()
+    return '', 204
+
+# ── Push notifications ───────────────────────────────────────────────────────
+@app.route('/sw.js')
+def service_worker():
+    with open(os.path.join(BASE_DIR, 'sw.js'), 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/javascript; charset=utf-8'}
+
+@app.route('/api/push/vapid-public-key')
+def push_vapid_key():
+    return jsonify({'publicKey': VAPID_PUBLIC_KEY})
+
+@app.route('/api/push/subscribe', methods=['POST'])
+def push_subscribe():
+    err = require_auth()
+    if err: return err
+    body = request.json or {}
+    endpoint = body.get('endpoint')
+    keys = body.get('keys') or {}
+    p256dh, auth_key = keys.get('p256dh'), keys.get('auth')
+    if not endpoint or not p256dh or not auth_key:
+        return jsonify({'error': 'Invalid subscription'}), 400
+    with get_db() as db:
+        db.execute('''INSERT INTO push_subscriptions(id,user_id,endpoint,p256dh,auth,created_at)
+                      VALUES (?,?,?,?,?,?)
+                      ON CONFLICT(endpoint) DO UPDATE SET user_id=excluded.user_id,
+                        p256dh=excluded.p256dh, auth=excluded.auth''',
+                   [uuid.uuid4().hex[:12], uid(), endpoint, p256dh, auth_key, datetime.now().isoformat()])
+    return jsonify({'ok': True}), 201
+
+@app.route('/api/push/unsubscribe', methods=['POST'])
+def push_unsubscribe():
+    err = require_auth()
+    if err: return err
+    endpoint = (request.json or {}).get('endpoint')
+    with get_db() as db:
+        db.execute('DELETE FROM push_subscriptions WHERE endpoint=? AND user_id=?', [endpoint, uid()])
+    return '', 204
+
+@app.route('/api/push/due-today')
+def push_due_today():
+    # Secret-protected: called by the scheduled GitHub Actions job, not by the browser.
+    if request.args.get('token') != CRON_SECRET:
+        return jsonify({'error': 'Unauthorized'}), 401
+    today = datetime.now(ISRAEL_TZ).strftime('%Y-%m-%d') if ISRAEL_TZ else datetime.utcnow().strftime('%Y-%m-%d')
+    with get_db() as db:
+        subs = db.execute('SELECT * FROM push_subscriptions').fetchall()
+        out = []
+        for sub in subs:
+            lessons = db.execute(
+                'SELECT data FROM lessons WHERE user_id=? AND date=?', [sub['user_id'], today]
+            ).fetchall()
+            if not lessons:
+                continue
+            students = {s['id']: s for s in rows_to_list(
+                db.execute('SELECT data FROM students WHERE user_id=?', [sub['user_id']]).fetchall())}
+            lesson_list = rows_to_list(lessons)
+            if len(lesson_list) == 1:
+                s = students.get(lesson_list[0]['studentId'], {})
+                body = f"שיעור עם {s.get('name','תלמיד')} בשעה {lesson_list[0].get('time','')}"
+            else:
+                body = f"{len(lesson_list)} שיעורים מתוכננים היום"
+            out.append({
+                'endpoint': sub['endpoint'],
+                'p256dh': sub['p256dh'],
+                'auth': sub['auth'],
+                'title': 'תזכורת: יש לך שיעור היום 📚',
+                'body': body,
+                'url': '/',
+            })
+    return jsonify(out)
+
+@app.route('/api/push/due-today', methods=['DELETE'])
+def push_remove_stale():
+    # Called by the scheduled job when Apple reports a subscription as gone (410/404).
+    if request.args.get('token') != CRON_SECRET:
+        return jsonify({'error': 'Unauthorized'}), 401
+    endpoint = (request.json or {}).get('endpoint')
+    with get_db() as db:
+        db.execute('DELETE FROM push_subscriptions WHERE endpoint=?', [endpoint])
     return '', 204
 
 # ── Students ──────────────────────────────────────────────────────────────────

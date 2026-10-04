@@ -1104,9 +1104,38 @@
       .cal-day-cell { height: 46px; }
       .cal-event { font-size: 10px; padding: 1px 4px; }
     }
+
+    /* ===== ICONS ===== */
+    .icon {
+      width: 18px; height: 18px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      vertical-align: -3px; flex-shrink: 0;
+    }
+    .icon-sm { width: 15px; height: 15px; vertical-align: -2px; }
+    .bn-icon .icon { width: 22px; height: 22px; vertical-align: -5px; }
   </style>
 </head>
 <body>
+<svg style="display:none" aria-hidden="true">
+  <defs>
+    <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
+    <symbol id="icon-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+    <symbol id="icon-keyboard" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10"/></symbol>
+    <symbol id="icon-home" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7"/><path d="M5 10v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10"/><path d="M9 22V12h6v10"/></symbol>
+    <symbol id="icon-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+    <symbol id="icon-wallet" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></symbol>
+    <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+    <symbol id="icon-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="icon-bar-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></symbol>
+    <symbol id="icon-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  </defs>
+</svg>
 
 <div id="app">
   <!-- HEADER -->
@@ -1167,7 +1196,7 @@
         <div class="search-results" id="search-results"></div>
       </div>
       <span id="user-display" style="color:rgba(255,255,255,0.85);font-size:13px;white-space:nowrap;display:none"></span>
-      <button class="kb-hint-btn" id="kb-hint-btn" title="קיצורי מקלדת">⌨️
+      <button class="kb-hint-btn" id="kb-hint-btn" title="קיצורי מקלדת"><svg class="icon"><use href="#icon-keyboard"/></svg>
         <div class="kb-tooltip">
           <strong>קיצורי מקלדת:</strong><br>
           N / נ — הוסף שיעור<br>
@@ -1176,9 +1205,10 @@
           D / ג — דשבורד
         </div>
       </button>
-      <button class="btn-import" id="dark-mode-btn" onclick="toggleDarkMode()">🌙</button>
+      <button class="btn-import" id="reminders-btn" onclick="toggleLessonReminders()" title="תזכורות על שיעורי היום" style="display:none">🔔</button>
+      <button class="btn-import" id="dark-mode-btn" onclick="toggleDarkMode()"><svg class="icon" id="dark-mode-icon"><use href="#icon-moon"/></svg></button>
       <button class="btn-import" onclick="document.getElementById('excel-input').click()">
-        ⬆ ייבוא מאקסל
+        <svg class="icon icon-sm"><use href="#icon-upload"/></svg> ייבוא מאקסל
       </button>
       <button class="btn-import" id="logout-btn" onclick="doLogout()" style="display:none">יציאה</button>
     </div>
@@ -1393,16 +1423,16 @@
 <nav class="bottom-nav">
   <div class="bottom-nav-inner">
     <button class="bottom-nav-item" data-page="payments" onclick="showPage('payments')">
-      <span class="bn-icon">💰</span>תשלומים
+      <span class="bn-icon"><svg class="icon"><use href="#icon-wallet"/></svg></span>תשלומים
     </button>
     <button class="bottom-nav-item" data-page="lessons" onclick="showPage('lessons')">
-      <span class="bn-icon">📚</span>שיעורים
+      <span class="bn-icon"><svg class="icon"><use href="#icon-book"/></svg></span>שיעורים
     </button>
     <button class="bottom-nav-item" data-page="students" onclick="showPage('students')">
-      <span class="bn-icon">👥</span>תלמידים
+      <span class="bn-icon"><svg class="icon"><use href="#icon-users"/></svg></span>תלמידים
     </button>
     <button class="bottom-nav-item" data-page="dashboard" onclick="showPage('dashboard')">
-      <span class="bn-icon">🏠</span>דשבורד
+      <span class="bn-icon"><svg class="icon"><use href="#icon-home"/></svg></span>דשבורד
     </button>
   </div>
 </nav>
@@ -1493,6 +1523,7 @@ function showAuthOverlay() {
   document.getElementById('auth-overlay').classList.add('visible');
   document.getElementById('user-display').style.display = 'none';
   document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('reminders-btn').style.display = 'none';
 }
 function hideAuthOverlay(userName) {
   document.getElementById('auth-overlay').classList.remove('visible');
@@ -1501,6 +1532,7 @@ function hideAuthOverlay(userName) {
     el.textContent = '👤 ' + userName;
     el.style.display = '';
     document.getElementById('logout-btn').style.display = '';
+    initPushUI();
   }
 }
 function showAuthTab(tab) {
@@ -1631,7 +1663,87 @@ function toggleDarkMode() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
   localStorage.setItem('theme', isDark ? '' : 'dark');
-  document.getElementById('dark-mode-btn').textContent = isDark ? '🌙' : '☀️';
+  document.getElementById('dark-mode-icon').innerHTML = `<use href="#icon-${isDark ? 'moon' : 'sun'}"/>`;
+}
+
+// ===== PUSH NOTIFICATIONS (lesson reminders) =====
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+function pushIsSupported() {
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+
+async function initPushUI() {
+  const btn = document.getElementById('reminders-btn');
+  if (!pushIsSupported()) { btn.style.display = 'none'; return; }
+  btn.style.display = '';
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const existing = await reg.pushManager.getSubscription();
+    updateReminderBtnState(!!existing);
+  } catch (e) {
+    console.warn('Service worker registration failed', e);
+  }
+}
+
+function updateReminderBtnState(active) {
+  const btn = document.getElementById('reminders-btn');
+  if (!btn) return;
+  btn.textContent = active ? '🔔' : '🔕';
+  btn.title = active ? 'תזכורות פעילות — לחץ לביטול' : 'הפעל תזכורות על שיעורי היום';
+}
+
+async function toggleLessonReminders() {
+  if (!pushIsSupported()) {
+    showToast('המכשיר הזה לא תומך בהתראות, או שהאפליקציה לא נוספה למסך הבית', 'warning');
+    return;
+  }
+  // iOS Safari only supports Web Push for apps added to the home screen (standalone mode)
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (isIOS && !isStandalone) {
+    showToast('באייפון: קודם צריך להוסיף את האפליקציה למסך הבית (שתף ⬆️ ← הוסף למסך הבית), ואז לפתוח אותה משם ולנסות שוב', 'warning');
+    return;
+  }
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) {
+      await fetch('/api/push/unsubscribe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: existing.endpoint }),
+      });
+      await existing.unsubscribe();
+      updateReminderBtnState(false);
+      showToast('תזכורות בוטלו');
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      showToast('לא אושרה הרשאה להתראות', 'warning');
+      return;
+    }
+    const keyRes = await fetch('/api/push/vapid-public-key');
+    const { publicKey } = await keyRes.json();
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+    await fetch('/api/push/subscribe', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sub.toJSON()),
+    });
+    updateReminderBtnState(true);
+    showToast('תזכורות הופעלו! תקבל/י התראה בבוקר אם יש שיעור באותו יום 🔔');
+  } catch (e) {
+    console.error(e);
+    showToast('משהו השתבש בהפעלת התזכורות', 'danger');
+  }
 }
 
 // ===== TOAST =====
@@ -3380,8 +3492,8 @@ async function initApp() {
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
-    const dmBtn = document.getElementById('dark-mode-btn');
-    if (dmBtn) dmBtn.textContent = '☀️';
+    const dmIcon = document.getElementById('dark-mode-icon');
+    if (dmIcon) dmIcon.innerHTML = '<use href="#icon-sun"/>';
   }
 
   document.getElementById('modal-close').onclick = closeModal;

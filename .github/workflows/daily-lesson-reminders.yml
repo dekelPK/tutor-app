@@ -1,0 +1,30 @@
+name: Daily lesson reminders
+
+on:
+  schedule:
+    # ~06:00-07:00 Israel time year-round (04:00 UTC). Adjust to taste —
+    # GitHub Actions cron is always UTC.
+    - cron: '0 4 * * *'
+  workflow_dispatch: {}   # lets you trigger a test run manually from the Actions tab
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests pywebpush
+
+      - name: Send today's reminders
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_CONTACT_EMAIL: ${{ secrets.VAPID_CONTACT_EMAIL }}
+        run: python scripts/send_reminders.py

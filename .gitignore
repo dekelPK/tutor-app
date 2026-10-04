@@ -5,6 +5,7 @@ data_*.json
 # Auth & secrets
 users.db
 .secret_key
+.cron_secret
 
 # Python
 __pycache__/
