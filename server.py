@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from flask import Flask, jsonify, request, session
+from flask import Flask, jsonify, request, session, send_from_directory
 import json, os, threading, webbrowser, sqlite3, hashlib, secrets, uuid
 from datetime import datetime
 
@@ -74,6 +74,24 @@ def require_auth():
 def index():
     with open(os.path.join(BASE_DIR, 'tutor-app.html'), encoding='utf-8') as f:
         return f.read(), 200, {'Content-Type': 'text/html; charset=utf-8'}
+
+# ── PWA static files (manifest/icons/service worker) ────────────────────────────
+# Note: push-notification API routes are production-only (see flask_app.py) since
+# they need the real public APP_URL the GitHub Actions cron job calls. Locally the
+# bell button will 404 if clicked — everything else works the same.
+@app.route('/manifest.json')
+def web_manifest():
+    with open(os.path.join(BASE_DIR, 'manifest.json'), 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/manifest+json; charset=utf-8'}
+
+@app.route('/icons/<path:filename>')
+def app_icons(filename):
+    return send_from_directory(os.path.join(BASE_DIR, 'icons'), filename)
+
+@app.route('/sw.js')
+def service_worker():
+    with open(os.path.join(BASE_DIR, 'sw.js'), 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/javascript; charset=utf-8'}
 
 # ── Auth endpoints ─────────────────────────────────────────────────────────────
 @app.route('/api/auth/me')

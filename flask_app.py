@@ -4,7 +4,7 @@ flask_app.py — PythonAnywhere WSGI entry point
 מסד נתונים: SQLite (tutor.db)
 מיקום: /home/DekelPA/mysite/flask_app.py
 """
-from flask import Flask, jsonify, request, session
+from flask import Flask, jsonify, request, session, send_from_directory
 import sqlite3, json, os, hashlib, secrets, uuid
 from datetime import datetime, timedelta
 try:
@@ -208,6 +208,15 @@ def auth_logout():
 def service_worker():
     with open(os.path.join(BASE_DIR, 'sw.js'), 'r', encoding='utf-8') as f:
         return f.read(), 200, {'Content-Type': 'application/javascript; charset=utf-8'}
+
+@app.route('/manifest.json')
+def web_manifest():
+    with open(os.path.join(BASE_DIR, 'manifest.json'), 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/manifest+json; charset=utf-8'}
+
+@app.route('/icons/<path:filename>')
+def app_icons(filename):
+    return send_from_directory(os.path.join(BASE_DIR, 'icons'), filename)
 
 @app.route('/api/push/vapid-public-key')
 def push_vapid_key():

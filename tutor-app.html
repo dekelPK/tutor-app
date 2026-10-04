@@ -8,6 +8,11 @@
   <meta name="apple-mobile-web-app-title" content="שיעורים פרטיים">
   <meta name="theme-color" content="#2563eb">
   <title>ניהול שיעורים פרטיים</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon-source.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -1081,6 +1086,35 @@
       .cal-filter-select { display: none; } /* מסתיר פילטר תלמיד בנייד */
       .cal-title { font-size: 13px; }
       .cal-view-btn { padding: 4px 7px; font-size: 11px; }
+
+      /* TABLES → CARDS: טבלת שיעורים/תשלומים הופכת לרשימת כרטיסים, בלי גלילה אופקית */
+      .table-wrapper { overflow-x: visible; }
+      #lessons-tbody, #payments-tbody { display: block; }
+      #lessons-tbody tr:not(:has([colspan])), #payments-tbody tr:not(:has([colspan])) {
+        display: block;
+        background: var(--card);
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        position: relative;
+      }
+      .table-wrapper thead { display: none; }
+      #lessons-tbody td, #payments-tbody td {
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 10px; border-bottom: none; padding: 5px 0; font-size: 13px;
+        max-width: none !important; white-space: normal !important;
+      }
+      #lessons-tbody td[data-label]::before, #payments-tbody td[data-label]::before {
+        content: attr(data-label); font-size: 11px; font-weight: 600;
+        color: var(--text-muted); flex-shrink: 0;
+      }
+      #lessons-tbody td.cell-select { justify-content: flex-end; padding-bottom: 8px; border-bottom: 1px solid var(--border) !important; margin-bottom: 4px; }
+      #lessons-tbody td.cell-actions, #payments-tbody td.cell-actions {
+        margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border) !important;
+      }
+      #lessons-tbody td.cell-actions .actions-cell, #payments-tbody td.cell-actions { justify-content: flex-start; width: 100%; }
+      #lessons-tbody tr:has([colspan]) td, #payments-tbody tr:has([colspan]) td { display: block; }
 
       .modal-handle { display: block; }
       /* MODAL — עולה מלמטה כמו iOS */
@@ -2446,14 +2480,14 @@ function renderLessonsTable() {
   tbody.innerHTML = lessons.map(l => {
     const s = getStudentById(l.studentId);
     return `<tr>
-      <td style="text-align:center"><input type="checkbox" class="lesson-cb" data-id="${l.id}" onchange="updateBulkToolbar()"></td>
-      <td>${formatDate(l.date)}</td>
-      <td><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
-      <td>${l.durationHours} שיעור${l.durationHours>1?'ים':''}</td>
-      <td>${formatCurrency(l.amount)}</td>
-      <td>${lessonBadge(l)}</td>
-      <td class="text-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.notes||''}</td>
-      <td><div class="actions-cell">
+      <td class="cell-select" style="text-align:center"><input type="checkbox" class="lesson-cb" data-id="${l.id}" onchange="updateBulkToolbar()"></td>
+      <td data-label="תאריך">${formatDate(l.date)}</td>
+      <td data-label="תלמיד"><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
+      <td data-label="משך">${l.durationHours} שיעור${l.durationHours>1?'ים':''}</td>
+      <td data-label="סכום">${formatCurrency(l.amount)}</td>
+      <td data-label="סטטוס">${lessonBadge(l)}</td>
+      <td data-label="הערות" class="text-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.notes||''}</td>
+      <td class="cell-actions"><div class="actions-cell">
         <button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}')" title="${getLessonPayStatus(l) === 'paid' ? 'בטל סימון' : 'סמן שולם'}">${toggleBtnLabel(l)}</button>
         <button class="btn btn-ghost btn-xs" onclick="openEditLessonModal('${l.id}')">ערוך</button>
         <button class="btn btn-ghost btn-xs text-danger" onclick="deleteLesson('${l.id}')">מחק</button>
@@ -2790,11 +2824,11 @@ function renderPayments() {
   tbody.innerHTML = payments.map(p => {
     const s = getStudentById(p.studentId);
     return `<tr>
-      <td>${formatDate(p.date)}</td>
-      <td><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
-      <td class="text-success" style="font-weight:600">${formatCurrency(p.amount)}</td>
-      <td class="text-muted">${p.notes || ''}</td>
-      <td><button class="btn btn-ghost btn-xs text-danger" onclick="deletePayment('${p.id}')">מחק</button></td>
+      <td data-label="תאריך">${formatDate(p.date)}</td>
+      <td data-label="תלמיד"><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
+      <td data-label="סכום" class="text-success" style="font-weight:600">${formatCurrency(p.amount)}</td>
+      <td data-label="הערות" class="text-muted">${p.notes || ''}</td>
+      <td class="cell-actions"><button class="btn btn-ghost btn-xs text-danger" onclick="deletePayment('${p.id}')">מחק</button></td>
     </tr>`;
   }).join('');
 }
@@ -3568,6 +3602,12 @@ async function initApp() {
     document.getElementById('cvb-month').classList.add('active');
   }
   showPage('dashboard');
+
+  // Launched from the home-screen "הוסף שיעור" shortcut (see manifest.json)
+  if (new URLSearchParams(location.search).get('action') === 'add-lesson') {
+    history.replaceState(null, '', location.pathname);
+    openAddLessonModal(null);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', initApp);
