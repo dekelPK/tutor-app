@@ -823,9 +823,12 @@
     /* ===== TOAST ===== */
     .toast {
       position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(80px);
+      top: calc(70px + env(safe-area-inset-top, 0px));
+      left: 16px;
+      max-width: min(360px, calc(100vw - 32px));
+      transform: translateY(-14px);
+      opacity: 0;
+      pointer-events: none;
       background: #1e293b;
       color: white;
       padding: 11px 20px;
@@ -833,11 +836,11 @@
       font-size: 14px;
       font-weight: 500;
       z-index: 2000;
-      transition: transform 0.25s ease;
+      transition: transform 0.2s ease, opacity 0.2s ease;
       box-shadow: var(--shadow-md);
-      white-space: nowrap;
+      white-space: normal;
     }
-    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
     .toast-error { background: var(--danger); }
     .toast-warning { background: var(--warning); }
     .toast-success { background: var(--success); }
@@ -1169,7 +1172,7 @@
       .btn-sm { min-height: 36px; }
 
       /* TOAST */
-      .toast { bottom: calc(72px + env(safe-area-inset-bottom, 0px)); font-size: 13px; white-space: normal; text-align: center; max-width: 92vw; }
+      .toast { top: calc(60px + env(safe-area-inset-top, 0px) + 8px); left: 10px; max-width: min(300px, calc(100vw - 20px)); font-size: 13px; }
 
       /* NEXT LESSON */
       .next-lesson-widget { padding: 12px 14px; gap: 10px; margin-bottom: 14px; }
@@ -1833,7 +1836,7 @@ function showToast(msg, type = 'success') {
   t.innerHTML = msg;
   t.className = `toast toast-${type} show`;
   clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.className = 'toast'; }, 3500);
+  t._timer = setTimeout(() => { t.className = 'toast'; }, 2500);
 }
 
 // ===== UNDO DELETE =====
