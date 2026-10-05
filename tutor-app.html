@@ -1095,25 +1095,33 @@
         background: var(--card);
         border-radius: 10px;
         box-shadow: var(--shadow);
-        padding: 12px 14px;
+        padding: 10px 14px;
         margin-bottom: 10px;
         position: relative;
       }
       .table-wrapper thead { display: none; }
-      #lessons-tbody td, #payments-tbody td {
-        display: flex; justify-content: space-between; align-items: center;
-        gap: 10px; border-bottom: none; padding: 5px 0; font-size: 13px;
+      /* שורת מידע: תווית צרה וקבועה + ערך צמוד אליה — לא מתוח מקצה לקצה */
+      #lessons-tbody td[data-label], #payments-tbody td[data-label] {
+        display: flex; align-items: baseline; justify-content: flex-start;
+        gap: 8px; border-bottom: none; padding: 3px 0; font-size: 13.5px;
         max-width: none !important; white-space: normal !important;
       }
       #lessons-tbody td[data-label]::before, #payments-tbody td[data-label]::before {
         content: attr(data-label); font-size: 11px; font-weight: 600;
-        color: var(--text-muted); flex-shrink: 0;
+        color: var(--text-muted); flex-shrink: 0; width: 46px;
       }
-      #lessons-tbody td.cell-select { justify-content: flex-end; padding-bottom: 8px; border-bottom: 1px solid var(--border) !important; margin-bottom: 4px; }
+      /* תאים ריקים (למשל אין הערות) — לא מציגים שורה ריקה */
+      #lessons-tbody td[data-label]:empty, #payments-tbody td[data-label]:empty { display: none; }
+      #lessons-tbody td.cell-select {
+        display: flex; justify-content: flex-end; padding: 0 0 6px;
+      }
+      #lessons-tbody td.cell-select input { width: 18px; height: 18px; }
       #lessons-tbody td.cell-actions, #payments-tbody td.cell-actions {
-        margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border) !important;
+        display: block; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border) !important;
       }
-      #lessons-tbody td.cell-actions .actions-cell, #payments-tbody td.cell-actions { justify-content: flex-start; width: 100%; }
+      #lessons-tbody td.cell-actions .actions-cell, #payments-tbody td.cell-actions {
+        display: flex; justify-content: flex-start; gap: 6px;
+      }
       #lessons-tbody tr:has([colspan]) td, #payments-tbody tr:has([colspan]) td { display: block; }
 
       .modal-handle { display: block; }
@@ -3404,7 +3412,7 @@ function onSearch(q) {
 
 // ===== CAL SUBSCRIBE =====
 function showCalSubscribeInfo() {
-  const url = `http://${location.hostname}:8080/calendar.ics`;
+  const url = `${location.protocol}//${location.host}/calendar.ics`;
   const html = `
     <p style="font-size:14px;margin-bottom:14px">המנוי מתעדכן אוטומטית בכל שיעור שמוסיפים.</p>
     <div style="background:var(--bg);padding:10px 12px;border-radius:8px;font-size:13px;direction:ltr;text-align:left;word-break:break-all;margin-bottom:16px;user-select:all">${url}</div>
