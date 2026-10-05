@@ -1087,37 +1087,63 @@
       .cal-title { font-size: 13px; }
       .cal-view-btn { padding: 4px 7px; font-size: 11px; }
 
-      /* TABLES → CARDS: טבלת שיעורים/תשלומים הופכת לרשימת כרטיסים, בלי גלילה אופקית */
+      /* TABLES → CARDS: טבלת שיעורים/תשלומים הופכת לכרטיסים אמיתיים, בלי גלילה אופקית */
       .table-wrapper { overflow-x: visible; }
       #lessons-tbody, #payments-tbody { display: block; }
-      #lessons-tbody tr:not(:has([colspan])), #payments-tbody tr:not(:has([colspan])) {
-        display: block;
-        background: var(--card);
-        border-radius: 10px;
-        box-shadow: var(--shadow);
-        padding: 10px 14px;
-        margin-bottom: 10px;
-        position: relative;
-      }
       .table-wrapper thead { display: none; }
-      /* שורת מידע: תווית צרה וקבועה + ערך צמוד אליה — לא מתוח מקצה לקצה */
-      #lessons-tbody td[data-label], #payments-tbody td[data-label] {
-        display: flex; align-items: baseline; justify-content: flex-start;
-        gap: 8px; border-bottom: none; padding: 3px 0; font-size: 13.5px;
+
+      #lessons-tbody tr:not(:has([colspan])), #payments-tbody tr:not(:has([colspan])) {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        column-gap: 10px; row-gap: 3px;
+        background: var(--card);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        border-inline-start: 4px solid var(--primary);
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+      #lessons-tbody tr:not(:has([colspan])) {
+        grid-template-areas: "select select" "date status" "student amount" "duration duration" "notes notes" "actions actions";
+      }
+      #payments-tbody tr:not(:has([colspan])) {
+        grid-template-areas: "date date" "student amount" "notes notes" "actions actions";
+      }
+
+      /* איפוס הבסיס הגנרי של ה-td לפני שממקמים כל שדה לאזור שלו */
+      #lessons-tbody td, #payments-tbody td {
+        border-bottom: none; padding: 0; font-size: 13.5px;
         max-width: none !important; white-space: normal !important;
       }
-      #lessons-tbody td[data-label]::before, #payments-tbody td[data-label]::before {
-        content: attr(data-label); font-size: 11px; font-weight: 600;
-        color: var(--text-muted); flex-shrink: 0; width: 46px;
-      }
-      /* תאים ריקים (למשל אין הערות) — לא מציגים שורה ריקה */
       #lessons-tbody td[data-label]:empty, #payments-tbody td[data-label]:empty { display: none; }
-      #lessons-tbody td.cell-select {
-        display: flex; justify-content: flex-end; padding: 0 0 6px;
-      }
+
+      #lessons-tbody td.cell-select { grid-area: select; justify-self: end; margin-bottom: 4px; }
       #lessons-tbody td.cell-select input { width: 18px; height: 18px; }
+
+      #lessons-tbody td[data-label="תאריך"], #payments-tbody td[data-label="תאריך"] {
+        grid-area: date; align-self: center; font-size: 12px; color: var(--text-muted); font-weight: 600;
+      }
+      #lessons-tbody td[data-label="סטטוס"] { grid-area: status; align-self: center; }
+
+      #lessons-tbody td[data-label="תלמיד"], #payments-tbody td[data-label="תלמיד"] {
+        grid-area: student; align-self: center; font-size: 16px; font-weight: 700; display: flex; align-items: center;
+      }
+      #lessons-tbody td[data-label="תלמיד"] .student-dot, #payments-tbody td[data-label="תלמיד"] .student-dot { width: 10px; height: 10px; }
+
+      #lessons-tbody td[data-label="סכום"], #payments-tbody td[data-label="סכום"] {
+        grid-area: amount; align-self: center; font-size: 16px; font-weight: 700; color: var(--primary);
+      }
+      #payments-tbody td[data-label="סכום"] { color: var(--success); }
+
+      #lessons-tbody td[data-label="משך"] {
+        grid-area: duration; font-size: 12px; color: var(--text-muted);
+      }
+      #lessons-tbody td[data-label="הערות"], #payments-tbody td[data-label="הערות"] {
+        grid-area: notes; font-size: 12.5px; font-style: italic;
+      }
+
       #lessons-tbody td.cell-actions, #payments-tbody td.cell-actions {
-        display: block; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border) !important;
+        grid-area: actions; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border);
       }
       #lessons-tbody td.cell-actions .actions-cell, #payments-tbody td.cell-actions {
         display: flex; justify-content: flex-start; gap: 6px;
@@ -2501,7 +2527,7 @@ function renderLessonsTable() {
   }
   tbody.innerHTML = lessons.map(l => {
     const s = getStudentById(l.studentId);
-    return `<tr>
+    return `<tr style="border-inline-start-color:${s?.color||'#2563eb'}">
       <td class="cell-select" style="text-align:center"><input type="checkbox" class="lesson-cb" data-id="${l.id}" onchange="updateBulkToolbar()"></td>
       <td data-label="תאריך">${formatDate(l.date)}</td>
       <td data-label="תלמיד"><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
@@ -2845,7 +2871,7 @@ function renderPayments() {
   }
   tbody.innerHTML = payments.map(p => {
     const s = getStudentById(p.studentId);
-    return `<tr>
+    return `<tr style="border-inline-start-color:${s?.color||'#2563eb'}">
       <td data-label="תאריך">${formatDate(p.date)}</td>
       <td data-label="תלמיד"><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
       <td data-label="סכום" class="text-success" style="font-weight:600">${formatCurrency(p.amount)}</td>
