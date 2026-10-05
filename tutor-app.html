@@ -1718,6 +1718,13 @@ const DAY_NAMES = ['ראשון','שני','שלישי','רביעי','חמישי',
 let showInactiveStudents = false;
 let calStudentFilter = '';
 
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
 // ===== STORAGE (in-memory cache + REST API) =====
 let _students = [], _lessons = [], _payments = [];
 const getStudents = () => _students;
@@ -2313,7 +2320,7 @@ function renderDashboard() {
       const balance = getStudentBalance(s.id);
       const lastLesson = lessons.filter(l => l.studentId === s.id).sort((a,b) => b.date.localeCompare(a.date))[0];
       return `<tr>
-        <td><span class="student-dot" style="background:${s.color}"></span>${s.name}</td>
+        <td><span class="student-dot" style="background:${s.color}"></span>${escapeHtml(s.name)}</td>
         <td>${sMonthLessons.length}</td>
         <td class="${balance < 0 ? 'text-danger' : balance > 0 ? 'text-success' : 'text-muted'}">
           ${balance < 0 ? `לתשלום ${formatCurrency(Math.abs(balance))}` : balance > 0 ? `זכות ${formatCurrency(balance)}` : 'מאוזן'}
@@ -2395,21 +2402,21 @@ function renderStudents() {
       <div class="student-card-header">
         <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
           <div class="student-avatar" style="background:${s.color}">${avatarLetter}</div>
-          <h3 style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name} ${inactive ? '<span style="font-size:11px;font-weight:400;color:var(--text-muted);background:var(--border);padding:2px 7px;border-radius:10px;margin-right:4px">לא פעיל</span>' : ''}</h3>
+          <h3 style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(s.name)} ${inactive ? '<span style="font-size:11px;font-weight:400;color:var(--text-muted);background:var(--border);padding:2px 7px;border-radius:10px;margin-right:4px">לא פעיל</span>' : ''}</h3>
         </div>
         <span class="badge ${balClass}" style="flex-shrink:0">${balText}</span>
       </div>
       <div class="student-info">
         <span>💰 ${formatCurrency(s.hourlyRate)}/שיעור</span>
         <span>📅 ${days || 'ימים לא הוגדרו'}</span>
-        ${s.phone ? `<span>📞 <a href="tel:${s.phone}" style="color:var(--primary);text-decoration:none">${s.phone}</a></span>` : ''}
+        ${s.phone ? `<span>📞 <a href="tel:${escapeHtml(s.phone)}" style="color:var(--primary);text-decoration:none">${escapeHtml(s.phone)}</a></span>` : ''}
         <span style="display:flex;gap:10px;flex-wrap:wrap">
           <span>📊 ${lessonCount} שיעורים</span>
           <span class="text-success">✅ ${paidCount} שולמו</span>
           ${pendingCount > 0 ? `<span class="text-warning">⏳ ${pendingCount} ממתינים</span>` : ''}
         </span>
       </div>
-      ${s.notes ? `<p class="student-notes">${s.notes}</p>` : ''}
+      ${s.notes ? `<p class="student-notes">${escapeHtml(s.notes)}</p>` : ''}
       <div class="student-actions">
         <button class="btn btn-ghost btn-sm" onclick="openEditStudentModal('${s.id}')">ערוך</button>
         ${!inactive ? `<button class="btn btn-primary btn-sm" onclick="openAddLessonModal('${s.id}')">+ שיעור</button>` : ''}
@@ -2427,7 +2434,7 @@ function buildStudentForm(s) {
   return `
     <div class="form-group">
       <label>שם תלמיד</label>
-      <input type="text" id="f-name" value="${s?.name || ''}" placeholder="שם מלא">
+      <input type="text" id="f-name" value="${escapeHtml(s?.name)}" placeholder="שם מלא">
     </div>
     <div class="form-group">
       <label>מחיר לשיעור (₪)</label>
@@ -2449,24 +2456,24 @@ function buildStudentForm(s) {
     </div>
     <div class="form-group">
       <label>טלפון תלמיד</label>
-      <input type="tel" id="f-phone" value="${s?.phone || ''}" placeholder="05X-XXXXXXX" style="direction:ltr;text-align:right">
+      <input type="tel" id="f-phone" value="${escapeHtml(s?.phone)}" placeholder="05X-XXXXXXX" style="direction:ltr;text-align:right">
     </div>
     <div class="form-group" style="background:var(--primary-light);border-radius:10px;padding:12px;margin-top:4px">
       <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px">📲 פרטי הורה (לדוח תשלום)</div>
       <div style="display:flex;gap:8px">
         <div style="flex:1">
           <label style="font-size:12px">שם הורה</label>
-          <input type="text" id="f-parent-name" value="${s?.parentName || ''}" placeholder="שם אמא / אבא">
+          <input type="text" id="f-parent-name" value="${escapeHtml(s?.parentName)}" placeholder="שם אמא / אבא">
         </div>
         <div style="flex:1">
           <label style="font-size:12px">טלפון הורה</label>
-          <input type="tel" id="f-parent-phone" value="${s?.parentPhone || ''}" placeholder="05X-XXXXXXX" style="direction:ltr;text-align:right">
+          <input type="tel" id="f-parent-phone" value="${escapeHtml(s?.parentPhone)}" placeholder="05X-XXXXXXX" style="direction:ltr;text-align:right">
         </div>
       </div>
     </div>
     <div class="form-group">
       <label>הערות</label>
-      <textarea id="f-notes" rows="2">${s?.notes || ''}</textarea>
+      <textarea id="f-notes" rows="2">${escapeHtml(s?.notes)}</textarea>
     </div>
     <div class="form-group">
       <label class="checkbox-label">
@@ -2575,7 +2582,7 @@ function viewStudentHistory(id) {
       ${payments.length ? payments.map(p => `<div class="history-item">
         <span>${formatDate(p.date)}</span>
         <span class="text-success" style="font-weight:600">${formatCurrency(p.amount)}</span>
-        <span class="text-muted">${p.notes || ''}</span>
+        <span class="text-muted">${escapeHtml(p.notes)}</span>
       </div>`).join('') : '<p class="text-muted" style="font-size:13px">אין תשלומים</p>'}
     </div>`;
 
@@ -2715,7 +2722,7 @@ function renderLessonsTable() {
       <td data-label="משך">${l.durationHours} שיעור${l.durationHours>1?'ים':''}</td>
       <td data-label="סכום">${formatCurrency(l.amount)}</td>
       <td data-label="סטטוס">${lessonBadge(l)}</td>
-      <td data-label="הערות" class="text-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.notes||''}</td>
+      <td data-label="הערות" class="text-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.notes)}</td>
       <td class="cell-actions"><div class="actions-cell">
         <button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}')" title="${getLessonPayStatus(l) === 'paid' ? 'בטל סימון' : 'סמן שולם'}">${toggleBtnLabel(l)}</button>
         <button class="btn btn-ghost btn-xs" onclick="openEditLessonModal('${l.id}')">ערוך</button>
@@ -2741,7 +2748,7 @@ function buildLessonForm(l, defaultStudentId, defaultDate) {
       <label>תלמיד</label>
       <select id="f-student" onchange="updateLessonAmount()">
         <option value="">בחר תלמיד...</option>
-        ${students.map(s => `<option value="${s.id}" ${s.id===sid ? 'selected' : ''}>${s.name}</option>`).join('')}
+        ${students.map(s => `<option value="${s.id}" ${s.id===sid ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
       </select>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -2768,7 +2775,7 @@ function buildLessonForm(l, defaultStudentId, defaultDate) {
     </div>
     <div class="form-group">
       <label>הערות</label>
-      <textarea id="f-notes" rows="2">${l?.notes || ''}</textarea>
+      <textarea id="f-notes" rows="2">${escapeHtml(l?.notes)}</textarea>
     </div>
     <div class="form-group">
       <label>סטטוס תשלום</label>
@@ -3037,7 +3044,7 @@ function renderPayments() {
     : visibleStudents.map(s => {
         const balance = getStudentBalance(s.id);
         return `<div class="balance-card" style="border-inline-start-color:${s.color}">
-          <div class="balance-name">${s.name}${s.isActive === false ? ' <span style="font-size:11px;color:var(--text-muted)">(לא פעיל)</span>' : ''}</div>
+          <div class="balance-name">${escapeHtml(s.name)}${s.isActive === false ? ' <span style="font-size:11px;color:var(--text-muted)">(לא פעיל)</span>' : ''}</div>
           <div class="balance-amount ${balance < 0 ? 'text-danger' : balance > 0 ? 'text-success' : 'text-muted'}">
             ${balance < 0 ? `לתשלום: ${formatCurrency(Math.abs(balance))}` : balance > 0 ? `זכות: ${formatCurrency(balance)}` : 'מאוזן ✓'}
           </div>
@@ -3056,7 +3063,7 @@ function renderPayments() {
       <td data-label="תאריך">${formatDate(p.date)}</td>
       <td data-label="תלמיד"><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
       <td data-label="סכום" class="text-success" style="font-weight:600">${formatCurrency(p.amount)}</td>
-      <td data-label="הערות" class="text-muted">${p.notes || ''}</td>
+      <td data-label="הערות" class="text-muted">${escapeHtml(p.notes)}</td>
       <td class="cell-actions"><button class="btn btn-ghost btn-xs text-danger" onclick="deletePayment('${p.id}')">מחק</button></td>
     </tr>`;
   }).join('');
@@ -3070,7 +3077,7 @@ function openAddPaymentModal(defaultStudentId) {
       <label>תלמיד</label>
       <select id="f-student" onchange="showStudentBalance()">
         <option value="">בחר תלמיד...</option>
-        ${students.map(s => `<option value="${s.id}" ${s.id===defaultStudentId ? 'selected' : ''}>${s.name}</option>`).join('')}
+        ${students.map(s => `<option value="${s.id}" ${s.id===defaultStudentId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
       </select>
       <div id="balance-hint" class="form-hint"></div>
     </div>
@@ -3444,9 +3451,9 @@ function renderCalendar() {
         html += `<div class="cal-day-num"><span>${d.getDate()}</span></div>`;
         lessons.slice(0, maxShow).forEach(l => {
           const s = getStudentById(l.studentId);
-          const tip = `${s?.name||'?'} | ${l.time||'--:--'} | ${l.durationHours} שיעור${l.durationHours>1?'ים':''}${l.notes?' | '+l.notes:''}`;
+          const tip = escapeHtml(`${s?.name||'?'} | ${l.time||'--:--'} | ${l.durationHours} שיעור${l.durationHours>1?'ים':''}${l.notes?' | '+l.notes:''}`);
           html += `<div class="cal-event" style="background:${s?.color||'#2563eb'}" onclick="showCalPopup('${l.id}',event)" title="${tip}">
-            ${l.time||''} ${s?.name||'?'}
+            ${l.time||''} ${escapeHtml(s?.name)||'?'}
           </div>`;
         });
         if (lessons.length > maxShow) html += `<div class="cal-more">+${lessons.length - maxShow} נוספים</div>`;
@@ -3507,11 +3514,11 @@ function renderCalendar() {
         html += `<div class="cal-day-lesson" style="border-inline-start-color:${s?.color||'#2563eb'}">
           <div class="cal-day-lesson-time">${l.time||'--:--'}</div>
           <div class="cal-day-lesson-info">
-            <span class="badge" style="background:${s?.color||'#2563eb'}">${s?.name||'?'}</span>
+            <span class="badge" style="background:${s?.color||'#2563eb'}">${escapeHtml(s?.name)||'?'}</span>
             <span>${l.durationHours} שיעור${l.durationHours>1?'ים':''}</span>
             <span>${formatCurrency(l.amount)}</span>
             ${lessonBadge(l)}
-            ${l.notes ? `<span class="text-muted">${l.notes}</span>` : ''}
+            ${l.notes ? `<span class="text-muted">${escapeHtml(l.notes)}</span>` : ''}
           </div>
           <div class="cal-day-lesson-actions">
             <button class="btn btn-ghost btn-xs" onclick="openEditLessonModal('${l.id}')">ערוך</button>
@@ -3536,11 +3543,11 @@ function showCalPopup(lessonId, e) {
   const p = document.getElementById('cal-popup');
   p.innerHTML = `
     <div class="cal-popup-name">
-      <span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}
+      <span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${escapeHtml(s?.name)||'?'}
     </div>
     <div class="cal-popup-detail">🕐 ${l.time||'--:--'} &nbsp;·&nbsp; ${l.durationHours} שיעור${l.durationHours>1?'ים':''}</div>
     <div class="cal-popup-detail">${formatCurrency(l.amount)} &nbsp;·&nbsp; ${lessonBadge(l)}</div>
-    ${l.notes ? `<div class="cal-popup-detail" style="font-style:italic">${l.notes}</div>` : ''}
+    ${l.notes ? `<div class="cal-popup-detail" style="font-style:italic">${escapeHtml(l.notes)}</div>` : ''}
     <div class="cal-popup-btns">
       <button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}').then(()=>{hideCalPopup();renderCalendar()})">${getLessonPayStatus(l)==='paid'?'↩ בטל':'✓ שולם'}</button>
       <button class="btn btn-primary btn-xs" onclick="hideCalPopup();openEditLessonModal('${l.id}')">ערוך</button>
@@ -3671,8 +3678,8 @@ async function loadAdminUsers() {
       <div style="padding:10px 0;border-bottom:1px solid var(--border)">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
           <div>
-            <div style="font-weight:600;font-size:14px">${u.name || '(ללא שם)'} ${u.isAdmin ? '<span class="badge badge-muted" style="font-size:10px">מנהל</span>' : ''}</div>
-            <div style="font-size:12.5px;color:var(--text-muted);direction:ltr;text-align:right">${u.email}</div>
+            <div style="font-weight:600;font-size:14px">${escapeHtml(u.name) || '(ללא שם)'} ${u.isAdmin ? '<span class="badge badge-muted" style="font-size:10px">מנהל</span>' : ''}</div>
+            <div style="font-size:12.5px;color:var(--text-muted);direction:ltr;text-align:right">${escapeHtml(u.email)}</div>
             <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">הצטרף/ה ${formatDate(u.created_at.split('T')[0])}</div>
           </div>
           <div style="text-align:center;flex-shrink:0;font-size:12px;color:var(--text-muted)">
@@ -3700,7 +3707,7 @@ async function toggleAdminUserStudents(userId, btn) {
     if (!r.ok || students.length === 0) { box.innerHTML = '<span class="text-muted">אין תלמידים</span>'; return; }
     box.innerHTML = students.map(s => `
       <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
-        <span>${s.name || '(ללא שם)'}</span>
+        <span>${escapeHtml(s.name) || '(ללא שם)'}</span>
         <span class="badge ${s.isActive ? 'badge-success' : 'badge-muted'}" style="font-size:10px">${s.isActive ? 'פעיל' : 'לא פעיל'}</span>
       </div>`).join('');
   } catch (e) {
@@ -3739,8 +3746,8 @@ async function loadAdminPending() {
     el.innerHTML = pending.map(u => `
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
         <div>
-          <div style="font-weight:600;font-size:14px">${u.name || '(ללא שם)'}</div>
-          <div style="font-size:12.5px;color:var(--text-muted);direction:ltr;text-align:right">${u.email}</div>
+          <div style="font-weight:600;font-size:14px">${escapeHtml(u.name) || '(ללא שם)'}</div>
+          <div style="font-size:12.5px;color:var(--text-muted);direction:ltr;text-align:right">${escapeHtml(u.email)}</div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
           <button class="btn btn-success btn-xs" onclick="adminApproveUser('${u.id}')">✓ אשר</button>
@@ -3858,7 +3865,7 @@ function openYearlyReport() {
     monthTotals[m][sid] = (monthTotals[m][sid] || 0) + (l.amount || 0);
   });
 
-  const colHeader = students.map(s => `<th style="background:${s.color};color:white">${s.name}</th>`).join('');
+  const colHeader = students.map(s => `<th style="background:${s.color};color:white">${escapeHtml(s.name)}</th>`).join('');
   const rows = HE_MONTHS.map((mName, mi) => {
     const cells = students.map(s => {
       const val = monthTotals[mi][s.id] || 0;
