@@ -1116,7 +1116,6 @@
       .search-wrapper { display: none; }    /* חיפוש נסתר בנייד */
       #user-display { display: none !important; } /* השם תופס מקום מיותר בפס הצר */
       .kb-hint-btn { display: none !important; }   /* קיצורי מקלדת לא רלוונטיים בלי מקלדת פיזית */
-      #import-excel-btn { display: none !important; } /* ייבוא אקסל הוא משימת שולחן עבודה */
       .btn-import { padding: 6px 9px; font-size: 12px; }
       .logout-label { display: none; }      /* רק האייקון נשאר, כדי לחסוך מקום */
 
@@ -1372,9 +1371,6 @@
       <button class="btn-import" id="admin-btn" onclick="showPage('admin')" title="ניהול מערכת" style="display:none"><svg class="icon"><use href="#icon-settings"/></svg></button>
       <button class="btn-import" id="reminders-btn" onclick="toggleLessonReminders()" title="תזכורות על שיעורי היום" style="display:none">🔔</button>
       <button class="btn-import" id="dark-mode-btn" onclick="toggleDarkMode()"><svg class="icon" id="dark-mode-icon"><use href="#icon-moon"/></svg></button>
-      <button class="btn-import" id="import-excel-btn" onclick="document.getElementById('excel-input').click()">
-        <svg class="icon icon-sm"><use href="#icon-upload"/></svg> ייבוא מאקסל
-      </button>
       <button class="btn-import" id="logout-btn" onclick="doLogout()" style="display:none">
         <svg class="icon icon-sm"><use href="#icon-log-out"/></svg><span class="logout-label"> יציאה</span>
       </button>
@@ -1708,7 +1704,6 @@
 </div>
 
 <!-- Hidden file input -->
-<input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none">
 
 <script>
 // ===== CONSTANTS =====
@@ -3156,141 +3151,6 @@ async function deletePayment(id) {
   });
 }
 
-// ===== EXCEL IMPORT =====
-let pendingImport = null;
-
-function handleExcelImport(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
-      const results = { students: [], lessons: [], payments: [] };
-
-      wb.SheetNames.forEach(sheetName => {
-        if (sheetName === 'דשבורד') return;
-
-        // Extract student name: everything before last "-YYYY" suffix
-        let studentName = sheetName;
-        const match = sheetName.match(/^(.+)-(\d{4})$/);
-        if (match) studentName = match[1];
-
-        const ws   = wb.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
-        if (rows.length < 3) return;
-
-        // Row index 1 = row 2: config [0, day1, day2, duration, hourlyRate]
-        const configRow = rows[1] || [];
-        let hourlyRate = 150;
-        // Hourly rate: last column that's 100-350
-        for (let i = configRow.length - 1; i >= 0; i--) {
-          const n = parseFloat(configRow[i]);
-          if (n >= 100 && n <= 350) { hourlyRate = n; break; }
-        }
-
-        // Scheduled days from cols B,C (indices 1,2): Israeli 1-7 → JS 0-6
-        const scheduledDays = [];
-        for (let i = 1; i <= 3; i++) {
-          const val = parseFloat(configRow[i]);
-          if (!isNaN(val) && val >= 1 && val <= 7) {
-            const jsDay = ((val - 1) + 7) % 7; // Israeli 1=Sun→JS 0, ..., 7=Sat→JS 6
-            if (!scheduledDays.includes(jsDay)) scheduledDays.push(jsDay);
-          }
-        }
-
-        // Find or create student (merge same-name students from different year sheets)
-        let student = results.students.find(s => s.name === studentName);
-        if (!student) {
-          student = {
-            id: generateId(), name: studentName, hourlyRate, scheduledDays,
-            color: STUDENT_COLORS[results.students.length % STUDENT_COLORS.length],
-            notes: '', createdAt: new Date().toISOString()
-          };
-          results.students.push(student);
-        } else {
-          student.hourlyRate = hourlyRate; // update to latest year's rate
-        }
-
-        // Parse lesson rows (index 2 onwards)
-        for (let i = 2; i < rows.length; i++) {
-          const row = rows[i];
-          if (!row || row.every(c => c === null || c === undefined || c === '')) continue;
-
-          let date = null;
-          const cell0 = row[0];
-          if (cell0 instanceof Date) {
-            date = cell0.toISOString().split('T')[0];
-          } else if (typeof cell0 === 'string' && /^\d{4}-\d{2}-\d{2}/.test(cell0)) {
-            date = cell0.split('T')[0];
-          } else {
-            const serial = parseFloat(cell0);
-            if (!isNaN(serial) && serial > 40000 && serial < 60000) {
-              date = excelSerialToISO(serial);
-            }
-          }
-          if (!date) continue;
-
-          // Col B (index 1): if 1 or 2, use as duration hours; else default 1
-          const colB = parseFloat(row[1]);
-          const durationHours = (colB >= 1 && colB <= 4) ? colB : 1;
-
-          results.lessons.push({
-            id: generateId(), studentId: student.id, date,
-            time: '16:00', durationHours,
-            amount: Math.round(student.hourlyRate * durationHours),
-            isPaid: false, notes: ''
-          });
-        }
-      });
-
-      if (results.students.length === 0 && results.lessons.length === 0) {
-        showToast('לא נמצאו נתונים בקובץ', 'warning');
-        return;
-      }
-
-      pendingImport = results;
-      const existingCount = getStudents().length + getLessons().length;
-      const html = `
-        <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:16px">
-          <strong>נמצאו בקובץ:</strong>
-          <ul style="margin:8px 0 0 20px;line-height:2;font-size:14px">
-            <li>${results.students.length} תלמידים: <strong>${results.students.map(s=>s.name).join(', ')}</strong></li>
-            <li>${results.lessons.length} שיעורים</li>
-          </ul>
-        </div>
-        <p style="margin-bottom:14px;font-size:14px">כיצד לייבא?</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="doImport('merge')">מזג עם נתונים קיימים</button>
-          ${existingCount > 0 ? `<button class="btn btn-danger" onclick="doImport('replace')">החלף הכל</button>` : ''}
-        </div>`;
-      openModal('אישור ייבוא מאקסל', html, null);
-      document.getElementById('modal-footer').innerHTML = `<button class="btn btn-ghost" onclick="closeModal()">ביטול</button>`;
-    } catch (err) {
-      showToast('שגיאה בקריאת הקובץ', 'error');
-      console.error(err);
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function excelSerialToISO(serial) {
-  // Excel 1900 date system (with 1900 leap year bug fix)
-  const s = serial > 60 ? serial - 1 : serial;
-  const date = new Date(1900, 0, 1);
-  date.setDate(date.getDate() + s - 1);
-  return date.toISOString().split('T')[0];
-}
-
-async function doImport(mode) {
-  if (!pendingImport) return;
-  await apiCall('POST', '/api/import', { ...pendingImport, mode });
-  pendingImport = null;
-  closeModal();
-  lessonFilters = { studentId: '', month: '', paid: '' };
-  await loadData();
-  showPage('dashboard');
-  showToast('ייבוא הושלם בהצלחה! 🎉');
-}
-
 // ===== ICS EXPORT =====
 function exportSingleLesson(lesson) {
   const s = getStudentById(lesson.studentId);
@@ -3927,10 +3787,6 @@ async function initApp() {
   document.getElementById('modal-overlay').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
   });
-  document.getElementById('excel-input').onchange = (e) => {
-    const f = e.target.files[0];
-    if (f) { handleExcelImport(f); e.target.value = ''; }
-  };
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => showPage(tab.dataset.page));
   });

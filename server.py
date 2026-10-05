@@ -470,39 +470,6 @@ def calendar_ics():
         'Content-Disposition': 'inline; filename="lessons.ics"',
     }
 
-# ── Excel import ───────────────────────────────────────────────────────────────
-@app.route('/api/import', methods=['POST'])
-def import_data():
-    err = require_auth()
-    if err: return err
-    body     = request.json
-    mode     = body.get('mode', 'merge')
-    incoming = {k: body[k] for k in ('students', 'lessons', 'payments') if k in body}
-    if mode == 'replace':
-        write_data(incoming)
-    else:
-        data = read_data()
-        existing_names = {s['name']: s['id'] for s in data['students']}
-        id_map = {}
-        for ns in incoming.get('students', []):
-            if ns['name'] in existing_names:
-                id_map[ns['id']] = existing_names[ns['name']]
-                data['students'] = [
-                    {**s, 'hourlyRate': ns['hourlyRate']}
-                    if s['id'] == existing_names[ns['name']] else s
-                    for s in data['students']
-                ]
-            else:
-                id_map[ns['id']] = ns['id']
-                data['students'].append(ns)
-        existing_keys = {(l['studentId'], l['date']) for l in data['lessons']}
-        for l in incoming.get('lessons', []):
-            l['studentId'] = id_map.get(l['studentId'], l['studentId'])
-            if (l['studentId'], l['date']) not in existing_keys:
-                data['lessons'].append(l)
-        write_data(data)
-    return jsonify({'ok': True})
-
 # ── Run ────────────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     def open_browser():
