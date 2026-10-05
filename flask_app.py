@@ -722,7 +722,8 @@ def calendar_ics():
         date = l['date'].replace('-', '')
         hh, mm = map(int, (l.get('time','16:00')).split(':'))
         start_min = hh*60 + mm
-        end_min   = start_min + int((l.get('durationHours',1) or 1)*60)
+        lesson_minutes = s.get('lessonDurationMinutes') or 50
+        end_min   = start_min + int((l.get('durationHours',1) or 1)*lesson_minutes)
         sh,sm = str(start_min//60).zfill(2), str(start_min%60).zfill(2)
         eh,em = str((end_min//60)%24).zfill(2), str(end_min%60).zfill(2)
         lines += ['BEGIN:VEVENT', f'UID:{l["id"]}@tutor-app', f'DTSTAMP:{stamp}',

@@ -2408,6 +2408,7 @@ function renderStudents() {
       </div>
       <div class="student-info">
         <span>💰 ${formatCurrency(s.hourlyRate)}/שיעור</span>
+        <span>⏱ ${s.lessonDurationMinutes || 50} דק' לשיעור</span>
         <span>📅 ${days || 'ימים לא הוגדרו'}</span>
         ${s.phone ? `<span>📞 <a href="tel:${escapeHtml(s.phone)}" style="color:var(--primary);text-decoration:none">${escapeHtml(s.phone)}</a></span>` : ''}
         <span style="display:flex;gap:10px;flex-wrap:wrap">
@@ -2439,6 +2440,10 @@ function buildStudentForm(s) {
     <div class="form-group">
       <label>מחיר לשיעור (₪)</label>
       <input type="number" id="f-rate" value="${s?.hourlyRate || 150}" min="0" step="10">
+    </div>
+    <div class="form-group">
+      <label>אורך שיעור בודד (בדקות)</label>
+      <input type="number" id="f-lesson-minutes" value="${s?.lessonDurationMinutes || 50}" min="5" step="5">
     </div>
     <div class="form-group">
       <label>ימי שיעור</label>
@@ -2496,6 +2501,7 @@ function openAddStudentModal() {
     const student = {
       id: generateId(), name,
       hourlyRate: parseFloat(document.getElementById('f-rate').value) || 150,
+      lessonDurationMinutes: parseInt(document.getElementById('f-lesson-minutes').value) || 50,
       scheduledDays: days, color,
       notes: document.getElementById('f-notes').value.trim(),
       isActive: document.getElementById('f-active').checked,
@@ -2522,6 +2528,7 @@ function openEditStudentModal(id) {
     const days  = [...document.querySelectorAll('.days-checkboxes input:checked')].map(i => parseInt(i.value));
     const color = document.querySelector('.color-dot.selected')?.dataset.color || s.color;
     const updated = { ...s, name, hourlyRate: parseFloat(document.getElementById('f-rate').value) || s.hourlyRate,
+      lessonDurationMinutes: parseInt(document.getElementById('f-lesson-minutes').value) || 50,
       scheduledDays: days, color, notes: document.getElementById('f-notes').value.trim(),
       isActive: document.getElementById('f-active').checked,
       phone: document.getElementById('f-phone').value.trim(),
@@ -3280,7 +3287,7 @@ function exportSingleLesson(lesson) {
   const time = lesson.time || '16:00';
   const [hh, mm] = time.split(':').map(Number);
   const startMin = hh * 60 + mm;
-  const endMin = startMin + (lesson.durationHours || 1) * 50;
+  const endMin = startMin + (lesson.durationHours || 1) * (s?.lessonDurationMinutes || 50);
   const sh = String(Math.floor(startMin/60)).padStart(2,'0');
   const sm = String(startMin%60).padStart(2,'0');
   const eh = String(Math.floor(endMin/60)%24).padStart(2,'0');
@@ -3324,7 +3331,7 @@ function exportToICS() {
     const time = l.time || '16:00';
     const [hh, mm] = time.split(':').map(Number);
     const totalStartMin = hh * 60 + mm;
-    const totalEndMin   = totalStartMin + Math.round((l.durationHours || 1) * 60);
+    const totalEndMin   = totalStartMin + Math.round((l.durationHours || 1) * (s?.lessonDurationMinutes || 50));
     const sh = String(Math.floor(totalStartMin / 60)).padStart(2,'0');
     const sm = String(totalStartMin % 60).padStart(2,'0');
     const eh = String(Math.floor(totalEndMin / 60) % 24).padStart(2,'0');
