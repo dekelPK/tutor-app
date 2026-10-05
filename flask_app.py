@@ -32,6 +32,18 @@ REGISTRATION_OPEN = False
 # "who needs a reminder today", it never calls out to Apple's push service.
 VAPID_PUBLIC_KEY = 'BItvzT-o_02tFQo_a61eRWe3lZ29jS6X6jKtWtwx3nFKJbzmslGFG9IKKiMCxuPfew88jBDeWefZMjv9XJIzczQ'
 
+# ── Admin ────────────────────────────────────────────────────────────────────
+# The one account allowed to see the admin screen (announcements + broadcast
+# push). Not a real roles system — fine for a single-owner app like this one.
+ADMIN_EMAIL = 'dekelkartel@gmail.com'
+
+def require_admin():
+    err = require_auth()
+    if err: return err
+    if (session.get('user_email') or '').lower() != ADMIN_EMAIL.lower():
+        return jsonify({'error': 'Forbidden'}), 403
+    return None
+
 # Shared secret the scheduled GitHub Actions job presents to /api/push/due-today.
 # Must match the CRON_SECRET GitHub Actions secret exactly. Generated once and
 # persisted to disk (same pattern as .secret_key) so it survives restarts.
@@ -171,7 +183,10 @@ def index():
 def auth_me():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    return jsonify({'id': session['user_id'], 'name': session.get('user_name',''), 'email': session.get('user_email','')})
+    return jsonify({
+        'id': session['user_id'], 'name': session.get('user_name',''), 'email': session.get('user_email',''),
+        'isAdmin': (session.get('user_email') or '').lower() == ADMIN_EMAIL.lower(),
+    })
 
 @app.route('/api/auth/login', methods=['POST'])
 def auth_login():
@@ -189,7 +204,8 @@ def auth_login():
     session['user_id']    = user['id']
     session['user_name']  = user['name']
     session['user_email'] = user['email']
-    return jsonify({'id': user['id'], 'name': user['name'], 'email': user['email']})
+    return jsonify({'id': user['id'], 'name': user['name'], 'email': user['email'],
+                     'isAdmin': user['email'].lower() == ADMIN_EMAIL.lower()})
 
 @app.route('/api/auth/register', methods=['POST'])
 def auth_register():
@@ -218,7 +234,8 @@ def auth_register():
     session['user_id']    = new_id
     session['user_name']  = name
     session['user_email'] = email
-    return jsonify({'id': new_id, 'name': name, 'email': email}), 201
+    return jsonify({'id': new_id, 'name': name, 'email': email,
+                     'isAdmin': email.lower() == ADMIN_EMAIL.lower()}), 201
 
 @app.route('/api/auth/logout', methods=['POST'])
 def auth_logout():
@@ -383,6 +400,66 @@ def get_announcement():
         return jsonify(None)
     with open(ann_path, encoding='utf-8') as f:
         return f.read(), 200, {'Content-Type': 'application/json; charset=utf-8'}
+
+# ── Admin screen ──────────────────────────────────────────────────────────────
+ANN_PATH = os.path.join(BASE_DIR, 'announcement.json')
+
+@app.route('/api/admin/announcement', methods=['GET'])
+def admin_get_announcement():
+    err = require_admin()
+    if err: return err
+    if not os.path.exists(ANN_PATH):
+        return jsonify(None)
+    with open(ANN_PATH, encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/json; charset=utf-8'}
+
+@app.route('/api/admin/announcement', methods=['POST'])
+def admin_set_announcement():
+    err = require_admin()
+    if err: return err
+    message = (request.json or {}).get('message', '').strip()
+    if not message:
+        if os.path.exists(ANN_PATH):
+            os.remove(ANN_PATH)
+        return jsonify({'ok': True, 'cleared': True})
+    ann = {'id': datetime.now().isoformat(), 'message': message}
+    with open(ANN_PATH, 'w', encoding='utf-8') as f:
+        json.dump(ann, f, ensure_ascii=False)
+    return jsonify({'ok': True, 'announcement': ann})
+
+@app.route('/api/admin/push-broadcast', methods=['POST'])
+def admin_push_broadcast():
+    err = require_admin()
+    if err: return err
+    body = request.json or {}
+    title, text = (body.get('title') or '').strip(), (body.get('body') or '').strip()
+    if not title or not text:
+        return jsonify({'error': 'כותרת וטקסט דרושים'}), 400
+
+    cfg = load_deploy_config()
+    pat = cfg.get('github_pat') if cfg else None
+    if not pat:
+        return jsonify({
+            'error': 'לא הוגדר github_pat ב-.deploy_config.json',
+            'manual_fallback': True,
+        }), 503
+
+    gh_url = 'https://api.github.com/repos/dekelPK/tutor-app/actions/workflows/broadcast-notification.yml/dispatches'
+    payload = json.dumps({'ref': 'main', 'inputs': {'title': title, 'body': text}}).encode()
+    req = urllib.request.Request(gh_url, data=payload, method='POST', headers={
+        'Authorization': f'Bearer {pat}',
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'tutor-app-admin',
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            ok = 200 <= resp.status < 300
+        return jsonify({'ok': ok})
+    except urllib.error.HTTPError as e:
+        return jsonify({'error': f'GitHub החזיר {e.code}', 'detail': e.read().decode(errors='replace')}), 502
+    except Exception as e:
+        return jsonify({'error': str(e)}), 502
 
 # ── Students ──────────────────────────────────────────────────────────────────
 @app.route('/api/students', methods=['GET'])

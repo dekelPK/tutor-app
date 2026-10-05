@@ -1252,6 +1252,7 @@
     <symbol id="icon-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
     <symbol id="icon-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></symbol>
     <symbol id="icon-alert-triangle" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
   </defs>
 </svg>
 
@@ -1324,6 +1325,7 @@
           D / ג — דשבורד
         </div>
       </button>
+      <button class="btn-import" id="admin-btn" onclick="openAdminModal()" title="ניהול מערכת" style="display:none"><svg class="icon"><use href="#icon-settings"/></svg></button>
       <button class="btn-import" id="reminders-btn" onclick="toggleLessonReminders()" title="תזכורות על שיעורי היום" style="display:none">🔔</button>
       <button class="btn-import" id="dark-mode-btn" onclick="toggleDarkMode()"><svg class="icon" id="dark-mode-icon"><use href="#icon-moon"/></svg></button>
       <button class="btn-import" id="import-excel-btn" onclick="document.getElementById('excel-input').click()">
@@ -1649,13 +1651,14 @@ function showAuthOverlay() {
   document.getElementById('logout-btn').style.display = 'none';
   document.getElementById('reminders-btn').style.display = 'none';
 }
-function hideAuthOverlay(userName) {
+function hideAuthOverlay(userName, isAdmin) {
   document.getElementById('auth-overlay').classList.remove('visible');
   if (userName) {
     const el = document.getElementById('user-display');
     el.textContent = '👤 ' + userName;
     el.style.display = '';
     document.getElementById('logout-btn').style.display = '';
+    document.getElementById('admin-btn').style.display = isAdmin ? '' : 'none';
     initPushUI();
     checkAnnouncement();
   }
@@ -1710,7 +1713,7 @@ async function doLogin() {
     });
     const data = await r.json();
     if (!r.ok) { showAuthError(data.error || 'שגיאה בהתחברות'); return; }
-    hideAuthOverlay(data.name || data.email);
+    hideAuthOverlay(data.name || data.email, data.isAdmin);
     await loadData();
     showPage('dashboard');
   } finally {
@@ -1731,7 +1734,7 @@ async function doRegister() {
     });
     const data = await r.json();
     if (!r.ok) { showAuthError(data.error || 'שגיאה בהרשמה'); return; }
-    hideAuthOverlay(data.name || data.email);
+    hideAuthOverlay(data.name || data.email, data.isAdmin);
     await loadData();
     showPage('dashboard');
   } finally {
@@ -3538,6 +3541,83 @@ async function showCalSubscribeInfo() {
   document.getElementById('modal-save-btn').style.display = 'none';
 }
 
+// ===== ADMIN =====
+async function openAdminModal() {
+  showLoading();
+  let current = null;
+  try {
+    const r = await fetch('/api/admin/announcement');
+    if (r.ok) current = await r.json();
+  } catch (e) { /* ignore — form just starts empty */ }
+  hideLoading();
+
+  const html = `
+    <div style="margin-bottom:22px">
+      <strong style="font-size:14px">📢 באנר בתוך האפליקציה</strong>
+      <p style="font-size:12.5px;color:var(--text-muted);margin:4px 0 10px">מוצג לכל מי שמתחבר, עד שהם סוגרים אותו.</p>
+      <div class="form-group">
+        <textarea id="admin-ann-text" rows="3" placeholder="טקסט העדכון...">${current?.message || ''}</textarea>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="adminPublishAnnouncement()">פרסם</button>
+        <button class="btn btn-ghost btn-sm" onclick="adminClearAnnouncement()">נקה באנר</button>
+      </div>
+    </div>
+    <hr style="margin:0 0 20px">
+    <div>
+      <strong style="font-size:14px">🔔 Push לכל מי שהפעיל תזכורות</strong>
+      <p style="font-size:12.5px;color:var(--text-muted);margin:4px 0 10px">נשלח מיידית כהתראה אמיתית למכשיר.</p>
+      <div class="form-group">
+        <label>כותרת</label>
+        <input id="admin-push-title" placeholder="📢 עדכון חדש">
+      </div>
+      <div class="form-group">
+        <label>טקסט</label>
+        <textarea id="admin-push-body" rows="2" placeholder="מה חדש..."></textarea>
+      </div>
+      <button class="btn btn-primary btn-sm" id="admin-push-btn" onclick="adminSendPushBroadcast()">שלח לכולם</button>
+    </div>`;
+  openModal('⚙️ ניהול מערכת', html, null);
+  document.getElementById('modal-footer').style.display = 'none';
+}
+async function adminPublishAnnouncement() {
+  const message = document.getElementById('admin-ann-text').value.trim();
+  if (!message) { showToast('כתבי קודם טקסט', 'warning'); return; }
+  const r = await fetch('/api/admin/announcement', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({message}),
+  });
+  if (r.ok) { showToast('הבאנר פורסם ✓'); closeModal(); }
+  else showToast('שגיאה בפרסום', 'danger');
+}
+async function adminClearAnnouncement() {
+  const r = await fetch('/api/admin/announcement', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({message: ''}),
+  });
+  if (r.ok) { showToast('הבאנר נוקה ✓'); closeModal(); }
+  else showToast('שגיאה', 'danger');
+}
+async function adminSendPushBroadcast() {
+  const title = document.getElementById('admin-push-title').value.trim();
+  const body  = document.getElementById('admin-push-body').value.trim();
+  if (!title || !body) { showToast('כותרת וטקסט דרושים', 'warning'); return; }
+  const btn = document.getElementById('admin-push-btn');
+  btn.disabled = true; btn.textContent = 'שולח...';
+  try {
+    const r = await fetch('/api/admin/push-broadcast', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({title, body}),
+    });
+    const data = await r.json();
+    if (r.ok && data.ok) { showToast('ההתראה נשלחה ✓'); closeModal(); }
+    else if (data.manual_fallback) showToast('לא מוגדר טוקן GitHub — שלחי ידנית דרך ה-Actions tab', 'warning');
+    else showToast(data.error || 'שגיאה בשליחה', 'danger');
+  } finally {
+    btn.disabled = false; btn.textContent = 'שלח לכולם';
+  }
+}
+
 // ===== EXCEL EXPORT =====
 function exportReport() {
   const students = getStudents();
@@ -3701,7 +3781,7 @@ async function initApp() {
     const r = await fetch('/api/auth/me');
     if (r.ok) {
       const user = await r.json();
-      hideAuthOverlay(user.name || user.email);
+      hideAuthOverlay(user.name || user.email, user.isAdmin);
     } else {
       hideLoading();
       showAuthOverlay();

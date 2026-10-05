@@ -72,6 +72,14 @@ def require_auth():
         return jsonify({'error': 'Unauthorized'}), 401
     return None
 
+ADMIN_EMAIL = 'dekelkartel@gmail.com'
+def require_admin():
+    err = require_auth()
+    if err: return err
+    if (session.get('user_email') or '').lower() != ADMIN_EMAIL.lower():
+        return jsonify({'error': 'Forbidden'}), 403
+    return None
+
 # ── Serve HTML ─────────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
@@ -105,6 +113,7 @@ def auth_me():
         'id':    session['user_id'],
         'name':  session.get('user_name', ''),
         'email': session.get('user_email', ''),
+        'isAdmin': (session.get('user_email') or '').lower() == ADMIN_EMAIL.lower(),
     })
 
 @app.route('/api/auth/login', methods=['POST'])
@@ -125,7 +134,8 @@ def auth_login():
     session['user_id']    = user['id']
     session['user_name']  = user['name']
     session['user_email'] = user['email']
-    return jsonify({'id': user['id'], 'name': user['name'], 'email': user['email']})
+    return jsonify({'id': user['id'], 'name': user['name'], 'email': user['email'],
+                     'isAdmin': user['email'].lower() == ADMIN_EMAIL.lower()})
 
 @app.route('/api/auth/register', methods=['POST'])
 def auth_register():
@@ -159,7 +169,8 @@ def auth_register():
     session['user_id']    = uid
     session['user_name']  = name
     session['user_email'] = email
-    return jsonify({'id': uid, 'name': name, 'email': email}), 201
+    return jsonify({'id': uid, 'name': name, 'email': email,
+                     'isAdmin': email.lower() == ADMIN_EMAIL.lower()}), 201
 
 @app.route('/api/auth/logout', methods=['POST'])
 def auth_logout():
@@ -274,6 +285,39 @@ def get_announcement():
         return jsonify(None)
     with open(ann_path, encoding='utf-8') as f:
         return f.read(), 200, {'Content-Type': 'application/json; charset=utf-8'}
+
+# ── Admin screen (announcement only — push broadcast needs the real deployed
+# GitHub Action, not meaningful against this local dev server) ─────────────────
+ANN_PATH = os.path.join(BASE_DIR, 'announcement.json')
+
+@app.route('/api/admin/announcement', methods=['GET'])
+def admin_get_announcement():
+    err = require_admin()
+    if err: return err
+    if not os.path.exists(ANN_PATH):
+        return jsonify(None)
+    with open(ANN_PATH, encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/json; charset=utf-8'}
+
+@app.route('/api/admin/announcement', methods=['POST'])
+def admin_set_announcement():
+    err = require_admin()
+    if err: return err
+    message = (request.json or {}).get('message', '').strip()
+    if not message:
+        if os.path.exists(ANN_PATH):
+            os.remove(ANN_PATH)
+        return jsonify({'ok': True, 'cleared': True})
+    ann = {'id': datetime.now().isoformat(), 'message': message}
+    with open(ANN_PATH, 'w', encoding='utf-8') as f:
+        json.dump(ann, f, ensure_ascii=False)
+    return jsonify({'ok': True, 'announcement': ann})
+
+@app.route('/api/admin/push-broadcast', methods=['POST'])
+def admin_push_broadcast():
+    err = require_admin()
+    if err: return err
+    return jsonify({'error': 'שידור Push לא נתמך בשרת המקומי — רק בפרודקשן', 'manual_fallback': True}), 503
 
 # ── Live ICS calendar feed ─────────────────────────────────────────────────────
 @app.route('/api/calendar-token')
