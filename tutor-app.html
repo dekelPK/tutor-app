@@ -826,24 +826,37 @@
       top: calc(70px + env(safe-area-inset-top, 0px));
       left: 16px;
       max-width: min(360px, calc(100vw - 32px));
-      transform: translateY(-14px);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      color: var(--text);
+      padding: 12px 16px;
+      border-radius: 12px;
+      border-inline-start: 4px solid var(--success);
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.4;
+      z-index: 2000;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08);
+      transform: translateY(-10px) scale(0.96);
       opacity: 0;
       pointer-events: none;
-      background: #1e293b;
-      color: white;
-      padding: 11px 20px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 500;
-      z-index: 2000;
-      transition: transform 0.2s ease, opacity 0.2s ease;
-      box-shadow: var(--shadow-md);
+      transition: transform 0.25s cubic-bezier(.34,1.45,.64,1), opacity 0.2s ease;
       white-space: normal;
     }
-    .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
-    .toast-error { background: var(--danger); }
-    .toast-warning { background: var(--warning); }
-    .toast-success { background: var(--success); }
+    .toast.show { transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
+    .toast-icon {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--success); color: white;
+    }
+    .toast-icon .icon { width: 15px; height: 15px; vertical-align: 0; }
+    .toast-error, .toast-danger { border-inline-start-color: var(--danger); }
+    .toast-error .toast-icon, .toast-danger .toast-icon { background: var(--danger); }
+    .toast-warning { border-inline-start-color: var(--warning); }
+    .toast-warning .toast-icon { background: var(--warning); color: #78350f; }
+    .toast-success .toast-icon { background: var(--success); }
 
     /* ===== UTILS ===== */
     .text-danger { color: var(--danger); }
@@ -1215,6 +1228,9 @@
     <symbol id="icon-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
     <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
     <symbol id="icon-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+    <symbol id="icon-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="icon-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></symbol>
+    <symbol id="icon-alert-triangle" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
   </defs>
 </svg>
 
@@ -1831,9 +1847,13 @@ async function toggleLessonReminders() {
 }
 
 // ===== TOAST =====
+const TOAST_ICONS = { success: 'check-circle', error: 'x-circle', danger: 'x-circle', warning: 'alert-triangle' };
+function toastIconHTML(type) {
+  return `<span class="toast-icon"><svg class="icon"><use href="#icon-${TOAST_ICONS[type] || 'check-circle'}"/></svg></span>`;
+}
 function showToast(msg, type = 'success') {
   const t = document.getElementById('toast');
-  t.innerHTML = msg;
+  t.innerHTML = `${toastIconHTML(type)}<span>${msg}</span>`;
   t.className = `toast toast-${type} show`;
   clearTimeout(t._timer);
   t._timer = setTimeout(() => { t.className = 'toast'; }, 2500);
@@ -1843,8 +1863,8 @@ function showToast(msg, type = 'success') {
 window._lastDeleted = null;
 function showUndoToast(label, restoreFn) {
   const t = document.getElementById('toast');
-  const btnStyle = 'background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);color:white;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;margin-right:6px';
-  t.innerHTML = `${label} <button onclick="undoDelete()" style="${btnStyle}">↩ בטל</button>`;
+  const btnStyle = 'background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 10px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;margin-right:6px;font-weight:600';
+  t.innerHTML = `${toastIconHTML('success')}<span>${label} <button onclick="undoDelete()" style="${btnStyle}">↩ בטל</button></span>`;
   t.className = 'toast toast-success show';
   window._undoRestoreFn = restoreFn;
   clearTimeout(t._timer);
@@ -1895,11 +1915,11 @@ function showToastWithCalendar(lesson) {
   const s = getStudentById(lesson.studentId);
   const hasPhone = !!s?.phone;
   const t = document.getElementById('toast');
-  const btnStyle = 'background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);color:white;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;margin-right:4px';
-  t.innerHTML = `שיעור נוסף! &nbsp;
+  const btnStyle = 'background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 10px;border-radius:6px;cursor:pointer;font-size:12.5px;font-family:inherit;margin-top:6px;margin-inline-end:4px;font-weight:600';
+  t.innerHTML = `${toastIconHTML('success')}<span>שיעור נוסף!<br>
     <button onclick="exportSingleLesson(window._lastLesson)" style="${btnStyle}">📅 לוח שנה</button>
     ${hasPhone ? `<button onclick="sendWhatsApp(window._lastLesson)" style="${btnStyle}">💬 ווצאפ</button>` : ''}
-    ${hasPhone ? `<button onclick="sendWhatsAppThenCalendar(window._lastLesson)" style="${btnStyle}">📅+💬 הכל</button>` : ''}`;
+    ${hasPhone ? `<button onclick="sendWhatsAppThenCalendar(window._lastLesson)" style="${btnStyle}">📅+💬 הכל</button>` : ''}</span>`;
   t.className = 'toast toast-success show';
   window._lastLesson = lesson;
   clearTimeout(t._timer);
