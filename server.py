@@ -377,6 +377,15 @@ def admin_users():
         out.append(d)
     return jsonify(out)
 
+@app.route('/api/admin/users/<target_id>/students')
+def admin_user_students(target_id):
+    err = require_admin()
+    if err: return err
+    data = read_data(target_id)
+    out = [{'id': s.get('id'), 'name': s.get('name'), 'isActive': s.get('isActive') is not False}
+           for s in data.get('students', [])]
+    return jsonify(out)
+
 @app.route('/api/admin/users/<target_id>/approve', methods=['POST'])
 def admin_approve_user(target_id):
     err = require_admin()

@@ -540,6 +540,19 @@ def admin_users():
             out.append(d)
     return jsonify(out)
 
+@app.route('/api/admin/users/<target_id>/students')
+def admin_user_students(target_id):
+    # Diagnostic view — lists exactly which student rows are being counted for
+    # a given user, including their raw student-table id (not shown anywhere
+    # in the normal UI), so a mismatch between this count and what the tutor
+    # actually sees on their own Students page can be tracked down directly.
+    err = require_admin()
+    if err: return err
+    with get_db() as db:
+        students = rows_to_list(db.execute('SELECT data FROM students WHERE user_id=?', [target_id]).fetchall())
+    out = [{'id': s.get('id'), 'name': s.get('name'), 'isActive': s.get('isActive') is not False} for s in students]
+    return jsonify(out)
+
 @app.route('/api/admin/users/<target_id>/approve', methods=['POST'])
 def admin_approve_user(target_id):
     err = require_admin()
