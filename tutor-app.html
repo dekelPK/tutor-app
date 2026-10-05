@@ -1840,6 +1840,20 @@ function sendWhatsApp(lesson) {
   window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
+// Firing two "leave the page" actions back-to-back (calendar file + WhatsApp
+// redirect) breaks on mobile — the second one interrupts the first before its
+// "הוסף ללוח שנה" system prompt can be acted on. So: send WhatsApp first, then
+// only export to calendar once the user actually comes back to this tab.
+function sendWhatsAppThenCalendar(lesson) {
+  const onReturn = () => {
+    if (document.visibilityState !== 'visible') return;
+    document.removeEventListener('visibilitychange', onReturn);
+    exportSingleLesson(lesson);
+  };
+  document.addEventListener('visibilitychange', onReturn);
+  sendWhatsApp(lesson);
+}
+
 function showToastWithCalendar(lesson) {
   const s = getStudentById(lesson.studentId);
   const hasPhone = !!s?.phone;
@@ -1848,7 +1862,7 @@ function showToastWithCalendar(lesson) {
   t.innerHTML = `שיעור נוסף! &nbsp;
     <button onclick="exportSingleLesson(window._lastLesson)" style="${btnStyle}">📅 לוח שנה</button>
     ${hasPhone ? `<button onclick="sendWhatsApp(window._lastLesson)" style="${btnStyle}">💬 ווצאפ</button>` : ''}
-    ${hasPhone ? `<button onclick="exportSingleLesson(window._lastLesson);sendWhatsApp(window._lastLesson)" style="${btnStyle}">📅+💬 הכל</button>` : ''}`;
+    ${hasPhone ? `<button onclick="sendWhatsAppThenCalendar(window._lastLesson)" style="${btnStyle}">📅+💬 הכל</button>` : ''}`;
   t.className = 'toast toast-success show';
   window._lastLesson = lesson;
   clearTimeout(t._timer);
@@ -3157,7 +3171,12 @@ function initCalSwipe() {
 
 function calGoDay(dateStr) { calCursor = new Date(dateStr + 'T00:00:00'); setCalView('day'); }
 
-function isoDate(d) { return d.toISOString().split('T')[0]; }
+function isoDate(d) {
+  // Local-time YYYY-MM-DD — never toISOString(), which converts to UTC and
+  // shifts the date by a day for any timezone ahead of UTC (e.g. Israel).
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 
 function lessonsForDate(dateStr) {
   return getLessons()
