@@ -1238,6 +1238,25 @@
     }
     .icon-sm { width: 15px; height: 15px; vertical-align: -2px; }
     .bn-icon .icon { width: 22px; height: 22px; vertical-align: -5px; }
+
+    /* ===== PRINT (window.print() is only ever called from an open report modal) =====
+       Hide the whole app and show just the modal content — otherwise the printed
+       page captures the header/cards/nav sitting behind the modal overlay too. */
+    @media print {
+      body * { visibility: hidden; }
+      #modal-overlay, #modal-overlay * { visibility: visible; }
+      #modal-overlay {
+        position: absolute; inset: 0; background: white;
+        display: block; padding: 0; align-items: normal; justify-content: normal;
+      }
+      .modal {
+        box-shadow: none; max-width: 100%; max-height: none;
+        overflow: visible; border-radius: 0;
+      }
+      .modal-body { overflow: visible; padding: 0 12px; }
+      .modal-header { position: static; border-bottom: 2px solid #000; }
+      .modal-handle, .modal-close, .modal-footer { display: none !important; }
+    }
   </style>
 </head>
 <body>
