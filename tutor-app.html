@@ -2740,6 +2740,7 @@ function renderLessonsTable() {
       <td data-label="הערות" class="text-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.notes)}</td>
       <td class="cell-actions"><div class="actions-cell">
         <button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}')" title="${getLessonPayStatus(l) === 'paid' ? 'בטל סימון' : 'סמן שולם'}">${toggleBtnLabel(l)}</button>
+        ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ לתלמיד">💬 ווצאפ</button>` : ''}
         <button class="btn btn-ghost btn-xs" onclick="openEditLessonModal('${l.id}')">ערוך</button>
         <button class="btn btn-ghost btn-xs text-danger" onclick="deleteLesson('${l.id}')">מחק</button>
       </div></td>
@@ -3403,6 +3404,7 @@ function renderCalendar() {
           <div class="cal-day-lesson-actions">
             <button class="btn btn-ghost btn-xs" onclick="openEditLessonModal('${l.id}')">ערוך</button>
             <button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}').then(()=>renderCalendar())">${toggleBtnLabel(l)}</button>
+            ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ לתלמיד">💬</button>` : ''}
           </div>
         </div>`;
       });
@@ -3430,6 +3432,7 @@ function showCalPopup(lessonId, e) {
     ${l.notes ? `<div class="cal-popup-detail" style="font-style:italic">${escapeHtml(l.notes)}</div>` : ''}
     <div class="cal-popup-btns">
       <button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}').then(()=>{hideCalPopup();renderCalendar()})">${getLessonPayStatus(l)==='paid'?'↩ בטל':'✓ שולם'}</button>
+      ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ לתלמיד">💬 ווצאפ</button>` : ''}
       <button class="btn btn-primary btn-xs" onclick="hideCalPopup();openEditLessonModal('${l.id}')">ערוך</button>
       <button class="btn btn-ghost btn-xs text-danger" onclick="hideCalPopup();deleteLesson('${l.id}').then(()=>renderCalendar())">מחק</button>
     </div>`;
