@@ -1560,7 +1560,6 @@
       <div class="page-header">
         <h2 class="page-title">תשלומים</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="exportReport()"><svg class="icon icon-sm"><use href="#icon-bar-chart"/></svg> ייצוא לאקסל</button>
           <button class="btn btn-ghost btn-sm" onclick="openYearlyReport()"><svg class="icon icon-sm"><use href="#icon-bar-chart"/></svg> דוח שנתי</button>
           <button class="btn btn-primary" onclick="openAddPaymentModal(null)">+ הוסף תשלום</button>
         </div>
@@ -3830,45 +3829,6 @@ async function adminSendPushBroadcast() {
 }
 
 // ===== EXCEL EXPORT =====
-function exportReport() {
-  const students = getStudents();
-  const lessons  = getLessons();
-  const payments = getPayments();
-
-  const wb = XLSX.utils.book_new();
-
-  // Sheet 1: lessons
-  const lessonRows = [['תאריך','תלמיד','מספר שיעורים','סכום','שולם','הערות']];
-  [...lessons].sort((a,b) => a.date.localeCompare(b.date)).forEach(l => {
-    const s = getStudentById(l.studentId);
-    lessonRows.push([l.date, s?.name||'?', l.durationHours, l.amount, l.isPaid?'כן':'לא', l.notes||'']);
-  });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(lessonRows), 'שיעורים');
-
-  // Sheet 2: payments
-  const payRows = [['תאריך','תלמיד','סכום','הערות']];
-  [...payments].sort((a,b) => a.date.localeCompare(b.date)).forEach(p => {
-    const s = getStudentById(p.studentId);
-    payRows.push([p.date, s?.name||'?', p.amount, p.notes||'']);
-  });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(payRows), 'תשלומים');
-
-  // Sheet 3: summary
-  const sumRows = [['תלמיד','סה״כ שיעורים','סה״כ חיובים','סה״כ תשלומים','יתרה']];
-  students.forEach(s => {
-    const sLessons  = lessons.filter(l => l.studentId === s.id);
-    const sPayments = payments.filter(p => p.studentId === s.id);
-    const charged = sLessons.reduce((t,l) => t + (l.amount||0), 0);
-    const paid    = sPayments.reduce((t,p) => t + (p.amount||0), 0);
-    sumRows.push([s.name, sLessons.length, charged, paid, paid - charged]);
-  });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumRows), 'סיכום');
-
-  const now = new Date();
-  XLSX.writeFile(wb, `דוח-שיעורים-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.xlsx`);
-  showToast('דוח יוצא בהצלחה 📊');
-}
-
 // ===== YEARLY REPORT =====
 function openYearlyReport() {
   const students = getStudents().filter(s => s.isActive !== false);
