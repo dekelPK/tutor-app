@@ -6,6 +6,7 @@ data_*.json
 users.db
 .secret_key
 .cron_secret
+.deploy_config.json
 
 # Python
 __pycache__/

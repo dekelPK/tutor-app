@@ -5,7 +5,7 @@ flask_app.py — PythonAnywhere WSGI entry point
 מיקום: /home/DekelPA/mysite/flask_app.py
 """
 from flask import Flask, jsonify, request, session, send_from_directory
-import sqlite3, json, os, hashlib, secrets, uuid
+import sqlite3, json, os, hashlib, secrets, uuid, hmac, subprocess, urllib.request, urllib.error
 from datetime import datetime, timedelta
 try:
     from zoneinfo import ZoneInfo
@@ -41,6 +41,22 @@ if os.path.exists(_cs_file):
 else:
     CRON_SECRET = secrets.token_hex(24)
     open(_cs_file, 'w').write(CRON_SECRET)
+
+# ── Auto-deploy webhook config (GitHub push → git pull → PythonAnywhere reload)
+# Lives in .deploy_config.json, which is gitignored and created once by hand on
+# the server (never committed — it holds a real API token). Shape:
+#   {"webhook_secret": "...", "pa_api_token": "...", "pa_username": "...", "pa_domain": "..."}
+# If missing, /deploy-webhook just responds 'not configured' — everything else
+# in the app works fine either way.
+_deploy_cfg_file = os.path.join(BASE_DIR, '.deploy_config.json')
+def load_deploy_config():
+    if not os.path.exists(_deploy_cfg_file):
+        return None
+    try:
+        with open(_deploy_cfg_file) as f:
+            return json.load(f)
+    except Exception:
+        return None
 
 # ── Secret key (persist across restarts) ──────────────────────────────────────
 _sk_file = os.path.join(BASE_DIR, '.secret_key')
@@ -217,6 +233,54 @@ def web_manifest():
 @app.route('/icons/<path:filename>')
 def app_icons(filename):
     return send_from_directory(os.path.join(BASE_DIR, 'icons'), filename)
+
+# ── Auto-deploy webhook ──────────────────────────────────────────────────────
+@app.route('/deploy-webhook', methods=['POST'])
+def deploy_webhook():
+    cfg = load_deploy_config()
+    if not cfg:
+        return jsonify({'error': 'not configured'}), 503
+
+    # Verify this really came from GitHub (HMAC-SHA256 over the raw body,
+    # using the webhook secret set on both sides) — never git-pull on an
+    # unauthenticated request.
+    sig = request.headers.get('X-Hub-Signature-256', '')
+    expected = 'sha256=' + hmac.new(cfg['webhook_secret'].encode(), request.get_data(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, expected):
+        return jsonify({'error': 'bad signature'}), 401
+
+    event = request.headers.get('X-GitHub-Event', '')
+    if event == 'ping':
+        return jsonify({'ok': True, 'msg': 'pong'})
+    if event != 'push':
+        return jsonify({'ok': True, 'msg': f'ignored event: {event}'})
+
+    body = request.json or {}
+    if body.get('ref') != 'refs/heads/main':
+        return jsonify({'ok': True, 'msg': 'ignored non-main push'})
+
+    try:
+        pull = subprocess.run(['git', 'pull', 'origin', 'main'], cwd=BASE_DIR,
+                               capture_output=True, text=True, timeout=60)
+        pull_ok = pull.returncode == 0
+    except Exception as e:
+        return jsonify({'ok': False, 'step': 'git pull', 'error': str(e)}), 500
+    if not pull_ok:
+        return jsonify({'ok': False, 'step': 'git pull', 'stdout': pull.stdout, 'stderr': pull.stderr}), 500
+
+    # Reload the web app via the PythonAnywhere API (outbound to
+    # pythonanywhere.com itself, which free accounts can always reach).
+    try:
+        url = f"https://www.pythonanywhere.com/api/v0/user/{cfg['pa_username']}/webapps/{cfg['pa_domain']}/reload/"
+        req = urllib.request.Request(url, method='POST', headers={'Authorization': f"Token {cfg['pa_api_token']}"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            reload_ok = 200 <= resp.status < 300
+    except urllib.error.HTTPError as e:
+        return jsonify({'ok': False, 'step': 'reload', 'pulled': True, 'status': e.code, 'body': e.read().decode(errors='replace')}), 500
+    except Exception as e:
+        return jsonify({'ok': False, 'step': 'reload', 'pulled': True, 'error': str(e)}), 500
+
+    return jsonify({'ok': True, 'pulled': True, 'reloaded': reload_ok, 'commit': pull.stdout.strip()})
 
 @app.route('/api/push/vapid-public-key')
 def push_vapid_key():
