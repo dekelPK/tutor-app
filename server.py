@@ -35,6 +35,9 @@ def init_db():
         name          TEXT,
         created_at    TEXT
     )''')
+    cols = [r[1] for r in c.execute('PRAGMA table_info(users)').fetchall()]
+    if 'cal_token' not in cols:
+        c.execute('ALTER TABLE users ADD COLUMN cal_token TEXT')
     c.commit()
     c.close()
 
@@ -143,7 +146,7 @@ def auth_register():
     # First user gets the legacy data.json migrated automatically
     is_first = c.execute('SELECT COUNT(*) FROM users').fetchone()[0] == 0
     uid = uuid.uuid4().hex[:12]
-    c.execute('INSERT INTO users VALUES (?,?,?,?,?)',
+    c.execute('INSERT INTO users (id,email,password_hash,name,created_at) VALUES (?,?,?,?,?)',
               [uid, email, hash_pw(pw), name, datetime.now().isoformat()])
     c.commit()
     c.close()
@@ -262,11 +265,33 @@ def delete_payment(pid):
     return '', 204
 
 # ── Live ICS calendar feed ─────────────────────────────────────────────────────
+@app.route('/api/calendar-token')
+def get_calendar_token():
+    err = require_auth()
+    if err: return err
+    with get_db() as c:
+        row = c.execute('SELECT cal_token FROM users WHERE id=?', [session['user_id']]).fetchone()
+        token = row['cal_token'] if row else None
+        if not token:
+            token = secrets.token_urlsafe(24)
+            c.execute('UPDATE users SET cal_token=? WHERE id=?', [token, session['user_id']])
+            c.commit()
+    return jsonify({'token': token})
+
 @app.route('/calendar.ics')
 def calendar_ics():
-    if 'user_id' not in session:
+    # External calendar apps subscribing by URL never send our session
+    # cookie, so they authenticate via ?token=... instead (see above).
+    cal_user_id = session.get('user_id')
+    if not cal_user_id:
+        token = request.args.get('token')
+        if token:
+            with get_db() as c:
+                row = c.execute('SELECT id FROM users WHERE cal_token=?', [token]).fetchone()
+                cal_user_id = row['id'] if row else None
+    if not cal_user_id:
         return 'Unauthorized', 401
-    data     = read_data()
+    data     = read_data(cal_user_id)
     students = {s['id']: s for s in data['students']}
     stamp    = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
     lines = [
@@ -300,7 +325,8 @@ def calendar_ics():
     lines.append('END:VCALENDAR')
     return '\r\n'.join(lines), 200, {
         'Content-Type': 'text/calendar; charset=utf-8',
-        'Content-Disposition': 'inline; filename="שיעורים.ics"',
+        # ASCII only — a raw Hebrew filename here crashed the response mid-stream.
+        'Content-Disposition': 'inline; filename="lessons.ics"',
     }
 
 # ── Excel import ───────────────────────────────────────────────────────────────

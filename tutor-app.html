@@ -3460,8 +3460,15 @@ function onSearch(q) {
 }
 
 // ===== CAL SUBSCRIBE =====
-function showCalSubscribeInfo() {
-  const url = `${location.protocol}//${location.host}/calendar.ics`;
+async function showCalSubscribeInfo() {
+  showLoading();
+  let token = '';
+  try {
+    const r = await fetch('/api/calendar-token');
+    if (r.ok) token = (await r.json()).token || '';
+  } catch (e) { /* fall through — url without a token will just 401, not crash */ }
+  hideLoading();
+  const url = `${location.protocol}//${location.host}/calendar.ics?token=${token}`;
   const html = `
     <p style="font-size:14px;margin-bottom:14px">המנוי מתעדכן אוטומטית בכל שיעור שמוסיפים.</p>
     <div style="background:var(--bg);padding:10px 12px;border-radius:8px;font-size:13px;direction:ltr;text-align:left;word-break:break-all;margin-bottom:16px;user-select:all">${url}</div>

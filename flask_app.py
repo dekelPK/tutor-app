@@ -115,6 +115,12 @@ def init_db():
             cols = [r[1] for r in db.execute(f'PRAGMA table_info({tbl})').fetchall()]
             if 'user_id' not in cols:
                 db.execute(f'ALTER TABLE {tbl} ADD COLUMN user_id TEXT')
+        # cal_token: a per-user secret for the calendar-subscription URL (see
+        # calendar_ics()) — external calendar apps can't send our session
+        # cookie, so the feed needs its own token-based auth instead.
+        user_cols = [r[1] for r in db.execute('PRAGMA table_info(users)').fetchall()]
+        if 'cal_token' not in user_cols:
+            db.execute('ALTER TABLE users ADD COLUMN cal_token TEXT')
 
     # One-time migration from data.json if it exists
     json_path = os.path.join(BASE_DIR, 'data.json')
@@ -202,7 +208,7 @@ def auth_register():
             return jsonify({'error': 'כתובת האימייל כבר רשומה במערכת'}), 409
         is_first = db.execute('SELECT COUNT(*) FROM users').fetchone()[0] == 0
         new_id   = uuid.uuid4().hex[:12]
-        db.execute('INSERT INTO users VALUES (?,?,?,?,?)',
+        db.execute('INSERT INTO users (id,email,password_hash,name,created_at) VALUES (?,?,?,?,?)',
                    [new_id, email, hash_pw(pw), name, datetime.now().isoformat()])
         if is_first:
             # Associate all existing data (no user_id) with this first user
@@ -463,15 +469,40 @@ def delete_payment(pid):
     return '', 204
 
 # ── ICS calendar ──────────────────────────────────────────────────────────────
+@app.route('/api/calendar-token')
+def get_calendar_token():
+    # Used by the "subscribe" modal to build a URL that works for external
+    # calendar apps, which can't send our session cookie (see calendar_ics()).
+    err = require_auth()
+    if err: return err
+    with get_db() as db:
+        row = db.execute('SELECT cal_token FROM users WHERE id=?', [uid()]).fetchone()
+        token = row['cal_token'] if row else None
+        if not token:
+            token = secrets.token_urlsafe(24)
+            db.execute('UPDATE users SET cal_token=? WHERE id=?', [token, uid()])
+    return jsonify({'token': token})
+
 @app.route('/calendar.ics')
 def calendar_ics():
-    if 'user_id' not in session:
+    # Two ways in: a logged-in browser session (manual download), or a
+    # ?token=... query param (external calendar apps subscribing to the
+    # feed URL — they never send our session cookie, so this is the only
+    # way their periodic re-fetch can ever authenticate).
+    cal_user_id = session.get('user_id')
+    if not cal_user_id:
+        token = request.args.get('token')
+        if token:
+            with get_db() as db:
+                row = db.execute('SELECT id FROM users WHERE cal_token=?', [token]).fetchone()
+                cal_user_id = row['id'] if row else None
+    if not cal_user_id:
         return 'Unauthorized', 401
     with get_db() as db:
         students = {s['id']: s for s in rows_to_list(
-            db.execute('SELECT data FROM students WHERE user_id=?', [uid()]).fetchall())}
+            db.execute('SELECT data FROM students WHERE user_id=?', [cal_user_id]).fetchall())}
         lessons  = rows_to_list(
-            db.execute('SELECT data FROM lessons WHERE user_id=? ORDER BY date', [uid()]).fetchall())
+            db.execute('SELECT data FROM lessons WHERE user_id=? ORDER BY date', [cal_user_id]).fetchall())
     stamp = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
     lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//שיעורים פרטיים//HE',
              'CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:שיעורים - הוראה',
@@ -493,7 +524,10 @@ def calendar_ics():
     lines.append('END:VCALENDAR')
     return '\r\n'.join(lines), 200, {
         'Content-Type': 'text/calendar; charset=utf-8',
-        'Content-Disposition': 'inline; filename="שיעורים.ics"',
+        # ASCII only — HTTP headers can't carry raw Hebrew text (RFC 7230),
+        # and the Hebrew filename that used to be here crashed the response
+        # mid-stream on every single request to this endpoint.
+        'Content-Disposition': 'inline; filename="lessons.ics"',
     }
 
 # ── Import (Excel) ────────────────────────────────────────────────────────────
