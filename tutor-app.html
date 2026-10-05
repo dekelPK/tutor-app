@@ -487,9 +487,19 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      text-align: center;
     }
-    #announcement-banner .ann-text { flex: 1; }
+    #announcement-banner .ann-ticker {
+      flex: 1; overflow: hidden; position: relative; height: 1.3em;
+    }
+    #announcement-banner .ann-text {
+      position: absolute; top: 0; right: 0; white-space: nowrap;
+      animation: ann-scroll 16s linear infinite;
+    }
+    #announcement-banner .ann-ticker:hover .ann-text { animation-play-state: paused; }
+    @keyframes ann-scroll {
+      from { transform: translateX(100%); }
+      to   { transform: translateX(-100%); }
+    }
     #announcement-banner .ann-close {
       background: rgba(255,255,255,0.2); border: none; color: white;
       width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
@@ -1727,7 +1737,9 @@ async function checkAnnouncement() {
     const el = document.getElementById('announcement-banner');
     if (!ann || !ann.message) { el.style.display = 'none'; return; }
     if (localStorage.getItem('dismissedAnnouncementId') === String(ann.id)) { el.style.display = 'none'; return; }
-    el.innerHTML = `<span class="ann-text">📢 ${ann.message}</span><button class="ann-close" onclick="dismissAnnouncement('${ann.id}')" title="סגור">✕</button>`;
+    const fullText = `📢 ${ann.message}`;
+    const duration = Math.min(28, Math.max(10, fullText.length * 0.17)).toFixed(1);
+    el.innerHTML = `<div class="ann-ticker"><span class="ann-text" style="animation-duration:${duration}s">${fullText}</span></div><button class="ann-close" onclick="dismissAnnouncement('${ann.id}')" title="סגור">✕</button>`;
     el.style.display = 'flex';
   } catch (e) { /* no announcement.json yet — perfectly normal */ }
 }
