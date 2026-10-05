@@ -505,10 +505,11 @@ def admin_users():
         rows = db.execute('SELECT id, name, email, created_at FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
         out = []
         for u in rows:
-            student_count = db.execute('SELECT COUNT(*) FROM students WHERE user_id=?', [u['id']]).fetchone()[0]
-            lesson_count  = db.execute('SELECT COUNT(*) FROM lessons WHERE user_id=?', [u['id']]).fetchone()[0]
+            students = rows_to_list(db.execute('SELECT data FROM students WHERE user_id=?', [u['id']]).fetchall())
+            lesson_count = db.execute('SELECT COUNT(*) FROM lessons WHERE user_id=?', [u['id']]).fetchone()[0]
             d = dict(u)
-            d['studentCount'] = student_count
+            d['studentCount'] = len(students)
+            d['activeStudentCount'] = sum(1 for s in students if s.get('isActive') is not False)
             d['lessonCount'] = lesson_count
             d['isAdmin'] = u['email'].lower() == ADMIN_EMAIL.lower()
             out.append(d)

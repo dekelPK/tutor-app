@@ -371,6 +371,7 @@ def admin_users():
         d = dict(u)
         data = read_data(u['id'])
         d['studentCount'] = len(data.get('students', []))
+        d['activeStudentCount'] = sum(1 for s in data.get('students', []) if s.get('isActive') is not False)
         d['lessonCount'] = len(data.get('lessons', []))
         d['isAdmin'] = u['email'].lower() == ADMIN_EMAIL.lower()
         out.append(d)
