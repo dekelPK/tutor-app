@@ -70,6 +70,31 @@ def load_deploy_config():
     except Exception:
         return None
 
+def trigger_github_workflow(workflow_file, inputs):
+    """Fires a workflow_dispatch for the given .github/workflows/<workflow_file>.
+    Returns (ok: bool, error_response: Flask response | None) — error_response
+    is set only when the caller should return it directly (missing PAT, GitHub
+    error); when it's None, `ok` tells you whether the dispatch succeeded."""
+    cfg = load_deploy_config()
+    pat = cfg.get('github_pat') if cfg else None
+    if not pat:
+        return False, (jsonify({'error': f'לא הוגדר github_pat ב-.deploy_config.json', 'manual_fallback': True}), 503)
+    gh_url = f'https://api.github.com/repos/dekelPK/tutor-app/actions/workflows/{workflow_file}/dispatches'
+    payload = json.dumps({'ref': 'main', 'inputs': inputs}).encode()
+    req = urllib.request.Request(gh_url, data=payload, method='POST', headers={
+        'Authorization': f'Bearer {pat}',
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'tutor-app-admin',
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return (200 <= resp.status < 300), None
+    except urllib.error.HTTPError as e:
+        return False, (jsonify({'error': f'GitHub החזיר {e.code}', 'detail': e.read().decode(errors='replace')}), 502)
+    except Exception as e:
+        return False, (jsonify({'error': str(e)}), 502)
+
 # ── Secret key (persist across restarts) ──────────────────────────────────────
 _sk_file = os.path.join(BASE_DIR, '.secret_key')
 if os.path.exists(_sk_file):
@@ -239,6 +264,12 @@ def auth_register():
             for tbl in ('students', 'lessons', 'payments'):
                 db.execute(f'UPDATE {tbl} SET user_id=? WHERE user_id IS NULL', [new_id])
     if not approved:
+        # Best-effort push to the admin's own device — a signup is never
+        # blocked by this failing (no PAT configured yet, GitHub hiccup, etc).
+        try:
+            trigger_github_workflow('notify-admin-signup.yml', {'name': name or '(ללא שם)', 'email': email})
+        except Exception:
+            pass
         # No session — they can't use the app until the admin approves them.
         return jsonify({'pending': True,
                          'message': 'ההרשמה התקבלה! החשבון ימתין לאישור מנהל המערכת לפני שתוכל/י להתחבר.'}), 202
@@ -402,6 +433,21 @@ def push_all_subscriptions():
         subs = db.execute('SELECT endpoint, p256dh, auth FROM push_subscriptions').fetchall()
     return jsonify([dict(s) for s in subs])
 
+@app.route('/api/push/admin-subscriptions')
+def push_admin_subscriptions():
+    # Used by notify-admin-signup.yml to reach ONLY the admin's own device(s)
+    # when a new registration comes in — token-protected the same way as the
+    # other GitHub-Action-facing endpoints, never exposed to a regular session.
+    if request.args.get('token') != CRON_SECRET:
+        return jsonify({'error': 'Unauthorized'}), 401
+    with get_db() as db:
+        admin_row = db.execute('SELECT id FROM users WHERE email=?', [ADMIN_EMAIL]).fetchone()
+        if not admin_row:
+            return jsonify([])
+        subs = db.execute('SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=?',
+                           [admin_row['id']]).fetchall()
+    return jsonify([dict(s) for s in subs])
+
 # ── Announcements (in-app banner to every logged-in user) ───────────────────────
 @app.route('/api/announcement')
 def get_announcement():
@@ -448,30 +494,9 @@ def admin_push_broadcast():
     if not title or not text:
         return jsonify({'error': 'כותרת וטקסט דרושים'}), 400
 
-    cfg = load_deploy_config()
-    pat = cfg.get('github_pat') if cfg else None
-    if not pat:
-        return jsonify({
-            'error': 'לא הוגדר github_pat ב-.deploy_config.json',
-            'manual_fallback': True,
-        }), 503
-
-    gh_url = 'https://api.github.com/repos/dekelPK/tutor-app/actions/workflows/broadcast-notification.yml/dispatches'
-    payload = json.dumps({'ref': 'main', 'inputs': {'title': title, 'body': text}}).encode()
-    req = urllib.request.Request(gh_url, data=payload, method='POST', headers={
-        'Authorization': f'Bearer {pat}',
-        'Accept': 'application/vnd.github+json',
-        'Content-Type': 'application/json',
-        'User-Agent': 'tutor-app-admin',
-    })
-    try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            ok = 200 <= resp.status < 300
-        return jsonify({'ok': ok})
-    except urllib.error.HTTPError as e:
-        return jsonify({'error': f'GitHub החזיר {e.code}', 'detail': e.read().decode(errors='replace')}), 502
-    except Exception as e:
-        return jsonify({'error': str(e)}), 502
+    ok, err_resp = trigger_github_workflow('broadcast-notification.yml', {'title': title, 'body': text})
+    if err_resp: return err_resp
+    return jsonify({'ok': ok})
 
 @app.route('/api/admin/stats')
 def admin_stats():

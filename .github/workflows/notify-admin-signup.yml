@@ -1,0 +1,34 @@
+name: Notify admin of new signup
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Signup name'
+        required: true
+      email:
+        description: 'Signup email'
+        required: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests pywebpush
+
+      - name: Notify admin
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_CONTACT_EMAIL: ${{ secrets.VAPID_CONTACT_EMAIL }}
+          SIGNUP_NAME: ${{ inputs.name }}
+          SIGNUP_EMAIL: ${{ inputs.email }}
+        run: python scripts/notify_admin_signup.py
