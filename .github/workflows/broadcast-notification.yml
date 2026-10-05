@@ -1,0 +1,35 @@
+name: Broadcast notification
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'Notification title'
+        required: true
+        default: '📢 עדכון חדש'
+      body:
+        description: 'Notification text'
+        required: true
+
+jobs:
+  broadcast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests pywebpush
+
+      - name: Send broadcast
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_CONTACT_EMAIL: ${{ secrets.VAPID_CONTACT_EMAIL }}
+          BROADCAST_TITLE: ${{ inputs.title }}
+          BROADCAST_BODY: ${{ inputs.body }}
+        run: python scripts/send_broadcast.py

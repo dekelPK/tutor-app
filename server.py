@@ -264,6 +264,17 @@ def delete_payment(pid):
     write_data(data)
     return '', 204
 
+# ── Announcements (in-app banner) ────────────────────────────────────────────
+@app.route('/api/announcement')
+def get_announcement():
+    err = require_auth()
+    if err: return err
+    ann_path = os.path.join(BASE_DIR, 'announcement.json')
+    if not os.path.exists(ann_path):
+        return jsonify(None)
+    with open(ann_path, encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/json; charset=utf-8'}
+
 # ── Live ICS calendar feed ─────────────────────────────────────────────────────
 @app.route('/api/calendar-token')
 def get_calendar_token():

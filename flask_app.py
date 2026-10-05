@@ -362,6 +362,28 @@ def push_remove_stale():
         db.execute('DELETE FROM push_subscriptions WHERE endpoint=?', [endpoint])
     return '', 204
 
+@app.route('/api/push/all-subscriptions')
+def push_all_subscriptions():
+    # Used by the manual broadcast-notification GitHub Action — every current
+    # subscription, with no lesson-today filtering, so you (the developer) can
+    # push an announcement to every user who's ever enabled reminders.
+    if request.args.get('token') != CRON_SECRET:
+        return jsonify({'error': 'Unauthorized'}), 401
+    with get_db() as db:
+        subs = db.execute('SELECT endpoint, p256dh, auth FROM push_subscriptions').fetchall()
+    return jsonify([dict(s) for s in subs])
+
+# ── Announcements (in-app banner to every logged-in user) ───────────────────────
+@app.route('/api/announcement')
+def get_announcement():
+    err = require_auth()
+    if err: return err
+    ann_path = os.path.join(BASE_DIR, 'announcement.json')
+    if not os.path.exists(ann_path):
+        return jsonify(None)
+    with open(ann_path, encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/json; charset=utf-8'}
+
 # ── Students ──────────────────────────────────────────────────────────────────
 @app.route('/api/students', methods=['GET'])
 def get_students():

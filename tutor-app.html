@@ -477,6 +477,26 @@
     #debt-banner.show { display: block; }
     #debt-banner strong { font-weight: 700; }
 
+    /* ===== ANNOUNCEMENT BANNER (site-wide broadcast) ===== */
+    #announcement-banner {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 10px 24px;
+      font-size: 13.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+    }
+    #announcement-banner .ann-text { flex: 1; }
+    #announcement-banner .ann-close {
+      background: rgba(255,255,255,0.2); border: none; color: white;
+      width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    #announcement-banner .ann-close:hover { background: rgba(255,255,255,0.35); }
+
     /* ===== KEYBOARD SHORTCUTS TOOLTIP ===== */
     .kb-hint-btn {
       background: rgba(255,255,255,0.15);
@@ -1080,6 +1100,7 @@
 
       /* HEADER — פס מלא + מינימליסטי: רק מה שבאמת רלוונטי בנייד */
       .app-header { height: 52px; padding: 0 14px; width: 100%; left: 0; right: 0; }
+      #announcement-banner { padding: 9px 14px; font-size: 12.5px; }
       .app-title { font-size: 15px; }
       .header-actions { gap: 4px; }
       .search-wrapper { display: none; }    /* חיפוש נסתר בנייד */
@@ -1313,6 +1334,9 @@
       </button>
     </div>
   </header>
+
+  <!-- ANNOUNCEMENT (broadcast banner, shown once per announcement id) -->
+  <div id="announcement-banner" style="display:none"></div>
 
   <!-- NAV -->
   <nav class="nav-tabs">
@@ -1633,7 +1657,26 @@ function hideAuthOverlay(userName) {
     el.style.display = '';
     document.getElementById('logout-btn').style.display = '';
     initPushUI();
+    checkAnnouncement();
   }
+}
+
+// ===== ANNOUNCEMENT BANNER =====
+async function checkAnnouncement() {
+  try {
+    const r = await fetch('/api/announcement');
+    if (!r.ok) return;
+    const ann = await r.json();
+    const el = document.getElementById('announcement-banner');
+    if (!ann || !ann.message) { el.style.display = 'none'; return; }
+    if (localStorage.getItem('dismissedAnnouncementId') === String(ann.id)) { el.style.display = 'none'; return; }
+    el.innerHTML = `<span class="ann-text">📢 ${ann.message}</span><button class="ann-close" onclick="dismissAnnouncement('${ann.id}')" title="סגור">✕</button>`;
+    el.style.display = 'flex';
+  } catch (e) { /* no announcement.json yet — perfectly normal */ }
+}
+function dismissAnnouncement(id) {
+  localStorage.setItem('dismissedAnnouncementId', String(id));
+  document.getElementById('announcement-banner').style.display = 'none';
 }
 function showAuthTab(tab) {
   document.getElementById('auth-form-login').style.display    = tab === 'login'    ? '' : 'none';
