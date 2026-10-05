@@ -56,10 +56,16 @@ else:
 
 # ── Auto-deploy webhook config (GitHub push → git pull → PythonAnywhere reload)
 # Lives in .deploy_config.json, which is gitignored and created once by hand on
-# the server (never committed — it holds a real API token). Shape:
-#   {"webhook_secret": "...", "pa_api_token": "...", "pa_username": "...", "pa_domain": "..."}
-# If missing, /deploy-webhook just responds 'not configured' — everything else
-# in the app works fine either way.
+# the server (never committed — it holds real API tokens). Shape:
+#   {"webhook_secret": "...", "pa_api_token": "...", "pa_username": "...",
+#    "pa_domain": "...", "github_pat": "..."}
+# If webhook_secret/pa_* are missing, /deploy-webhook just responds 'not
+# configured' — the rest of the app still works. github_pat is separate: it's
+# only needed for admin push-broadcast and the new-signup admin notification
+# (trigger_github_workflow below), which need a GitHub PAT with the
+# "repo" scope (classic) or "Actions: write" (fine-grained) to fire
+# workflow_dispatch. Without it those two features 503 with a Hebrew
+# "github_pat not configured" message — everything else is unaffected.
 _deploy_cfg_file = os.path.join(BASE_DIR, '.deploy_config.json')
 def load_deploy_config():
     if not os.path.exists(_deploy_cfg_file):
