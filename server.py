@@ -359,6 +359,23 @@ def admin_pending_users():
     c.close()
     return jsonify([dict(r) for r in rows])
 
+@app.route('/api/admin/users')
+def admin_users():
+    err = require_admin()
+    if err: return err
+    c = get_db()
+    rows = c.execute('SELECT id, name, email, created_at FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
+    c.close()
+    out = []
+    for u in rows:
+        d = dict(u)
+        data = read_data(u['id'])
+        d['studentCount'] = len(data.get('students', []))
+        d['lessonCount'] = len(data.get('lessons', []))
+        d['isAdmin'] = u['email'].lower() == ADMIN_EMAIL.lower()
+        out.append(d)
+    return jsonify(out)
+
 @app.route('/api/admin/users/<target_id>/approve', methods=['POST'])
 def admin_approve_user(target_id):
     err = require_admin()

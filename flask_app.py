@@ -497,6 +497,23 @@ def admin_pending_users():
         rows = db.execute('SELECT id, name, email, created_at FROM users WHERE approved=0 ORDER BY created_at').fetchall()
     return jsonify([dict(r) for r in rows])
 
+@app.route('/api/admin/users')
+def admin_users():
+    err = require_admin()
+    if err: return err
+    with get_db() as db:
+        rows = db.execute('SELECT id, name, email, created_at FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
+        out = []
+        for u in rows:
+            student_count = db.execute('SELECT COUNT(*) FROM students WHERE user_id=?', [u['id']]).fetchone()[0]
+            lesson_count  = db.execute('SELECT COUNT(*) FROM lessons WHERE user_id=?', [u['id']]).fetchone()[0]
+            d = dict(u)
+            d['studentCount'] = student_count
+            d['lessonCount'] = lesson_count
+            d['isAdmin'] = u['email'].lower() == ADMIN_EMAIL.lower()
+            out.append(d)
+    return jsonify(out)
+
 @app.route('/api/admin/users/<target_id>/approve', methods=['POST'])
 def admin_approve_user(target_id):
     err = require_admin()
