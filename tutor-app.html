@@ -1325,7 +1325,7 @@
           D / ג — דשבורד
         </div>
       </button>
-      <button class="btn-import" id="admin-btn" onclick="openAdminModal()" title="ניהול מערכת" style="display:none"><svg class="icon"><use href="#icon-settings"/></svg></button>
+      <button class="btn-import" id="admin-btn" onclick="showPage('admin')" title="ניהול מערכת" style="display:none"><svg class="icon"><use href="#icon-settings"/></svg></button>
       <button class="btn-import" id="reminders-btn" onclick="toggleLessonReminders()" title="תזכורות על שיעורי היום" style="display:none">🔔</button>
       <button class="btn-import" id="dark-mode-btn" onclick="toggleDarkMode()"><svg class="icon" id="dark-mode-icon"><use href="#icon-moon"/></svg></button>
       <button class="btn-import" id="import-excel-btn" onclick="document.getElementById('excel-input').click()">
@@ -1542,6 +1542,59 @@
       </div>
     </div>
 
+    <!-- PAGE: ADMIN (dekelkartel@gmail.com only — showPage() refuses to render this for anyone else) -->
+    <div id="page-admin" class="page">
+      <div class="page-header">
+        <h2 class="page-title">⚙️ ניהול מערכת</h2>
+      </div>
+
+      <div class="stats-grid" id="admin-stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">משתמשים פעילים</div>
+          <div class="stat-value" id="admin-stat-users">–</div>
+        </div>
+        <div class="stat-card stat-card--warning">
+          <div class="stat-label">בקשות ממתינות</div>
+          <div class="stat-value" id="admin-stat-pending">–</div>
+        </div>
+        <div class="stat-card stat-card--success">
+          <div class="stat-label">תלמידים פעילים (הכל)</div>
+          <div class="stat-value" id="admin-stat-students">–</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div class="dash-card-title">בקשות הרשמה ממתינות</div>
+        <div id="admin-pending-list"><p class="text-muted" style="font-size:13px">טוען...</p></div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div class="dash-card-title">📢 באנר בתוך האפליקציה</div>
+        <p style="font-size:12.5px;color:var(--text-muted);margin:-6px 0 10px">מוצג לכל מי שמתחבר, עד שהם סוגרים אותו.</p>
+        <div class="form-group">
+          <textarea id="admin-ann-text" rows="3" placeholder="טקסט העדכון..."></textarea>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary btn-sm" onclick="adminPublishAnnouncement()">פרסם</button>
+          <button class="btn btn-ghost btn-sm" onclick="adminClearAnnouncement()">נקה באנר</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="dash-card-title">🔔 Push לכל מי שהפעיל תזכורות</div>
+        <p style="font-size:12.5px;color:var(--text-muted);margin:-6px 0 10px">נשלח מיידית כהתראה אמיתית למכשיר.</p>
+        <div class="form-group">
+          <label>כותרת</label>
+          <input id="admin-push-title" placeholder="📢 עדכון חדש">
+        </div>
+        <div class="form-group">
+          <label>טקסט</label>
+          <textarea id="admin-push-body" rows="2" placeholder="מה חדש..."></textarea>
+        </div>
+        <button class="btn btn-primary btn-sm" id="admin-push-btn" onclick="adminSendPushBroadcast()">שלח לכולם</button>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -1659,6 +1712,7 @@ function hideAuthOverlay(userName, isAdmin) {
     el.style.display = '';
     document.getElementById('logout-btn').style.display = '';
     document.getElementById('admin-btn').style.display = isAdmin ? '' : 'none';
+    window._isAdmin = !!isAdmin;
     initPushUI();
     checkAnnouncement();
   }
@@ -1733,6 +1787,11 @@ async function doRegister() {
       body: JSON.stringify({name, email, password})
     });
     const data = await r.json();
+    if (data.pending) {
+      showAuthTab('login');
+      showToast(data.message || 'ההרשמה התקבלה! ממתינה לאישור.', 'warning');
+      return;
+    }
     if (!r.ok) { showAuthError(data.error || 'שגיאה בהרשמה'); return; }
     hideAuthOverlay(data.name || data.email, data.isAdmin);
     await loadData();
@@ -1991,6 +2050,7 @@ function closeModal() {
 
 // ===== NAVIGATION =====
 function showPage(name) {
+  if (name === 'admin' && !window._isAdmin) return; // defense in depth — the gear icon is already hidden for everyone else
   document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; p.classList.remove('active-anim'); });
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.bottom-nav-item').forEach(t => t.classList.remove('active'));
@@ -2004,6 +2064,7 @@ function showPage(name) {
   if (name === 'students')  renderStudents();
   if (name === 'lessons')   renderLessons();
   if (name === 'payments')  renderPayments();
+  if (name === 'admin')     renderAdminPage();
 }
 
 // ===== DASHBOARD =====
@@ -3542,52 +3603,73 @@ async function showCalSubscribeInfo() {
 }
 
 // ===== ADMIN =====
-async function openAdminModal() {
-  showLoading();
-  let current = null;
+async function renderAdminPage() {
+  await Promise.all([loadAdminStats(), loadAdminPending(), loadAdminAnnouncementIntoForm()]);
+}
+async function loadAdminStats() {
+  try {
+    const r = await fetch('/api/admin/stats');
+    if (!r.ok) return;
+    const s = await r.json();
+    document.getElementById('admin-stat-users').textContent = s.activeUsers;
+    document.getElementById('admin-stat-pending').textContent = s.pendingUsers;
+    document.getElementById('admin-stat-students').textContent = s.activeStudents;
+  } catch (e) { /* stats just stay at – */ }
+}
+async function loadAdminAnnouncementIntoForm() {
   try {
     const r = await fetch('/api/admin/announcement');
-    if (r.ok) current = await r.json();
-  } catch (e) { /* ignore — form just starts empty */ }
-  hideLoading();
-
-  const html = `
-    <div style="margin-bottom:22px">
-      <strong style="font-size:14px">📢 באנר בתוך האפליקציה</strong>
-      <p style="font-size:12.5px;color:var(--text-muted);margin:4px 0 10px">מוצג לכל מי שמתחבר, עד שהם סוגרים אותו.</p>
-      <div class="form-group">
-        <textarea id="admin-ann-text" rows="3" placeholder="טקסט העדכון...">${current?.message || ''}</textarea>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary btn-sm" onclick="adminPublishAnnouncement()">פרסם</button>
-        <button class="btn btn-ghost btn-sm" onclick="adminClearAnnouncement()">נקה באנר</button>
-      </div>
-    </div>
-    <hr style="margin:0 0 20px">
-    <div>
-      <strong style="font-size:14px">🔔 Push לכל מי שהפעיל תזכורות</strong>
-      <p style="font-size:12.5px;color:var(--text-muted);margin:4px 0 10px">נשלח מיידית כהתראה אמיתית למכשיר.</p>
-      <div class="form-group">
-        <label>כותרת</label>
-        <input id="admin-push-title" placeholder="📢 עדכון חדש">
-      </div>
-      <div class="form-group">
-        <label>טקסט</label>
-        <textarea id="admin-push-body" rows="2" placeholder="מה חדש..."></textarea>
-      </div>
-      <button class="btn btn-primary btn-sm" id="admin-push-btn" onclick="adminSendPushBroadcast()">שלח לכולם</button>
-    </div>`;
-  openModal('⚙️ ניהול מערכת', html, null);
-  document.getElementById('modal-footer').style.display = 'none';
+    if (!r.ok) return;
+    const ann = await r.json();
+    const ta = document.getElementById('admin-ann-text');
+    if (ta) ta.value = ann?.message || '';
+  } catch (e) { /* leave form empty */ }
+}
+async function loadAdminPending() {
+  const el = document.getElementById('admin-pending-list');
+  try {
+    const r = await fetch('/api/admin/pending-users');
+    if (!r.ok) { el.innerHTML = '<p class="text-muted" style="font-size:13px">שגיאה בטעינה</p>'; return; }
+    const pending = await r.json();
+    if (pending.length === 0) {
+      el.innerHTML = '<p class="text-muted" style="font-size:13px">אין בקשות ממתינות 👍</p>';
+      return;
+    }
+    el.innerHTML = pending.map(u => `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-weight:600;font-size:14px">${u.name || '(ללא שם)'}</div>
+          <div style="font-size:12.5px;color:var(--text-muted);direction:ltr;text-align:right">${u.email}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-success btn-xs" onclick="adminApproveUser('${u.id}')">✓ אשר</button>
+          <button class="btn btn-ghost btn-xs text-danger" onclick="adminRejectUser('${u.id}')">✕ דחה</button>
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    el.innerHTML = '<p class="text-muted" style="font-size:13px">שגיאה בטעינה</p>';
+  }
+}
+async function adminApproveUser(id) {
+  const r = await fetch(`/api/admin/users/${id}/approve`, {method: 'POST'});
+  if (r.ok) { showToast('המשתמש אושר ✓'); loadAdminStats(); loadAdminPending(); }
+  else showToast('שגיאה באישור', 'danger');
+}
+async function adminRejectUser(id) {
+  if (!confirm('לדחות ולמחוק את הבקשה הזו?')) return;
+  const r = await fetch(`/api/admin/users/${id}/reject`, {method: 'POST'});
+  if (r.ok) { showToast('הבקשה נדחתה'); loadAdminStats(); loadAdminPending(); }
+  else showToast('שגיאה בדחייה', 'danger');
 }
 async function adminPublishAnnouncement() {
-  const message = document.getElementById('admin-ann-text').value.trim();
+  const ta = document.getElementById('admin-ann-text');
+  const message = ta.value.trim();
   if (!message) { showToast('כתבי קודם טקסט', 'warning'); return; }
   const r = await fetch('/api/admin/announcement', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({message}),
   });
-  if (r.ok) { showToast('הבאנר פורסם ✓'); closeModal(); }
+  if (r.ok) showToast('הבאנר פורסם ✓');
   else showToast('שגיאה בפרסום', 'danger');
 }
 async function adminClearAnnouncement() {
@@ -3595,7 +3677,7 @@ async function adminClearAnnouncement() {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({message: ''}),
   });
-  if (r.ok) { showToast('הבאנר נוקה ✓'); closeModal(); }
+  if (r.ok) { showToast('הבאנר נוקה ✓'); document.getElementById('admin-ann-text').value = ''; }
   else showToast('שגיאה', 'danger');
 }
 async function adminSendPushBroadcast() {
@@ -3610,7 +3692,7 @@ async function adminSendPushBroadcast() {
       body: JSON.stringify({title, body}),
     });
     const data = await r.json();
-    if (r.ok && data.ok) { showToast('ההתראה נשלחה ✓'); closeModal(); }
+    if (r.ok && data.ok) { showToast('ההתראה נשלחה ✓'); }
     else if (data.manual_fallback) showToast('לא מוגדר טוקן GitHub — שלחי ידנית דרך ה-Actions tab', 'warning');
     else showToast(data.error || 'שגיאה בשליחה', 'danger');
   } finally {

@@ -10,7 +10,7 @@ DATA_FILE = os.path.join(BASE_DIR, 'data.json')   # legacy – migrated to first
 app = Flask(__name__, static_folder=BASE_DIR)
 
 # ── Set to True only when you want to allow new registrations ─────────────────
-REGISTRATION_OPEN = False
+REGISTRATION_OPEN = True
 
 # ── Persistent secret key ──────────────────────────────────────────────────────
 _sk_file = os.path.join(BASE_DIR, '.secret_key')
@@ -38,6 +38,8 @@ def init_db():
     cols = [r[1] for r in c.execute('PRAGMA table_info(users)').fetchall()]
     if 'cal_token' not in cols:
         c.execute('ALTER TABLE users ADD COLUMN cal_token TEXT')
+    if 'approved' not in cols:
+        c.execute('ALTER TABLE users ADD COLUMN approved INTEGER DEFAULT 1')
     c.commit()
     c.close()
 
@@ -131,6 +133,8 @@ def auth_login():
     c.close()
     if not user:
         return jsonify({'error': 'אימייל או סיסמה שגויים'}), 401
+    if not user['approved']:
+        return jsonify({'error': 'החשבון שלך ממתין לאישור מנהל המערכת'}), 403
     session['user_id']    = user['id']
     session['user_name']  = user['name']
     session['user_email'] = user['email']
@@ -149,6 +153,7 @@ def auth_register():
         return jsonify({'error': 'נא למלא אימייל וסיסמה'}), 400
     if len(pw) < 6:
         return jsonify({'error': 'הסיסמה חייבת להכיל לפחות 6 תווים'}), 400
+    is_admin_account = email.lower() == ADMIN_EMAIL.lower()
     c = get_db()
     if c.execute('SELECT 1 FROM users WHERE email=?', [email]).fetchone():
         c.close()
@@ -156,8 +161,9 @@ def auth_register():
     # First user gets the legacy data.json migrated automatically
     is_first = c.execute('SELECT COUNT(*) FROM users').fetchone()[0] == 0
     uid = uuid.uuid4().hex[:12]
-    c.execute('INSERT INTO users (id,email,password_hash,name,created_at) VALUES (?,?,?,?,?)',
-              [uid, email, hash_pw(pw), name, datetime.now().isoformat()])
+    approved = 1 if (is_first or is_admin_account) else 0
+    c.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved) VALUES (?,?,?,?,?,?)',
+              [uid, email, hash_pw(pw), name, datetime.now().isoformat(), approved])
     c.commit()
     c.close()
     if is_first and os.path.exists(DATA_FILE):
@@ -166,11 +172,14 @@ def auth_register():
         write_data(legacy, uid)
     else:
         write_data(empty_data(), uid)
+    if not approved:
+        return jsonify({'pending': True,
+                         'message': 'ההרשמה התקבלה! החשבון ימתין לאישור מנהל המערכת לפני שתוכל/י להתחבר.'}), 202
     session['user_id']    = uid
     session['user_name']  = name
     session['user_email'] = email
     return jsonify({'id': uid, 'name': name, 'email': email,
-                     'isAdmin': email.lower() == ADMIN_EMAIL.lower()}), 201
+                     'isAdmin': is_admin_account}), 201
 
 @app.route('/api/auth/logout', methods=['POST'])
 def auth_logout():
@@ -318,6 +327,55 @@ def admin_push_broadcast():
     err = require_admin()
     if err: return err
     return jsonify({'error': 'שידור Push לא נתמך בשרת המקומי — רק בפרודקשן', 'manual_fallback': True}), 503
+
+@app.route('/api/admin/stats')
+def admin_stats():
+    err = require_admin()
+    if err: return err
+    c = get_db()
+    active_users  = c.execute('SELECT COUNT(*) FROM users WHERE approved=1').fetchone()[0]
+    pending_users = c.execute('SELECT COUNT(*) FROM users WHERE approved=0').fetchone()[0]
+    c.close()
+    all_students = []
+    for fn in os.listdir(BASE_DIR):
+        if fn.startswith('data_') and fn.endswith('.json'):
+            try:
+                with open(os.path.join(BASE_DIR, fn), encoding='utf-8') as f:
+                    all_students += json.load(f).get('students', [])
+            except Exception:
+                pass
+    active_students = sum(1 for s in all_students if s.get('isActive') is not False)
+    return jsonify({
+        'activeUsers': active_users, 'pendingUsers': pending_users,
+        'activeStudents': active_students, 'totalStudents': len(all_students),
+    })
+
+@app.route('/api/admin/pending-users')
+def admin_pending_users():
+    err = require_admin()
+    if err: return err
+    c = get_db()
+    rows = c.execute('SELECT id, name, email, created_at FROM users WHERE approved=0 ORDER BY created_at').fetchall()
+    c.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/admin/users/<target_id>/approve', methods=['POST'])
+def admin_approve_user(target_id):
+    err = require_admin()
+    if err: return err
+    c = get_db()
+    c.execute('UPDATE users SET approved=1 WHERE id=?', [target_id])
+    c.commit(); c.close()
+    return jsonify({'ok': True})
+
+@app.route('/api/admin/users/<target_id>/reject', methods=['POST'])
+def admin_reject_user(target_id):
+    err = require_admin()
+    if err: return err
+    c = get_db()
+    c.execute('DELETE FROM users WHERE id=? AND approved=0', [target_id])
+    c.commit(); c.close()
+    return jsonify({'ok': True})
 
 # ── Live ICS calendar feed ─────────────────────────────────────────────────────
 @app.route('/api/calendar-token')

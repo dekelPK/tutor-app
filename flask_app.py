@@ -20,7 +20,7 @@ app = Flask(__name__, static_folder=BASE_DIR)
 app.permanent_session_lifetime = timedelta(days=30)
 
 # ── Set to True only when you want to allow new registrations ─────────────────
-REGISTRATION_OPEN = False
+REGISTRATION_OPEN = True
 
 # ── Push notifications (Web Push / VAPID) ──────────────────────────────────────
 # Public key only — safe to hardcode, it's meant to be public. The matching
@@ -133,6 +133,10 @@ def init_db():
         user_cols = [r[1] for r in db.execute('PRAGMA table_info(users)').fetchall()]
         if 'cal_token' not in user_cols:
             db.execute('ALTER TABLE users ADD COLUMN cal_token TEXT')
+        if 'approved' not in user_cols:
+            # Default 1 so every pre-existing account stays usable; only new
+            # signups from here on start at 0 and need the admin to approve them.
+            db.execute('ALTER TABLE users ADD COLUMN approved INTEGER DEFAULT 1')
 
     # One-time migration from data.json if it exists
     json_path = os.path.join(BASE_DIR, 'data.json')
@@ -200,6 +204,8 @@ def auth_login():
                           [email, hash_pw(pw)]).fetchone()
     if not user:
         return jsonify({'error': 'אימייל או סיסמה שגויים'}), 401
+    if not user['approved']:
+        return jsonify({'error': 'החשבון שלך ממתין לאישור מנהל המערכת'}), 403
     session.permanent = True
     session['user_id']    = user['id']
     session['user_name']  = user['name']
@@ -219,23 +225,29 @@ def auth_register():
         return jsonify({'error': 'נא למלא אימייל וסיסמה'}), 400
     if len(pw) < 6:
         return jsonify({'error': 'הסיסמה חייבת להכיל לפחות 6 תווים'}), 400
+    is_admin_account = email.lower() == ADMIN_EMAIL.lower()
     with get_db() as db:
         if db.execute('SELECT 1 FROM users WHERE email=?', [email]).fetchone():
             return jsonify({'error': 'כתובת האימייל כבר רשומה במערכת'}), 409
         is_first = db.execute('SELECT COUNT(*) FROM users').fetchone()[0] == 0
         new_id   = uuid.uuid4().hex[:12]
-        db.execute('INSERT INTO users (id,email,password_hash,name,created_at) VALUES (?,?,?,?,?)',
-                   [new_id, email, hash_pw(pw), name, datetime.now().isoformat()])
+        approved = 1 if (is_first or is_admin_account) else 0
+        db.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved) VALUES (?,?,?,?,?,?)',
+                   [new_id, email, hash_pw(pw), name, datetime.now().isoformat(), approved])
         if is_first:
             # Associate all existing data (no user_id) with this first user
             for tbl in ('students', 'lessons', 'payments'):
                 db.execute(f'UPDATE {tbl} SET user_id=? WHERE user_id IS NULL', [new_id])
+    if not approved:
+        # No session — they can't use the app until the admin approves them.
+        return jsonify({'pending': True,
+                         'message': 'ההרשמה התקבלה! החשבון ימתין לאישור מנהל המערכת לפני שתוכל/י להתחבר.'}), 202
     session.permanent = True
     session['user_id']    = new_id
     session['user_name']  = name
     session['user_email'] = email
     return jsonify({'id': new_id, 'name': name, 'email': email,
-                     'isAdmin': email.lower() == ADMIN_EMAIL.lower()}), 201
+                     'isAdmin': is_admin_account}), 201
 
 @app.route('/api/auth/logout', methods=['POST'])
 def auth_logout():
@@ -460,6 +472,48 @@ def admin_push_broadcast():
         return jsonify({'error': f'GitHub החזיר {e.code}', 'detail': e.read().decode(errors='replace')}), 502
     except Exception as e:
         return jsonify({'error': str(e)}), 502
+
+@app.route('/api/admin/stats')
+def admin_stats():
+    err = require_admin()
+    if err: return err
+    with get_db() as db:
+        active_users    = db.execute('SELECT COUNT(*) FROM users WHERE approved=1').fetchone()[0]
+        pending_users   = db.execute('SELECT COUNT(*) FROM users WHERE approved=0').fetchone()[0]
+        all_students    = rows_to_list(db.execute('SELECT data FROM students').fetchall())
+        active_students = sum(1 for s in all_students if s.get('isActive') is not False)
+    return jsonify({
+        'activeUsers': active_users,
+        'pendingUsers': pending_users,
+        'activeStudents': active_students,
+        'totalStudents': len(all_students),
+    })
+
+@app.route('/api/admin/pending-users')
+def admin_pending_users():
+    err = require_admin()
+    if err: return err
+    with get_db() as db:
+        rows = db.execute('SELECT id, name, email, created_at FROM users WHERE approved=0 ORDER BY created_at').fetchall()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/admin/users/<target_id>/approve', methods=['POST'])
+def admin_approve_user(target_id):
+    err = require_admin()
+    if err: return err
+    with get_db() as db:
+        db.execute('UPDATE users SET approved=1 WHERE id=?', [target_id])
+    return jsonify({'ok': True})
+
+@app.route('/api/admin/users/<target_id>/reject', methods=['POST'])
+def admin_reject_user(target_id):
+    err = require_admin()
+    if err: return err
+    with get_db() as db:
+        # Only ever deletes an unapproved signup — never touches an active account,
+        # even if someone passes a stale/wrong id.
+        db.execute('DELETE FROM users WHERE id=? AND approved=0', [target_id])
+    return jsonify({'ok': True})
 
 # ── Students ──────────────────────────────────────────────────────────────────
 @app.route('/api/students', methods=['GET'])
