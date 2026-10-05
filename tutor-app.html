@@ -2099,7 +2099,21 @@ function openModal(title, bodyHTML, onSave) {
   footer.innerHTML = '<button class="btn btn-ghost" onclick="closeModal()">ביטול</button><button class="btn btn-primary" id="modal-save-btn">שמור</button>';
   const saveBtn = document.getElementById('modal-save-btn');
   saveBtn.style.display = onSave ? '' : 'none';
-  if (onSave) saveBtn.onclick = onSave;
+  if (onSave) {
+    // Guard against double-submit: onSave is often async (sequential API
+    // calls for recurring lessons can take a moment), and a second click
+    // before the modal closes used to fire the whole handler again,
+    // creating every lesson/record twice.
+    saveBtn.onclick = async () => {
+      if (saveBtn.disabled) return;
+      saveBtn.disabled = true;
+      try {
+        await onSave();
+      } finally {
+        saveBtn.disabled = false;
+      }
+    };
+  }
   footer.style.display = (onSave === null) ? 'none' : '';
 }
 function closeModal() {
@@ -2845,7 +2859,7 @@ function openAddLessonModal(defaultStudentId, defaultDate) {
       for (let i = 1; i < recurCount; i++) {
         const d = new Date(date + 'T00:00:00');
         d.setDate(d.getDate() + i * 7);
-        allLessons.push({ ...lesson, id: generateId(), date: d.toISOString().split('T')[0] });
+        allLessons.push({ ...lesson, id: generateId(), date: isoDate(d) });
       }
     }
     for (const l of allLessons) {
