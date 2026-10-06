@@ -1761,8 +1761,46 @@ async function loadData() {
       fetch('/api/payments').then(r => r.json()),
     ]);
     _students = s; _lessons = l; _payments = p;
+    checkOnboarding();
   } finally {
     hideLoading();
+  }
+}
+
+// ===== ONBOARDING (first-time welcome for a brand-new, student-less account) =====
+function checkOnboarding() {
+  if (localStorage.getItem('onboardingDismissed')) return;
+  if (_students.length > 0) return;
+  const html = `
+    <div style="text-align:center;margin-bottom:10px">
+      <div style="font-size:44px;margin-bottom:8px">👋</div>
+      <p style="font-size:15px;color:var(--text-muted)">בואי נכיר בקצרה את האפליקציה</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;margin:18px 0">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:22px">1️⃣</span>
+        <div><strong>הוסיפי תלמיד</strong><div style="font-size:13px;color:var(--text-muted)">שם, מחיר לשיעור וימי לימוד קבועים</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:22px">2️⃣</span>
+        <div><strong>קבעי שיעור</strong><div style="font-size:13px;color:var(--text-muted)">תאריך, שעה וכמות יחידות — הסכום מחושב אוטומטית</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:22px">3️⃣</span>
+        <div><strong>עקבי אחרי תשלומים</strong><div style="font-size:13px;color:var(--text-muted)">כל שיעור מסומן כשולם / לא שולם, ותמיד תדעי מי חייבת לך</div></div>
+      </div>
+    </div>`;
+  openModal('ברוכה הבאה! 🎉', html, async () => {
+    localStorage.setItem('onboardingDismissed', '1');
+    closeModal();
+    openAddStudentModal();
+  });
+  const saveBtn = document.getElementById('modal-save-btn');
+  if (saveBtn) saveBtn.textContent = 'בואי נתחיל — הוספת תלמיד ראשון';
+  const skipBtn = document.getElementById('modal-footer').querySelector('.btn-ghost');
+  if (skipBtn) {
+    skipBtn.textContent = 'דלגי';
+    skipBtn.onclick = () => { localStorage.setItem('onboardingDismissed', '1'); closeModal(); };
   }
 }
 async function apiCall(method, url, body) {
