@@ -2119,13 +2119,67 @@ function buildWhatsAppMsg(lesson, student) {
   return msg;
 }
 
+function phoneToIntl(phone) {
+  const digits = phone?.replace(/\D/g, '');
+  if (!digits) return null;
+  return digits.startsWith('0') ? '972' + digits.slice(1) : digits;
+}
+
 function sendWhatsApp(lesson) {
   const s = getStudentById(lesson.studentId);
-  const phone = s?.phone?.replace(/\D/g, '');
-  if (!phone) { showToast('אין מספר טלפון לתלמיד זה', 'warning'); return; }
-  const intl = phone.startsWith('0') ? '972' + phone.slice(1) : phone;
+  const intl = phoneToIntl(s?.phone);
+  if (!intl) { showToast('אין מספר טלפון לתלמיד זה', 'warning'); return; }
   const msg = buildWhatsAppMsg(lesson, s);
   window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function buildLessonsListMsg(student, lessons) {
+  const lines = lessons.map(l => {
+    const status = getLessonPayStatus(l) === 'paid' ? '✅ שולם'
+      : getLessonPayStatus(l) === 'partial' ? '🟡 שולם חלקית' : '⏳ לא שולם';
+    return `📅 ${formatDate(l.date)} ${l.time || ''} - ${status}`;
+  }).join('\n');
+  return `היי ${student?.name || ''} 😊\nהנה רשימת השיעורים שלך:\n\n${lines}\n\nסה"כ: ${lessons.length} שיעורים`;
+}
+
+function sendLessonsListWhatsApp(studentId, from, to) {
+  const s = getStudentById(studentId);
+  const intl = phoneToIntl(s?.phone);
+  if (!intl) { showToast('אין מספר טלפון לתלמיד זה', 'warning'); return; }
+  const lessons = getLessons()
+    .filter(l => l.studentId === studentId && l.date >= from && l.date <= to)
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
+  if (lessons.length === 0) { showToast('אין שיעורים בטווח התאריכים שנבחר', 'warning'); return; }
+  const msg = buildLessonsListMsg(s, lessons);
+  window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function openSendLessonsListModal(studentId) {
+  const s = getStudentById(studentId);
+  if (!s) return;
+  const studentLessons = getLessons().filter(l => l.studentId === studentId).sort((a, b) => a.date.localeCompare(b.date));
+  const today = isoDate(new Date());
+  const defaultFrom = studentLessons.find(l => l.date >= today)?.date || studentLessons[0]?.date || today;
+  const defaultTo = studentLessons.length ? studentLessons[studentLessons.length - 1].date : today;
+  const html = `
+    <p style="margin-bottom:14px;font-size:14px;color:var(--text-muted)">בחרי טווח תאריכים — כל השיעורים בטווח יישלחו כהודעת ווצאפ אחת</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label>מתאריך</label>
+        <input type="date" id="f-list-from" value="${defaultFrom}">
+      </div>
+      <div class="form-group">
+        <label>עד תאריך</label>
+        <input type="date" id="f-list-to" value="${defaultTo}">
+      </div>
+    </div>`;
+  openModal(`שליחת רשימת שיעורים — ${escapeHtml(s.name)}`, html, async () => {
+    const from = document.getElementById('f-list-from').value;
+    const to = document.getElementById('f-list-to').value;
+    if (!from || !to) { showToast('נא לבחור טווח תאריכים', 'error'); return; }
+    sendLessonsListWhatsApp(studentId, from, to);
+    closeModal();
+  });
 }
 
 // Firing two "leave the page" actions back-to-back (calendar file + WhatsApp
@@ -2504,6 +2558,7 @@ function renderStudents() {
         <button class="btn btn-ghost btn-sm" onclick="openEditStudentModal('${s.id}')">ערוך</button>
         ${!inactive ? `<button class="btn btn-primary btn-sm" onclick="openAddLessonModal('${s.id}')">+ שיעור</button>` : ''}
         <button class="btn btn-ghost btn-sm" onclick="viewStudentHistory('${s.id}')">היסטוריה</button>
+        ${s.phone ? `<button class="btn btn-ghost btn-sm" onclick="openSendLessonsListModal('${s.id}')">📋 שלח רשימת שיעורים</button>` : ''}
         ${balance < 0 ? `<button class="btn btn-warning btn-sm" onclick="openDebtReport('${s.id}')">📄 דוח תשלום</button>` : ''}
         ${balance < 0 ? `<button class="btn btn-success btn-sm" onclick="markAllLessonsPaid('${s.id}')"><svg class="icon icon-sm"><use href="#icon-check"/></svg> סמן הכל שולם</button>` : ''}
       </div>
