@@ -2134,11 +2134,7 @@ function sendWhatsApp(lesson) {
 }
 
 function buildLessonsListMsg(student, lessons) {
-  const lines = lessons.map(l => {
-    const status = getLessonPayStatus(l) === 'paid' ? '✅ שולם'
-      : getLessonPayStatus(l) === 'partial' ? '🟡 שולם חלקית' : '⏳ לא שולם';
-    return `📅 ${formatDate(l.date)} ${l.time || ''} - ${status}`;
-  }).join('\n');
+  const lines = lessons.map(l => `📅 ${formatDate(l.date)} ${l.time || ''}`).join('\n');
   return `היי ${student?.name || ''} 😊\nהנה רשימת השיעורים שלך:\n\n${lines}\n\nסה"כ: ${lessons.length} שיעורים`;
 }
 
