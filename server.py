@@ -278,6 +278,152 @@ def delete_student(sid):
     write_data(data)
     return '', 204
 
+@app.route('/api/students/<sid>/share-link', methods=['GET'])
+def student_share_link(sid):
+    err = require_auth()
+    if err: return err
+    data = read_data()
+    student = next((s for s in data['students'] if s['id'] == sid), None)
+    if not student:
+        return jsonify({'error': 'Not found'}), 404
+    if not student.get('shareToken'):
+        student['shareToken'] = secrets.token_urlsafe(20)
+        write_data(data)
+    return jsonify({'token': student['shareToken']})
+
+# ── Parent/student portal (public, no login — found by share token) ─────────────
+@app.route('/portal/<token>')
+def student_portal(token):
+    import html as html_mod
+    found = None
+    for fn in os.listdir(BASE_DIR):
+        if fn.startswith('data_') and fn.endswith('.json'):
+            try:
+                with open(os.path.join(BASE_DIR, fn), encoding='utf-8') as f:
+                    d = json.load(f)
+                for s in d.get('students', []):
+                    if s.get('shareToken') == token:
+                        found = (d, s)
+                        break
+            except Exception:
+                pass
+        if found:
+            break
+    if not found:
+        return 'הקישור לא נמצא או שפג תוקפו', 404
+    d, student = found
+    sid_ = student['id']
+    lessons  = [l for l in d.get('lessons', [])  if l['studentId'] == sid_]
+    payments = [p for p in d.get('payments', []) if p['studentId'] == sid_]
+
+    today = datetime.now().strftime('%Y-%m-%d')
+    upcoming = sorted([l for l in lessons if l['date'] >= today], key=lambda l: (l['date'], l.get('time', '')))
+    past = sorted([l for l in lessons if l['date'] < today], key=lambda l: (l['date'], l.get('time', '')), reverse=True)[:8]
+
+    total_lessons = sum(l.get('amount', 0) or 0 for l in lessons)
+    total_lesson_paid = sum(l.get('paidAmount', 0) or 0 for l in lessons)
+    total_payments = sum(p.get('amount', 0) or 0 for p in payments)
+    balance = total_payments + total_lesson_paid - total_lessons
+
+    def esc(x):
+        return html_mod.escape(str(x or ''))
+
+    def fmt_date(iso):
+        try:
+            y, m, d = iso.split('-')
+            return f'{d}/{m}/{y}'
+        except Exception:
+            return iso or ''
+
+    def lesson_row(l, show_status):
+        topic = esc(l.get('topic'))
+        homework = esc(l.get('homework'))
+        extra = ''
+        if topic:
+            extra += f'<div class="portal-lesson-extra">📘 {topic}</div>'
+        if homework:
+            extra += f'<div class="portal-lesson-extra">📝 שיעורי בית: {homework}</div>'
+        status_html = ''
+        if show_status:
+            paid = l.get('isPaid')
+            partial = (l.get('paidAmount') or 0) > 0
+            label = 'שולם' if paid else ('שולם חלקית' if partial else 'ממתין לתשלום')
+            cls = 'paid' if paid else ('partial' if partial else 'unpaid')
+            status_html = f'<span class="portal-badge {cls}">{label}</span>'
+        return f'''<div class="portal-lesson">
+          <div class="portal-lesson-head">
+            <span class="portal-lesson-date">{esc(fmt_date(l["date"]))} {esc(l.get("time",""))}</span>
+            {status_html}
+          </div>
+          {extra}
+        </div>'''
+
+    upcoming_html = ''.join(lesson_row(l, False) for l in upcoming) or '<p class="portal-empty">אין שיעורים קרובים כרגע</p>'
+    past_html = ''.join(lesson_row(l, True) for l in past) or '<p class="portal-empty">אין שיעורים קודמים</p>'
+    balance_label = 'לתשלום' if balance < 0 else ('זכות' if balance > 0 else 'מאוזן')
+    balance_abs = abs(balance)
+    balance_class = 'debt' if balance < 0 else ('credit' if balance > 0 else 'even')
+
+    page = f'''<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{esc(student.get("name"))} — מעקב שיעורים</title>
+<style>
+  :root {{ --primary: #2563eb; --bg: #f1f5f9; --card: #fff; --text: #1e293b; --muted: #64748b; --border: #e2e8f0; }}
+  * {{ box-sizing: border-box; }}
+  body {{ margin:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); padding: 16px; }}
+  .portal-wrap {{ max-width: 480px; margin: 0 auto; }}
+  .portal-header {{ text-align:center; margin: 12px 0 20px; }}
+  .portal-header .avatar {{ width: 56px; height:56px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; margin: 0 auto 10px; }}
+  .portal-header h1 {{ font-size: 20px; margin: 0 0 4px; }}
+  .portal-header p {{ color: var(--muted); font-size: 13px; margin:0; }}
+  .portal-balance {{ background: var(--card); border-radius: 14px; padding: 18px; text-align:center; margin-bottom:18px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }}
+  .portal-balance .amount {{ font-size: 28px; font-weight: 700; margin-top:4px; }}
+  .portal-balance.debt .amount {{ color: #dc2626; }}
+  .portal-balance.credit .amount {{ color: #16a34a; }}
+  .portal-balance.even .amount {{ color: var(--muted); }}
+  .portal-section {{ background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }}
+  .portal-section h2 {{ font-size: 14px; margin: 0 0 10px; }}
+  .portal-lesson {{ padding: 10px 0; border-bottom: 1px solid var(--border); }}
+  .portal-lesson:last-child {{ border-bottom: none; }}
+  .portal-lesson-head {{ display:flex; justify-content:space-between; align-items:center; }}
+  .portal-lesson-date {{ font-weight:600; font-size: 13.5px; }}
+  .portal-lesson-extra {{ font-size: 12.5px; color: var(--muted); margin-top: 4px; }}
+  .portal-badge {{ font-size: 11px; font-weight:700; padding: 2px 9px; border-radius: 10px; }}
+  .portal-badge.paid {{ background:#dcfce7; color:#166534; }}
+  .portal-badge.partial {{ background:#fef3c7; color:#92400e; }}
+  .portal-badge.unpaid {{ background:#fee2e2; color:#991b1b; }}
+  .portal-empty {{ color: var(--muted); font-size: 13px; text-align:center; padding: 10px 0; }}
+  .portal-footer {{ text-align:center; color: var(--muted); font-size: 11.5px; margin-top: 20px; }}
+</style>
+</head>
+<body>
+  <div class="portal-wrap">
+    <div class="portal-header">
+      <div class="avatar">{esc((student.get("name") or "?")[0])}</div>
+      <h1>{esc(student.get("name"))}</h1>
+      <p>מעקב שיעורים ותשלומים</p>
+    </div>
+    <div class="portal-balance {balance_class}">
+      <div>{balance_label}</div>
+      <div class="amount">₪{balance_abs:,.0f}</div>
+    </div>
+    <div class="portal-section">
+      <h2>📅 שיעורים קרובים</h2>
+      {upcoming_html}
+    </div>
+    <div class="portal-section">
+      <h2>📚 שיעורים אחרונים</h2>
+      {past_html}
+    </div>
+    <div class="portal-footer">עמוד זה מתעדכן אוטומטית · ניהול שיעורים פרטיים</div>
+  </div>
+</body>
+</html>'''
+    return page, 200, {'Content-Type': 'text/html; charset=utf-8'}
+
 # ── Lessons ────────────────────────────────────────────────────────────────────
 @app.route('/api/lessons', methods=['GET'])
 def get_lessons():
