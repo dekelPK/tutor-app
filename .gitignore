@@ -1,6 +1,8 @@
 # Data files – contain private student data, never commit
 data.json
 data_*.json
+tutor.db
+backups/
 
 # Auth & secrets
 users.db
