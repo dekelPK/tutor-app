@@ -169,6 +169,10 @@ def init_db():
             # Default 1 so every pre-existing account stays usable; only new
             # signups from here on start at 0 and need the admin to approve them.
             db.execute('ALTER TABLE users ADD COLUMN approved INTEGER DEFAULT 1')
+        if 'reset_token' not in user_cols:
+            db.execute('ALTER TABLE users ADD COLUMN reset_token TEXT')
+        if 'reset_token_expires' not in user_cols:
+            db.execute('ALTER TABLE users ADD COLUMN reset_token_expires TEXT')
 
     # One-time migration from data.json if it exists
     json_path = os.path.join(BASE_DIR, 'data.json')
@@ -302,6 +306,46 @@ def auth_register():
 def auth_logout():
     session.clear()
     return '', 204
+
+@app.route('/api/auth/forgot-password', methods=['POST'])
+def auth_forgot_password():
+    email = ((request.json or {}).get('email') or '').strip().lower()
+    # Always the same response whether or not the email exists — never reveal
+    # which emails are registered.
+    generic = jsonify({'message': 'אם כתובת האימייל קיימת במערכת, נשלח אליה קישור לאיפוס סיסמה.'})
+    if not email:
+        return generic
+    with get_db() as db:
+        user = db.execute('SELECT id, name FROM users WHERE email=?', [email]).fetchone()
+        if not user:
+            return generic
+        token = secrets.token_urlsafe(32)
+        expires = (datetime.now() + timedelta(hours=1)).isoformat()
+        db.execute('UPDATE users SET reset_token=?, reset_token_expires=? WHERE id=?',
+                   [token, expires, user['id']])
+    try:
+        trigger_github_workflow('send-password-reset.yml',
+                                 {'email': email, 'name': user['name'] or '', 'token': token})
+    except Exception:
+        pass
+    return generic
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def auth_reset_password():
+    body  = request.json or {}
+    token = (body.get('token') or '').strip()
+    pw    = body.get('password', '')
+    if not token:
+        return jsonify({'error': 'קישור לא תקין'}), 400
+    if len(pw) < 6:
+        return jsonify({'error': 'הסיסמה חייבת להכיל לפחות 6 תווים'}), 400
+    with get_db() as db:
+        user = db.execute('SELECT id, reset_token_expires FROM users WHERE reset_token=?', [token]).fetchone()
+        if not user or not user['reset_token_expires'] or datetime.fromisoformat(user['reset_token_expires']) < datetime.now():
+            return jsonify({'error': 'הקישור פג תוקף או כבר נוצל. נא לבקש קישור חדש.'}), 400
+        db.execute('UPDATE users SET password_hash=?, reset_token=NULL, reset_token_expires=NULL WHERE id=?',
+                   [hash_pw(pw), user['id']])
+    return jsonify({'ok': True})
 
 # ── Push notifications ───────────────────────────────────────────────────────
 @app.route('/sw.js')

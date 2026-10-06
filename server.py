@@ -2,7 +2,7 @@
 from flask import Flask, jsonify, request, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 import json, os, threading, webbrowser, sqlite3, hashlib, secrets, uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
 USERS_DB  = os.path.join(BASE_DIR, 'users.db')
@@ -41,6 +41,10 @@ def init_db():
         c.execute('ALTER TABLE users ADD COLUMN cal_token TEXT')
     if 'approved' not in cols:
         c.execute('ALTER TABLE users ADD COLUMN approved INTEGER DEFAULT 1')
+    if 'reset_token' not in cols:
+        c.execute('ALTER TABLE users ADD COLUMN reset_token TEXT')
+    if 'reset_token_expires' not in cols:
+        c.execute('ALTER TABLE users ADD COLUMN reset_token_expires TEXT')
     c.commit()
     c.close()
 
@@ -195,6 +199,47 @@ def auth_register():
 def auth_logout():
     session.clear()
     return '', 204
+
+@app.route('/api/auth/forgot-password', methods=['POST'])
+def auth_forgot_password():
+    email = ((request.json or {}).get('email') or '').strip().lower()
+    generic = jsonify({'message': 'אם כתובת האימייל קיימת במערכת, נשלח אליה קישור לאיפוס סיסמה.'})
+    if not email:
+        return generic
+    c = get_db()
+    user = c.execute('SELECT id FROM users WHERE email=?', [email]).fetchone()
+    if not user:
+        c.close()
+        return generic
+    token = secrets.token_urlsafe(32)
+    expires = (datetime.now() + timedelta(hours=1)).isoformat()
+    c.execute('UPDATE users SET reset_token=?, reset_token_expires=? WHERE id=?', [token, expires, user['id']])
+    c.commit()
+    c.close()
+    # Local dev has no email sending (same reason push-broadcast is a stub
+    # here) — print the reset link so you can test the flow by hand.
+    print(f'\n[local dev] password reset link: http://localhost:8080/?reset={token}\n')
+    return generic
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def auth_reset_password():
+    body  = request.json or {}
+    token = (body.get('token') or '').strip()
+    pw    = body.get('password', '')
+    if not token:
+        return jsonify({'error': 'קישור לא תקין'}), 400
+    if len(pw) < 6:
+        return jsonify({'error': 'הסיסמה חייבת להכיל לפחות 6 תווים'}), 400
+    c = get_db()
+    user = c.execute('SELECT id, reset_token_expires FROM users WHERE reset_token=?', [token]).fetchone()
+    if not user or not user['reset_token_expires'] or datetime.fromisoformat(user['reset_token_expires']) < datetime.now():
+        c.close()
+        return jsonify({'error': 'הקישור פג תוקף או כבר נוצל. נא לבקש קישור חדש.'}), 400
+    c.execute('UPDATE users SET password_hash=?, reset_token=NULL, reset_token_expires=NULL WHERE id=?',
+              [hash_pw(pw), user['id']])
+    c.commit()
+    c.close()
+    return jsonify({'ok': True})
 
 # ── Students ───────────────────────────────────────────────────────────────────
 @app.route('/api/students', methods=['GET'])
