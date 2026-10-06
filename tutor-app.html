@@ -2133,8 +2133,18 @@ function sendWhatsApp(lesson) {
   window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
+function lessonTimeRange(lesson, student) {
+  const time = lesson.time || '16:00';
+  const [hh, mm] = time.split(':').map(Number);
+  const startMin = hh * 60 + mm;
+  const endMin = startMin + (lesson.durationHours || 1) * (student?.lessonDurationMinutes || 50);
+  const eh = String(Math.floor(endMin / 60) % 24).padStart(2, '0');
+  const em = String(endMin % 60).padStart(2, '0');
+  return `${time}-${eh}:${em}`;
+}
+
 function buildLessonsListMsg(student, lessons) {
-  const lines = lessons.map(l => `📅 ${formatDate(l.date)} ${l.time || ''}`).join('\n');
+  const lines = lessons.map(l => `📅 ${formatDate(l.date)} ${lessonTimeRange(l, student)}`).join('\n');
   return `היי ${student?.name || ''} 😊\nהנה רשימת השיעורים שלך:\n\n${lines}\n\nסה"כ: ${lessons.length} שיעורים`;
 }
 
