@@ -518,6 +518,30 @@
     }
     #announcement-banner .ann-close:hover { background: rgba(255,255,255,0.35); }
 
+    /* ===== INSTALL APP BANNER ===== */
+    #install-banner {
+      background: linear-gradient(135deg, #0891b2, #0e7490);
+      color: white;
+      padding: 10px 24px;
+      font-size: 13.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #install-banner .install-text { flex: 1; display: flex; align-items: center; gap: 8px; }
+    #install-banner .install-btn {
+      background: white; color: #0e7490; border: none; padding: 6px 14px;
+      border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; flex-shrink: 0;
+    }
+    #install-banner .install-btn:hover { background: #f0f9ff; }
+    #install-banner .install-close {
+      background: rgba(255,255,255,0.2); border: none; color: white;
+      width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    #install-banner .install-close:hover { background: rgba(255,255,255,0.35); }
+
     /* ===== KEYBOARD SHORTCUTS TOOLTIP ===== */
     .kb-hint-btn {
       background: rgba(255,255,255,0.15);
@@ -1333,6 +1357,8 @@
     <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
     <symbol id="icon-message-circle" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
     <symbol id="icon-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
+    <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+    <symbol id="icon-share" viewBox="0 0 24 24"><path d="M12 2v13"/><path d="m8 6 4-4 4 4"/><path d="M8 21h8a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2Z"/></symbol>
   </defs>
 </svg>
 
@@ -1449,6 +1475,7 @@
       </button>
       <button class="btn-import" id="admin-btn" onclick="showPage('admin')" title="ניהול מערכת" style="display:none"><svg class="icon"><use href="#icon-settings"/></svg></button>
       <button class="btn-import" id="reminders-btn" onclick="toggleLessonReminders()" title="תזכורות על שיעורי היום" style="display:none">🔔</button>
+      <button class="btn-import" id="about-btn" onclick="openAboutModal()" title="אודות ויצירת קשר"><svg class="icon"><use href="#icon-info"/></svg></button>
       <button class="btn-import" id="dark-mode-btn" onclick="toggleDarkMode()"><svg class="icon" id="dark-mode-icon"><use href="#icon-moon"/></svg></button>
       <button class="btn-import" id="logout-btn" onclick="doLogout()" style="display:none">
         <svg class="icon icon-sm"><use href="#icon-log-out"/></svg><span class="logout-label"> יציאה</span>
@@ -1458,6 +1485,9 @@
 
   <!-- ANNOUNCEMENT (broadcast banner, shown once per announcement id) -->
   <div id="announcement-banner" style="display:none"></div>
+
+  <!-- INSTALL APP banner (hidden once installed/standalone or dismissed) -->
+  <div id="install-banner" style="display:none"></div>
 
   <!-- NAV -->
   <nav class="nav-tabs">
@@ -1887,7 +1917,78 @@ function hideAuthOverlay(userName, isAdmin) {
     window._isAdmin = !!isAdmin;
     initPushUI();
     checkAnnouncement();
+    checkInstallBanner();
   }
+}
+
+// ===== INSTALL APP BANNER =====
+// Chrome/Android/Edge fire beforeinstallprompt and let us trigger a real
+// one-tap install. iOS Safari never fires it — there's no programmatic
+// install API — so there we just show manual "Share → Add to Home Screen"
+// instructions instead. Either way, skip entirely once already installed
+// (running standalone) or dismissed.
+let _deferredInstallPrompt = null;
+
+function isStandaloneApp() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function isIOSDevice() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+  checkInstallBanner();
+});
+
+function checkInstallBanner() {
+  const banner = document.getElementById('install-banner');
+  if (!banner) return;
+  if (isStandaloneApp() || localStorage.getItem('installBannerDismissed')) { banner.style.display = 'none'; return; }
+  if (_deferredInstallPrompt) {
+    banner.innerHTML = `
+      <div class="install-text"><span>📲</span><span>התקיני את האפליקציה למסך הבית לגישה מהירה</span></div>
+      <button class="install-btn" onclick="doInstallPrompt()">התקנה</button>
+      <button class="install-close" onclick="dismissInstallBanner()" title="סגור"><svg class="icon icon-sm"><use href="#icon-x"/></svg></button>`;
+    banner.style.display = 'flex';
+  } else if (isIOSDevice()) {
+    banner.innerHTML = `
+      <div class="install-text"><span>📲</span><span>להתקנה: לחצי על <svg class="icon icon-sm"><use href="#icon-share"/></svg> ואז "הוסף למסך הבית"</span></div>
+      <button class="install-close" onclick="dismissInstallBanner()" title="סגור"><svg class="icon icon-sm"><use href="#icon-x"/></svg></button>`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+async function doInstallPrompt() {
+  if (!_deferredInstallPrompt) return;
+  _deferredInstallPrompt.prompt();
+  await _deferredInstallPrompt.userChoice;
+  _deferredInstallPrompt = null;
+  document.getElementById('install-banner').style.display = 'none';
+}
+
+function dismissInstallBanner() {
+  localStorage.setItem('installBannerDismissed', '1');
+  document.getElementById('install-banner').style.display = 'none';
+}
+
+// ===== ABOUT / CONTACT =====
+function openAboutModal() {
+  const html = `
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:42px;margin-bottom:6px">📚</div>
+      <h3 style="margin:0 0 4px">שיעורים פרטיים</h3>
+      <p style="color:var(--text-muted);font-size:13.5px;margin:0">מערכת ניהול חכמה למורים פרטיים — תלמידים, שיעורים ותשלומים במקום אחד</p>
+    </div>
+    <div class="form-group" style="background:var(--bg);border-radius:10px;padding:14px">
+      <div style="font-weight:600;margin-bottom:6px">יצירת קשר</div>
+      <p style="font-size:13px;color:var(--text-muted);margin:0 0 8px">לשאלות, תקלות או הצעות לשיפור, אפשר לפנות במייל:</p>
+      <a href="mailto:tutorappbydekel@gmail.com" style="color:var(--primary);font-weight:600;text-decoration:none">tutorappbydekel@gmail.com</a>
+    </div>`;
+  openModal('אודות', html, null);
 }
 
 // ===== ANNOUNCEMENT BANNER =====
