@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from flask import Flask, jsonify, request, session, send_from_directory
+from werkzeug.security import generate_password_hash, check_password_hash
 import json, os, threading, webbrowser, sqlite3, hashlib, secrets, uuid
 from datetime import datetime
 
@@ -46,7 +47,15 @@ def init_db():
 init_db()
 
 def hash_pw(pw):
-    return hashlib.sha256(pw.encode('utf-8')).hexdigest()
+    # Salted PBKDF2 (werkzeug default) — every new/rehashed password uses this.
+    return generate_password_hash(pw)
+
+def verify_pw(stored_hash, pw):
+    if stored_hash and (stored_hash.startswith('pbkdf2:') or stored_hash.startswith('scrypt:')):
+        return check_password_hash(stored_hash, pw)
+    # Legacy unsalted SHA-256 from before the security upgrade — rehashed on
+    # next successful login (see auth_login()), so this fades out over time.
+    return stored_hash == hashlib.sha256(pw.encode('utf-8')).hexdigest()
 
 # ── Per-user data files ────────────────────────────────────────────────────────
 def user_data_file(uid):
@@ -126,13 +135,14 @@ def auth_login():
     if not email or not pw:
         return jsonify({'error': 'נא למלא אימייל וסיסמה'}), 400
     c    = get_db()
-    user = c.execute(
-        'SELECT * FROM users WHERE email=? AND password_hash=?',
-        [email, hash_pw(pw)]
-    ).fetchone()
-    c.close()
-    if not user:
+    user = c.execute('SELECT * FROM users WHERE email=?', [email]).fetchone()
+    if not user or not verify_pw(user['password_hash'], pw):
+        c.close()
         return jsonify({'error': 'אימייל או סיסמה שגויים'}), 401
+    if not (user['password_hash'].startswith('pbkdf2:') or user['password_hash'].startswith('scrypt:')):
+        c.execute('UPDATE users SET password_hash=? WHERE id=?', [hash_pw(pw), user['id']])
+        c.commit()
+    c.close()
     if not user['approved']:
         return jsonify({'error': 'החשבון שלך ממתין לאישור מנהל המערכת'}), 403
     session['user_id']    = user['id']

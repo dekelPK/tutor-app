@@ -5,6 +5,7 @@ flask_app.py — PythonAnywhere WSGI entry point
 מיקום: /home/DekelPA/mysite/flask_app.py
 """
 from flask import Flask, jsonify, request, session, send_from_directory
+from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3, json, os, hashlib, secrets, uuid, hmac, subprocess, urllib.request, urllib.error
 from datetime import datetime, timedelta
 try:
@@ -197,7 +198,17 @@ def rows_to_list(rows):
     return [json.loads(r['data']) for r in rows]
 
 def hash_pw(pw):
-    return hashlib.sha256(pw.encode('utf-8')).hexdigest()
+    # Salted PBKDF2 (werkzeug default) — every new/rehashed password uses this.
+    return generate_password_hash(pw)
+
+def verify_pw(stored_hash, pw):
+    if stored_hash and (stored_hash.startswith('pbkdf2:') or stored_hash.startswith('scrypt:')):
+        return check_password_hash(stored_hash, pw)
+    # Legacy unsalted SHA-256 from before the security upgrade — still verified
+    # so existing accounts keep working; auth_login() rehashes them on next
+    # successful login, so this branch disappears over time without a forced
+    # password reset.
+    return stored_hash == hashlib.sha256(pw.encode('utf-8')).hexdigest()
 
 def require_auth():
     if 'user_id' not in session:
@@ -231,10 +242,11 @@ def auth_login():
     if not email or not pw:
         return jsonify({'error': 'נא למלא אימייל וסיסמה'}), 400
     with get_db() as db:
-        user = db.execute('SELECT * FROM users WHERE email=? AND password_hash=?',
-                          [email, hash_pw(pw)]).fetchone()
-    if not user:
-        return jsonify({'error': 'אימייל או סיסמה שגויים'}), 401
+        user = db.execute('SELECT * FROM users WHERE email=?', [email]).fetchone()
+        if not user or not verify_pw(user['password_hash'], pw):
+            return jsonify({'error': 'אימייל או סיסמה שגויים'}), 401
+        if not (user['password_hash'].startswith('pbkdf2:') or user['password_hash'].startswith('scrypt:')):
+            db.execute('UPDATE users SET password_hash=? WHERE id=?', [hash_pw(pw), user['id']])
     if not user['approved']:
         return jsonify({'error': 'החשבון שלך ממתין לאישור מנהל המערכת'}), 403
     session.permanent = True
