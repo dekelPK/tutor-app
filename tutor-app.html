@@ -140,6 +140,10 @@
     .btn-ghost:hover { background: var(--bg); color: var(--text); border-color: var(--primary); }
     .btn-sm { padding: 6px 12px; font-size: 13px; }
     .btn-xs { padding: 4px 8px; font-size: 12px; border-radius: 6px; }
+    /* Icon-only button: square, same height as its size variant, with a
+       title attribute standing in for the label that used to be on-screen. */
+    .btn-icon { padding: 7px; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-icon .icon { margin: 0; }
 
     /* ===== CARDS ===== */
     .card {
@@ -1325,6 +1329,10 @@
     <symbol id="icon-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></symbol>
     <symbol id="icon-alert-triangle" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
     <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="icon-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="icon-message-circle" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
+    <symbol id="icon-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
   </defs>
 </svg>
 
@@ -2653,12 +2661,12 @@ function renderStudents() {
       </div>
       ${s.notes ? `<p class="student-notes">${escapeHtml(s.notes)}</p>` : ''}
       <div class="student-actions">
-        <button class="btn btn-ghost btn-sm" onclick="openEditStudentModal('${s.id}')">ערוך</button>
         ${!inactive ? `<button class="btn btn-primary btn-sm" onclick="openAddLessonModal('${s.id}')">+ שיעור</button>` : ''}
-        <button class="btn btn-ghost btn-sm" onclick="viewStudentHistory('${s.id}')">היסטוריה</button>
-        ${s.phone ? `<button class="btn btn-ghost btn-sm" onclick="openSendLessonsListModal('${s.id}')">📋 שלח רשימת שיעורים</button>` : ''}
-        ${balance < 0 ? `<button class="btn btn-warning btn-sm" onclick="openDebtReport('${s.id}')">📄 דוח תשלום</button>` : ''}
-        ${balance < 0 ? `<button class="btn btn-success btn-sm" onclick="markAllLessonsPaid('${s.id}')"><svg class="icon icon-sm"><use href="#icon-check"/></svg> סמן הכל שולם</button>` : ''}
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditStudentModal('${s.id}')" title="ערוך פרטי תלמיד"><svg class="icon icon-sm"><use href="#icon-pencil"/></svg></button>
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="viewStudentHistory('${s.id}')" title="היסטוריית שיעורים"><svg class="icon icon-sm"><use href="#icon-clock"/></svg></button>
+        ${s.phone ? `<button class="btn btn-ghost btn-sm btn-icon" onclick="openSendLessonsListModal('${s.id}')" title="שלח רשימת שיעורים בווצאפ"><svg class="icon icon-sm"><use href="#icon-message-circle"/></svg></button>` : ''}
+        ${balance < 0 ? `<button class="btn btn-warning btn-sm btn-icon" onclick="openDebtReport('${s.id}')" title="דוח תשלום"><svg class="icon icon-sm"><use href="#icon-file-text"/></svg></button>` : ''}
+        ${balance < 0 ? `<button class="btn btn-success btn-sm btn-icon" onclick="markAllLessonsPaid('${s.id}')" title="סמן הכל שולם"><svg class="icon icon-sm"><use href="#icon-check"/></svg></button>` : ''}
       </div>
     </div>`;
   }).join('');
