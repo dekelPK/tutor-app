@@ -2041,6 +2041,13 @@ function buildWhatsAppMsg(lesson, student) {
   const time = lesson.time || '16:00';
   const name = student?.name || '';
   const count = lesson.durationHours || 1;
+  if (student?.whatsappTemplate && student.whatsappTemplate.trim()) {
+    return student.whatsappTemplate
+      .replace(/\{שם\}/g, name)
+      .replace(/\{תאריך\}/g, dateStr)
+      .replace(/\{שעה\}/g, time)
+      .replace(/\{כמות\}/g, count);
+  }
   const msg = `היי ${name} 😊\nנקבע לנו שיעור${count > 1 ? ` (${count} שיעורים)` : ''} בתאריך ${dateStr} בשעה ${time}.\nמחכה לך! 📚`;
   return msg;
 }
@@ -2471,6 +2478,11 @@ function buildStudentForm(s) {
       <label>טלפון תלמיד</label>
       <input type="tel" id="f-phone" value="${escapeHtml(s?.phone)}" placeholder="05X-XXXXXXX" style="direction:ltr;text-align:right">
     </div>
+    <div class="form-group">
+      <label>הודעת ווצאפ מותאמת אישית (אופציונלי)</label>
+      <textarea id="f-whatsapp-template" rows="3" placeholder="אם ריק, תישלח ההודעה הרגילה">${escapeHtml(s?.whatsappTemplate)}</textarea>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px">אפשר להשתמש ב: {שם} {תאריך} {שעה} {כמות}</div>
+    </div>
     <div class="form-group" style="background:var(--primary-light);border-radius:10px;padding:12px;margin-top:4px">
       <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px">📲 פרטי הורה (לדוח תשלום)</div>
       <div style="display:flex;gap:8px">
@@ -2514,6 +2526,7 @@ function openAddStudentModal() {
       notes: document.getElementById('f-notes').value.trim(),
       isActive: document.getElementById('f-active').checked,
       phone: document.getElementById('f-phone').value.trim(),
+      whatsappTemplate: document.getElementById('f-whatsapp-template').value.trim(),
       parentName: document.getElementById('f-parent-name').value.trim(),
       parentPhone: document.getElementById('f-parent-phone').value.trim(),
       createdAt: new Date().toISOString()
@@ -2540,6 +2553,7 @@ function openEditStudentModal(id) {
       scheduledDays: days, color, notes: document.getElementById('f-notes').value.trim(),
       isActive: document.getElementById('f-active').checked,
       phone: document.getElementById('f-phone').value.trim(),
+      whatsappTemplate: document.getElementById('f-whatsapp-template').value.trim(),
       parentName: document.getElementById('f-parent-name').value.trim(),
       parentPhone: document.getElementById('f-parent-phone').value.trim() };
     await apiCall('PUT', `/api/students/${id}`, updated);
