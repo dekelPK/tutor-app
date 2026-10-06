@@ -1,0 +1,18 @@
+name: Daily database backup
+
+on:
+  schedule:
+    # ~04:00-05:00 Israel time year-round (02:00 UTC), away from lesson hours.
+    - cron: '0 2 * * *'
+  workflow_dispatch: {}   # lets you trigger a test run manually from the Actions tab
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger server-side backup
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sf -X POST "$APP_URL/api/admin/run-backup?token=$CRON_SECRET"

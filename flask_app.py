@@ -6,7 +6,7 @@ flask_app.py — PythonAnywhere WSGI entry point
 """
 from flask import Flask, jsonify, request, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
-import sqlite3, json, os, hashlib, secrets, uuid, hmac, subprocess, urllib.request, urllib.error
+import sqlite3, json, os, hashlib, secrets, uuid, hmac, subprocess, urllib.request, urllib.error, shutil, glob
 from datetime import datetime, timedelta
 try:
     from zoneinfo import ZoneInfo
@@ -509,6 +509,35 @@ def push_admin_subscriptions():
         subs = db.execute('SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=?',
                            [admin_row['id']]).fetchall()
     return jsonify([dict(s) for s in subs])
+
+# ── Daily DB backup ───────────────────────────────────────────────────────────
+# PythonAnywhere's free tier doesn't include Scheduled Tasks (that needs a
+# paid plan), so this is triggered the same way as everything else that needs
+# "run this once a day": a GitHub Actions cron job (see backup-db.yml) hits
+# this endpoint daily. Copies tutor.db into backups/ with a timestamp and
+# prunes anything older than BACKUP_KEEP_DAYS — all on the server itself,
+# so no personal data ever leaves it.
+BACKUP_DIR = os.path.join(BASE_DIR, 'backups')
+BACKUP_KEEP_DAYS = 14
+
+@app.route('/api/admin/run-backup', methods=['POST'])
+def run_backup():
+    if request.args.get('token') != CRON_SECRET:
+        return jsonify({'error': 'Unauthorized'}), 401
+    if not os.path.exists(DB_PATH):
+        return jsonify({'ok': False, 'error': 'no DB found'}), 404
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    dest = os.path.join(BACKUP_DIR, f'tutor_{stamp}.db')
+    shutil.copy2(DB_PATH, dest)
+
+    cutoff = datetime.now() - timedelta(days=BACKUP_KEEP_DAYS)
+    removed = 0
+    for path in glob.glob(os.path.join(BACKUP_DIR, 'tutor_*.db')):
+        if datetime.fromtimestamp(os.path.getmtime(path)) < cutoff:
+            os.remove(path)
+            removed += 1
+    return jsonify({'ok': True, 'backup': os.path.basename(dest), 'removed_old': removed})
 
 # ── Announcements (in-app banner to every logged-in user) ───────────────────────
 @app.route('/api/announcement')
