@@ -400,9 +400,20 @@ def admin_stats():
             except Exception:
                 pass
     active_students = sum(1 for s in all_students if s.get('isActive') is not False)
+    month_prefix = datetime.now().strftime('%Y-%m')
+    lessons_month = 0
+    for fn in os.listdir(BASE_DIR):
+        if fn.startswith('data_') and fn.endswith('.json'):
+            try:
+                with open(os.path.join(BASE_DIR, fn), encoding='utf-8') as f:
+                    lessons = json.load(f).get('lessons', [])
+                lessons_month += sum(1 for l in lessons if l.get('date', '').startswith(month_prefix))
+            except Exception:
+                pass
     return jsonify({
         'activeUsers': active_users, 'pendingUsers': pending_users,
         'activeStudents': active_students, 'totalStudents': len(all_students),
+        'lessonsThisMonth': lessons_month,
     })
 
 @app.route('/api/admin/pending-users')
@@ -460,6 +471,15 @@ def admin_reject_user(target_id):
     if err: return err
     c = get_db()
     c.execute('DELETE FROM users WHERE id=? AND approved=0', [target_id])
+    c.commit(); c.close()
+    return jsonify({'ok': True})
+
+@app.route('/api/admin/users/<target_id>/suspend', methods=['POST'])
+def admin_suspend_user(target_id):
+    err = require_admin()
+    if err: return err
+    c = get_db()
+    c.execute('UPDATE users SET approved=0 WHERE id=? AND email!=?', [target_id, ADMIN_EMAIL])
     c.commit(); c.close()
     return jsonify({'ok': True})
 

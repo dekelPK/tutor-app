@@ -593,16 +593,19 @@ def admin_push_broadcast():
 def admin_stats():
     err = require_admin()
     if err: return err
+    month_prefix = datetime.now().strftime('%Y-%m')
     with get_db() as db:
         active_users    = db.execute('SELECT COUNT(*) FROM users WHERE approved=1').fetchone()[0]
         pending_users   = db.execute('SELECT COUNT(*) FROM users WHERE approved=0').fetchone()[0]
         all_students    = rows_to_list(db.execute('SELECT data FROM students').fetchall())
         active_students = sum(1 for s in all_students if s.get('isActive') is not False)
+        lessons_month   = db.execute('SELECT COUNT(*) FROM lessons WHERE date LIKE ?', [f'{month_prefix}%']).fetchone()[0]
     return jsonify({
         'activeUsers': active_users,
         'pendingUsers': pending_users,
         'activeStudents': active_students,
         'totalStudents': len(all_students),
+        'lessonsThisMonth': lessons_month,
     })
 
 @app.route('/api/admin/pending-users')
@@ -667,6 +670,18 @@ def admin_reject_user(target_id):
         # Only ever deletes an unapproved signup — never touches an active account,
         # even if someone passes a stale/wrong id.
         db.execute('DELETE FROM users WHERE id=? AND approved=0', [target_id])
+    return jsonify({'ok': True})
+
+@app.route('/api/admin/users/<target_id>/suspend', methods=['POST'])
+def admin_suspend_user(target_id):
+    # Moves an already-approved user back to "pending" (approved=0) without
+    # deleting their row or data — reversible via the same approve button
+    # used for new signups. Never lets the admin account itself be suspended,
+    # even by its own owner, so there's no way to accidentally lock everyone out.
+    err = require_admin()
+    if err: return err
+    with get_db() as db:
+        db.execute('UPDATE users SET approved=0 WHERE id=? AND email!=?', [target_id, ADMIN_EMAIL])
     return jsonify({'ok': True})
 
 # ── Students ──────────────────────────────────────────────────────────────────

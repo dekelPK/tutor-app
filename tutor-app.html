@@ -1616,26 +1616,31 @@
 
       <div class="stats-grid" id="admin-stats-grid">
         <div class="stat-card">
-          <div class="stat-label">משתמשים פעילים</div>
+          <div class="stat-label">👤 משתמשים פעילים</div>
           <div class="stat-value" id="admin-stat-users">–</div>
         </div>
         <div class="stat-card stat-card--warning">
-          <div class="stat-label">בקשות ממתינות</div>
+          <div class="stat-label">⏳ בקשות ממתינות</div>
           <div class="stat-value" id="admin-stat-pending">–</div>
         </div>
         <div class="stat-card stat-card--success">
-          <div class="stat-label">תלמידים פעילים (הכל)</div>
+          <div class="stat-label">🎓 תלמידים פעילים (הכל)</div>
           <div class="stat-value" id="admin-stat-students">–</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">📚 שיעורים החודש (הכל)</div>
+          <div class="stat-value" id="admin-stat-lessons-month">–</div>
         </div>
       </div>
 
       <div class="card" style="margin-bottom:20px">
-        <div class="dash-card-title">בקשות הרשמה ממתינות</div>
+        <div class="dash-card-title">⏳ בקשות הרשמה ממתינות</div>
         <div id="admin-pending-list"><p class="text-muted" style="font-size:13px">טוען...</p></div>
       </div>
 
       <div class="card" style="margin-bottom:20px">
-        <div class="dash-card-title">משתמשים רשומים</div>
+        <div class="dash-card-title">👥 משתמשים רשומים</div>
+        <input type="text" id="admin-user-search" placeholder="🔍 חיפוש לפי שם או אימייל..." oninput="filterAdminUsers(this.value)" style="width:100%;margin-bottom:12px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;background:var(--card);color:var(--text)">
         <div id="admin-users-list"><p class="text-muted" style="font-size:13px">טוען...</p></div>
       </div>
 
@@ -3724,39 +3729,90 @@ async function showCalSubscribeInfo() {
 }
 
 // ===== ADMIN =====
+let _adminUsers = [];
+
 async function renderAdminPage() {
   await Promise.all([loadAdminStats(), loadAdminPending(), loadAdminUsers(), loadAdminAnnouncementIntoForm()]);
 }
+
+function avatarColorFor(key) {
+  let hash = 0;
+  for (const ch of (key || '')) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return STUDENT_COLORS[hash % STUDENT_COLORS.length];
+}
+
+function relativeTime(dateStr) {
+  const then = new Date(dateStr);
+  const diffMs = Date.now() - then.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'ממש עכשיו';
+  if (mins < 60) return `לפני ${mins} דק'`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `לפני ${hours} שעות`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `לפני ${days} ימים`;
+  return formatDate(dateStr.split('T')[0]);
+}
+
 async function loadAdminUsers() {
   const el = document.getElementById('admin-users-list');
   try {
     const r = await fetch('/api/admin/users');
     if (!r.ok) { el.innerHTML = '<p class="text-muted" style="font-size:13px">שגיאה בטעינה</p>'; return; }
-    const users = await r.json();
-    if (users.length === 0) {
-      el.innerHTML = '<p class="text-muted" style="font-size:13px">אין משתמשים עדיין</p>';
-      return;
-    }
-    el.innerHTML = users.map(u => `
-      <div style="padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-          <div>
+    _adminUsers = await r.json();
+    renderAdminUsersList(_adminUsers);
+  } catch (e) {
+    el.innerHTML = '<p class="text-muted" style="font-size:13px">שגיאה בטעינה</p>';
+  }
+}
+
+function filterAdminUsers(query) {
+  const q = query.trim().toLowerCase();
+  const filtered = !q ? _adminUsers : _adminUsers.filter(u =>
+    (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
+  renderAdminUsersList(filtered, !!q);
+}
+
+function renderAdminUsersList(users, isFiltered) {
+  const el = document.getElementById('admin-users-list');
+  if (_adminUsers.length === 0) {
+    el.innerHTML = '<p class="text-muted" style="font-size:13px">אין משתמשים עדיין</p>';
+    return;
+  }
+  if (users.length === 0) {
+    el.innerHTML = `<p class="text-muted" style="font-size:13px">${isFiltered ? 'אין תוצאות לחיפוש' : 'אין משתמשים עדיין'}</p>`;
+    return;
+  }
+  el.innerHTML = users.map(u => `
+    <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+      <div class="student-avatar" style="width:38px;height:38px;font-size:15px;background:${avatarColorFor(u.email)}">${(u.name || u.email || '?')[0].toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+          <div style="min-width:0">
             <div style="font-weight:600;font-size:14px">${escapeHtml(u.name) || '(ללא שם)'} ${u.isAdmin ? '<span class="badge badge-muted" style="font-size:10px">מנהל</span>' : ''}</div>
             <div style="font-size:12.5px;color:var(--text-muted);direction:ltr;text-align:right">${escapeHtml(u.email)}</div>
-            <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">הצטרף/ה ${formatDate(u.created_at.split('T')[0])}</div>
           </div>
-          <div style="text-align:center;flex-shrink:0;font-size:12px;color:var(--text-muted)">
+          <div style="text-align:center;flex-shrink:0;font-size:11.5px;color:var(--text-muted)">
             <div style="font-size:16px;font-weight:700;color:var(--success)">${u.activeStudentCount}</div>
             תלמידים פעילים
             ${u.studentCount !== u.activeStudentCount ? `<div style="font-size:10.5px">(${u.studentCount} סה"כ)</div>` : ''}
           </div>
         </div>
-        <button class="btn btn-ghost btn-xs" style="margin-top:6px" onclick="toggleAdminUserStudents('${u.id}', this)">הצג רשימת תלמידים</button>
+        <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">הצטרף/ה ${formatDate(u.created_at.split('T')[0])} · ${u.lessonCount} שיעורים</div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-xs" onclick="toggleAdminUserStudents('${u.id}', this)">הצג רשימת תלמידים</button>
+          ${!u.isAdmin ? `<button class="btn btn-ghost btn-xs text-danger" onclick="adminSuspendUser('${u.id}', '${escapeHtml(u.name || u.email)}')">⛔ השבת גישה</button>` : ''}
+        </div>
         <div id="admin-user-students-${u.id}" style="display:none;margin-top:8px;font-size:12.5px"></div>
-      </div>`).join('');
-  } catch (e) {
-    el.innerHTML = '<p class="text-muted" style="font-size:13px">שגיאה בטעינה</p>';
-  }
+      </div>
+    </div>`).join('');
+}
+
+async function adminSuspendUser(id, label) {
+  if (!confirm(`להשבית את הגישה של ${label}? אפשר יהיה להפעיל אותה מחדש מתוך "בקשות ממתינות".`)) return;
+  const r = await fetch(`/api/admin/users/${id}/suspend`, {method: 'POST'});
+  if (r.ok) { showToast('הגישה הושבתה'); loadAdminStats(); loadAdminPending(); loadAdminUsers(); document.getElementById('admin-user-search').value = ''; }
+  else showToast('שגיאה בהשבתת הגישה', 'danger');
 }
 async function toggleAdminUserStudents(userId, btn) {
   const box = document.getElementById(`admin-user-students-${userId}`);
@@ -3785,6 +3841,7 @@ async function loadAdminStats() {
     document.getElementById('admin-stat-users').textContent = s.activeUsers;
     document.getElementById('admin-stat-pending').textContent = s.pendingUsers;
     document.getElementById('admin-stat-students').textContent = s.activeStudents;
+    document.getElementById('admin-stat-lessons-month').textContent = s.lessonsThisMonth;
   } catch (e) { /* stats just stay at – */ }
 }
 async function loadAdminAnnouncementIntoForm() {
@@ -3807,10 +3864,12 @@ async function loadAdminPending() {
       return;
     }
     el.innerHTML = pending.map(u => `
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div>
+      <div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div class="student-avatar" style="width:38px;height:38px;font-size:15px;background:${avatarColorFor(u.email)};flex-shrink:0">${(u.name || u.email || '?')[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:14px">${escapeHtml(u.name) || '(ללא שם)'}</div>
           <div style="font-size:12.5px;color:var(--text-muted);direction:ltr;text-align:right">${escapeHtml(u.email)}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:1px">ביקש/ה להצטרף ${relativeTime(u.created_at)}</div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
           <button class="btn btn-success btn-xs" onclick="adminApproveUser('${u.id}')">✓ אשר</button>
@@ -3823,7 +3882,7 @@ async function loadAdminPending() {
 }
 async function adminApproveUser(id) {
   const r = await fetch(`/api/admin/users/${id}/approve`, {method: 'POST'});
-  if (r.ok) { showToast('המשתמש אושר ✓'); loadAdminStats(); loadAdminPending(); }
+  if (r.ok) { showToast('המשתמש אושר ✓'); loadAdminStats(); loadAdminPending(); loadAdminUsers(); }
   else showToast('שגיאה באישור', 'danger');
 }
 async function adminRejectUser(id) {
