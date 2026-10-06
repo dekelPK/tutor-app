@@ -446,8 +446,12 @@ def admin_approve_user(target_id):
     err = require_admin()
     if err: return err
     c = get_db()
+    user = c.execute('SELECT email, name FROM users WHERE id=?', [target_id]).fetchone()
     c.execute('UPDATE users SET approved=1 WHERE id=?', [target_id])
     c.commit(); c.close()
+    if user:
+        # Local dev has no email sending — see forgot-password for the same pattern.
+        print(f"\n[local dev] would send approval email to {user['email']}\n")
     return jsonify({'ok': True})
 
 @app.route('/api/admin/users/<target_id>/reject', methods=['POST'])

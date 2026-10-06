@@ -649,7 +649,14 @@ def admin_approve_user(target_id):
     err = require_admin()
     if err: return err
     with get_db() as db:
+        user = db.execute('SELECT email, name FROM users WHERE id=?', [target_id]).fetchone()
         db.execute('UPDATE users SET approved=1 WHERE id=?', [target_id])
+    if user:
+        # Best-effort — approval always succeeds even if the notification fails.
+        try:
+            trigger_github_workflow('send-approval-email.yml', {'email': user['email'], 'name': user['name'] or ''})
+        except Exception:
+            pass
     return jsonify({'ok': True})
 
 @app.route('/api/admin/users/<target_id>/reject', methods=['POST'])

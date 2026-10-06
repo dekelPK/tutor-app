@@ -1,0 +1,30 @@
+name: Send approval email
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: 'Approved user email'
+        required: true
+      name:
+        description: 'Approved user name'
+        required: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Send approval email
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
+          APPROVED_EMAIL: ${{ inputs.email }}
+          APPROVED_NAME: ${{ inputs.name }}
+        run: python scripts/send_approval_email.py
