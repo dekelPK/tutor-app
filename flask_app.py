@@ -832,7 +832,9 @@ def student_portal(token):
         settings = load_booking_settings(db, owner_id)
         booking_enabled = settings['enabled'] and student.get('isActive') is not False
         slots = free_slots_for(db, owner_id, student, settings) if booking_enabled else []
-    page = portal_core.render_portal(token, student, lessons, payments, packages, bookings, slots, booking_enabled)
+        owner = db.execute('SELECT name FROM users WHERE id=?', [owner_id]).fetchone()
+    page = portal_core.render_portal(token, student, lessons, payments, packages, bookings, slots, booking_enabled,
+                                     teacher_name=(owner['name'] if owner else '') or '')
     return page, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 @app.route('/portal/<token>/book', methods=['POST'])

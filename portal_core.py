@@ -20,6 +20,7 @@ Data shapes (all stored as JSON blobs, same as students/lessons/payments):
 """
 import html as html_mod
 import json
+import re
 from datetime import datetime, timedelta
 
 try:
@@ -170,6 +171,10 @@ def validate_booking_request(body, free_slots):
 
 # ── Portal page ─────────────────────────────────────────────────────────────────
 _HE_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
+_HE_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט',
+              'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר']
+_HE_MONTHS_SHORT = ['ינו׳', 'פבר׳', 'מרץ', 'אפר׳', 'מאי', 'יוני', 'יולי', 'אוג׳', 'ספט׳', 'אוק׳', 'נוב׳', 'דצמ׳']
+_HEX_COLOR = re.compile(r'^#[0-9a-fA-F]{6}$')
 
 
 def _esc(x):
@@ -184,20 +189,62 @@ def _fmt_date(iso):
         return iso or ''
 
 
-def _day_label(iso):
+def _parse(iso):
     try:
-        d = datetime.strptime(iso, '%Y-%m-%d')
-        return f'יום {_HE_DAYS[(d.weekday() + 1) % 7]} · {d.day}/{d.month}'
+        return datetime.strptime(iso, '%Y-%m-%d')
     except Exception:
-        return iso
+        return None
+
+
+def _weekday(dt):
+    return _HE_DAYS[(dt.weekday() + 1) % 7]
+
+
+def _long_date(iso):
+    d = _parse(iso)
+    return f'יום {_weekday(d)}, {d.day} ב{_HE_MONTHS[d.month - 1]}' if d else iso
+
+
+def _time_range(lesson, student):
+    start = _to_min(lesson.get('time') or '16:00')
+    if start is None:
+        return _esc(lesson.get('time'))
+    per = student.get('lessonDurationMinutes') or 50
+    end = start + int((lesson.get('durationHours') or 1) * per)
+    # dir=ltr isolate: otherwise RTL bidi flips it to "18:00–17:00"
+    return f'<span class="tr" dir="ltr">{_fmt_min(start)}–{_fmt_min(end % (24 * 60))}</span>'
+
+
+def _countdown(iso, today):
+    d, t = _parse(iso), _parse(today)
+    if not d or not t:
+        return ''
+    n = (d - t).days
+    if n == 0:
+        return 'היום!'
+    if n == 1:
+        return 'מחר'
+    if n == 2:
+        return 'מחרתיים'
+    return f'בעוד {n} ימים'
+
+
+def _date_tile(iso, extra_cls=''):
+    d = _parse(iso)
+    if not d:
+        return ''
+    return (f'<div class="tile {extra_cls}"><span class="tile-wd">{_weekday(d)}</span>'
+            f'<span class="tile-day">{d.day}</span><span class="tile-mon">{_HE_MONTHS_SHORT[d.month - 1]}</span></div>')
 
 
 def render_portal(token, student, lessons, payments, packages=None, bookings=None,
-                  free_slots=None, booking_enabled=False):
+                  free_slots=None, booking_enabled=False, teacher_name=''):
     packages = packages or []
     bookings = bookings or []
     free_slots = free_slots or []
-    today = now_local().strftime('%Y-%m-%d')
+    esc = _esc
+    now = now_local()
+    today = now.strftime('%Y-%m-%d')
     upcoming = sorted([l for l in lessons if l['date'] >= today], key=lambda l: (l['date'], l.get('time', '')))
     past = sorted([l for l in lessons if l['date'] < today], key=lambda l: (l['date'], l.get('time', '')), reverse=True)[:8]
 
@@ -206,219 +253,406 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
     total_payments = sum(p.get('amount', 0) or 0 for p in payments)
     balance = total_payments + total_lesson_paid - total_lessons
 
-    esc = _esc
+    name = student.get('name') or ''
+    first_name = name.split()[0] if name.split() else name
+    # The student's color from the app tints the whole page — validated, since it lands in CSS.
+    accent = student.get('color') if _HEX_COLOR.match(str(student.get('color') or '')) else '#4f46e5'
 
-    def lesson_row(l, show_status):
-        topic = esc(l.get('topic'))
-        homework = esc(l.get('homework'))
-        extra = ''
-        if topic:
-            extra += f'<div class="portal-lesson-extra">📘 {topic}</div>'
-        if homework:
-            extra += f'<div class="portal-lesson-extra">📝 שיעורי בית: {homework}</div>'
-        status_html = ''
+    # ── Hero: greeting + the next lesson, front and centre ──
+    if upcoming:
+        nl = upcoming[0]
+        topic = f'<div class="next-topic">📘 {esc(nl.get("topic"))}</div>' if nl.get('topic') else ''
+        next_html = f'''<div class="next">
+          <div class="next-label">השיעור הבא שלך</div>
+          <div class="next-row">
+            <div><div class="next-date">{esc(_long_date(nl["date"]))}</div>
+              <div class="next-time">🕓 {_time_range(nl, student)}</div>{topic}</div>
+            <div class="countdown">{esc(_countdown(nl["date"], today))}</div>
+          </div>
+        </div>'''
+    else:
+        cta = '<a class="next-cta" href="#book">לקביעת שיעור ↓</a>' if booking_enabled else ''
+        next_html = f'''<div class="next next-empty">
+          <div class="next-label">השיעור הבא שלך</div>
+          <div class="next-date">עוד לא נקבע שיעור</div>{cta}
+        </div>'''
+    teacher_line = (f'<div class="hero-sub">השיעורים שלך אצל {esc(teacher_name)}</div>' if teacher_name
+                    else '<div class="hero-sub">השיעורים, הכרטיסייה והתשלומים שלך</div>')
+
+    # ── My lessons: upcoming lessons + my pending/declined requests, by date ──
+    rows = []
+    for l in upcoming:
+        topic = f'<div class="li-sub">📘 {esc(l.get("topic"))}</div>' if l.get('topic') else ''
+        card = '<span class="pill pill-card">🎟 מהכרטיסייה</span>' if l.get('packageId') else ''
+        rows.append((l['date'], l.get('time', ''), f'''<div class="li">
+          {_date_tile(l["date"])}
+          <div class="li-main"><div class="li-title">{_time_range(l, student)}</div>{topic}</div>
+          {card}
+        </div>'''))
+    week_ago = (now - timedelta(days=7)).isoformat()
+    for b in bookings:
+        if b.get('status') == 'pending' and b.get('date', '') >= today:
+            rows.append((b['date'], b.get('time', ''), f'''<div class="li li-pending">
+              {_date_tile(b["date"], 'tile-ghost')}
+              <div class="li-main"><div class="li-title">{esc(b.get("time"))} · בקשה שנשלחה</div>
+                <div class="li-sub">⏳ מחכה לאישור המורה</div></div>
+              <button class="li-x" onclick="cancelReq('{esc(b["id"])}')">ביטול</button>
+            </div>'''))
+        elif b.get('status') == 'rejected' and (b.get('decidedAt') or '') >= week_ago:
+            reason = f'<div class="li-sub">💬 {esc(b.get("rejectReason"))}</div>' if b.get('rejectReason') else ''
+            rows.append((b['date'], b.get('time', ''), f'''<div class="li li-declined">
+              {_date_tile(b["date"], 'tile-ghost')}
+              <div class="li-main"><div class="li-title">{esc(b.get("time"))} · המועד לא התאים</div>{reason}</div>
+            </div>'''))
+    rows.sort(key=lambda r: (r[0], r[1]))
+    lessons_html = ''.join(r[2] for r in rows) or '<div class="empty">אין שיעורים קרובים כרגע</div>'
+
+    # ── Book a lesson: day strip → time grid → bottom-sheet confirm ──
+    by_date = {}
+    for sl in free_slots:
+        by_date.setdefault(sl['date'], []).append(sl['time'])
+    booking_section = ''
+    if booking_enabled:
+        if by_date:
+            days_html = ''
+            for d in by_date:
+                dt = _parse(d)
+                days_html += (f'<button type="button" class="day" data-date="{esc(d)}" onclick="pickDay(this)">'
+                              f'<span class="day-wd">{_weekday(dt)}</span><span class="day-num">{dt.day}</span>'
+                              f'<span class="day-mon">{_HE_MONTHS_SHORT[dt.month - 1]}</span></button>')
+            picker = f'''<div class="days" id="days">{days_html}</div>
+              <div class="times-label" id="times-label"></div>
+              <div class="times" id="times"></div>'''
+        else:
+            picker = '<div class="empty">אין כרגע מועדים פנויים — כדאי להציץ שוב בהמשך 🙂</div>'
+        booking_section = f'''<section class="sec" id="book">
+          <div class="sec-head"><h2>🗓️ לקבוע שיעור לבד</h2></div>
+          <p class="sec-desc">בוחרים יום ושעה שנוחים לך — המורה מאשר/ת והשיעור נכנס לרשימה למעלה.</p>
+          {picker}
+        </section>'''
+    # Server-generated dates/times only; '</' escaped anyway so it can't close the <script>.
+    slots_json = json.dumps(by_date).replace('</', '<\\/')
+
+    # ── Punch card + balance ──
+    # Every card with units left; otherwise the most recent one so "10/10 used" stays visible.
+    all_cards = [(p, package_status(p, lessons, today)) for p in sorted(packages, key=lambda p: p.get('date', ''))]
+    live = [(p, st) for p, st in all_cards if st['remaining'] > 0 and not st['expired']]
+    cards_html = ''
+    for p, st in (live or all_cards[-1:]):
+        total = st['total']
+        if 0 < total <= 30:
+            holes = ''.join(
+                f'<span class="hole used">✓</span>' if i < st['used'] else f'<span class="hole">{i + 1}</span>'
+                for i in range(total))
+            visual = f'<div class="holes">{holes}</div>'
+        else:
+            pct = int(100 * st['used'] / total) if total else 0
+            visual = f'<div class="bar"><div style="width:{pct}%"></div></div>'
+        exp = f'<div class="muted">בתוקף עד {esc(_fmt_date(p["expiresAt"]))}</div>' if p.get('expiresAt') else ''
+        left_cls = 'low' if st['remaining'] <= 1 else ''
+        cards_html += f'''<div class="punch">
+          <div class="punch-head"><div><div class="punch-title">🎟 הכרטיסייה שלי</div>
+            <div class="muted">נוצלו {st["used"]} מתוך {total}</div></div>
+            <div class="punch-left {left_cls}"><b>{st["remaining"]}</b><span>נותרו</span></div></div>
+          {visual}{exp}
+        </div>'''
+    balance_label = 'לתשלום' if balance < 0 else ('זכות' if balance > 0 else 'הכול מאוזן')
+    balance_class = 'debt' if balance < 0 else ('credit' if balance > 0 else 'even')
+    balance_amount = f'₪{abs(balance):,.0f}' if balance else '✓'
+    money_section = f'''<section class="sec">
+      <div class="sec-head"><h2>💳 כרטיסייה ותשלומים</h2></div>
+      {cards_html}
+      <div class="balance {balance_class}"><span>{balance_label}</span><b>{balance_amount}</b></div>
+    </section>'''
+
+    # ── What we learned ──
+    hw = next((l for l in past if l.get('homework')), None)
+    hw_html = (f'<div class="hw"><div class="hw-label">📝 שיעורי הבית האחרונים · {esc(_fmt_date(hw["date"]))}</div>'
+               f'<div class="hw-text">{esc(hw.get("homework"))}</div></div>') if hw else ''
+
+    def past_row(l):
         if l.get('packageId'):
-            status_html = '<span class="portal-badge card">🎟 כרטיסייה</span>'
-        elif show_status:
+            badge = '<span class="pill pill-card">🎟 כרטיסייה</span>'
+        else:
             paid = l.get('isPaid')
             partial = (l.get('paidAmount') or 0) > 0
             label = 'שולם' if paid else ('שולם חלקית' if partial else 'ממתין לתשלום')
             cls = 'paid' if paid else ('partial' if partial else 'unpaid')
-            status_html = f'<span class="portal-badge {cls}">{label}</span>'
-        return f'''<div class="portal-lesson">
-          <div class="portal-lesson-head">
-            <span class="portal-lesson-date">{esc(_fmt_date(l["date"]))} {esc(l.get("time",""))}</span>
-            {status_html}
-          </div>
-          {extra}
-        </div>'''
+            badge = f'<span class="pill pill-{cls}">{label}</span>'
+        topic = f'<div class="li-sub">📘 {esc(l.get("topic"))}</div>' if l.get('topic') else ''
+        homework = f'<div class="li-sub">📝 {esc(l.get("homework"))}</div>' if l.get('homework') else ''
+        return f'''<div class="li li-past">{_date_tile(l["date"], 'tile-soft')}
+          <div class="li-main"><div class="li-title">{_time_range(l, student)}</div>{topic}{homework}</div>{badge}</div>'''
 
-    upcoming_html = ''.join(lesson_row(l, False) for l in upcoming) or '<p class="portal-empty">אין שיעורים קרובים כרגע</p>'
-    past_html = ''.join(lesson_row(l, True) for l in past) or '<p class="portal-empty">אין שיעורים קודמים</p>'
-    balance_label = 'לתשלום' if balance < 0 else ('זכות' if balance > 0 else 'מאוזן')
-    balance_abs = abs(balance)
-    balance_class = 'debt' if balance < 0 else ('credit' if balance > 0 else 'even')
-
-    # Punch cards: every card with units left, plus the most recent used-up one
-    # so the parent can still see "used 10 of 10" right after it runs out.
-    cards_html = ''
-    pkgs_sorted = sorted(packages, key=lambda p: p.get('date', ''))
-    shown = []
-    for p in pkgs_sorted:
-        st = package_status(p, lessons, today)
-        if st['remaining'] > 0 and not st['expired']:
-            shown.append((p, st))
-    if not shown and pkgs_sorted:
-        p = pkgs_sorted[-1]
-        shown.append((p, package_status(p, lessons, today)))
-    for p, st in shown:
-        pct = int(100 * st['used'] / st['total']) if st['total'] else 0
-        exp = f' · בתוקף עד {esc(_fmt_date(p["expiresAt"]))}' if p.get('expiresAt') else ''
-        left_cls = 'low' if st['remaining'] <= 1 else ''
-        cards_html += f'''<div class="portal-card">
-          <div class="portal-card-head"><span>🎟 כרטיסייה של {st["total"]} שיעורים</span>
-            <span class="portal-card-left {left_cls}">נותרו {st["remaining"]}</span></div>
-          <div class="portal-bar"><div style="width:{pct}%"></div></div>
-          <div class="portal-card-sub">נוצלו {st["used"]} מתוך {st["total"]}{exp}</div>
-        </div>'''
-    cards_section = f'<div class="portal-section">{cards_html}</div>' if cards_html else ''
-
-    # Booking requests: pending ones (cancellable) + rejections from the last week.
-    week_ago = (now_local() - timedelta(days=7)).isoformat()
-    req_rows = ''
-    for b in sorted(bookings, key=lambda b: (b.get('date', ''), b.get('time', ''))):
-        if b.get('status') == 'pending' and b.get('date', '') >= today:
-            req_rows += f'''<div class="portal-lesson"><div class="portal-lesson-head">
-              <span class="portal-lesson-date">{esc(_fmt_date(b["date"]))} {esc(b.get("time"))}</span>
-              <span class="portal-badge partial">⏳ ממתין לאישור</span></div>
-              <button class="portal-link-btn" onclick="cancelReq('{esc(b["id"])}')">ביטול הבקשה</button></div>'''
-        elif b.get('status') == 'rejected' and (b.get('decidedAt') or '') >= week_ago:
-            reason = f'<div class="portal-lesson-extra">{esc(b.get("rejectReason"))}</div>' if b.get('rejectReason') else ''
-            req_rows += f'''<div class="portal-lesson"><div class="portal-lesson-head">
-              <span class="portal-lesson-date">{esc(_fmt_date(b["date"]))} {esc(b.get("time"))}</span>
-              <span class="portal-badge unpaid">המועד לא אושר</span></div>{reason}</div>'''
-
-    booking_section = ''
-    if booking_enabled:
-        by_date = {}
-        for s in free_slots:
-            by_date.setdefault(s['date'], []).append(s['time'])
-        if by_date:
-            days_html = ''
-            for d, times in by_date.items():
-                chips = ''.join(f'<button type="button" class="slot" data-date="{esc(d)}" data-time="{esc(t)}" onclick="pickSlot(this)">{esc(t)}</button>' for t in times)
-                days_html += f'<div class="slot-day"><div class="slot-day-label">{esc(_day_label(d))}</div><div class="slot-chips">{chips}</div></div>'
-            picker = f'''{days_html}
-              <div id="book-box" class="book-box" style="display:none">
-                <div id="book-chosen" class="book-chosen"></div>
-                <textarea id="book-note" rows="2" maxlength="300" placeholder="הערה למורה (לא חובה)"></textarea>
-                <button id="book-btn" class="book-btn" onclick="submitBooking()">שליחת בקשה</button>
-                <div class="portal-card-sub">השיעור ייקבע רק אחרי אישור המורה</div>
-              </div>'''
-        else:
-            picker = '<p class="portal-empty">אין כרגע מועדים פנויים — כדאי לבדוק שוב בהמשך</p>'
-        pending_block = f'<div class="req-list"><h3>הבקשות שלי</h3>{req_rows}</div>' if req_rows else ''
-        booking_section = f'''<div class="portal-section">
-          <h2>🗓️ קביעת שיעור</h2>
-          {pending_block}
-          {picker}
-        </div>'''
-    elif req_rows:
-        booking_section = f'<div class="portal-section"><h2>🗓️ הבקשות שלי</h2>{req_rows}</div>'
+    past_html = ''.join(past_row(l) for l in past) or '<div class="empty">עוד אין שיעורים קודמים</div>'
 
     token_js = json.dumps(token)
-    page = f'''<!doctype html>
+    return PAGE_TEMPLATE.format(
+        accent=accent, title=esc(name), initial=esc(name[:1] or '?'), first_name=esc(first_name),
+        teacher_line=teacher_line, next_html=next_html, lessons_html=lessons_html,
+        booking_section=booking_section, money_section=money_section, hw_html=hw_html,
+        past_html=past_html, token_js=token_js, slots_json=slots_json)
+
+
+# Kept as a plain template (not an f-string) so the CSS/JS braces stay readable;
+# literal braces are doubled for str.format.
+PAGE_TEMPLATE = '''<!doctype html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{esc(student.get("name"))} — מעקב שיעורים</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="{accent}">
+<title>{title} — השיעורים שלי</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {{ --primary: #2563eb; --bg: #f1f5f9; --card: #fff; --text: #1e293b; --muted: #64748b; --border: #e2e8f0; }}
+  :root {{
+    --accent: {accent};
+    --accent-deep: color-mix(in srgb, var(--accent) 62%, #0b1033);
+    --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+    --bg: #f4f5fb; --card: #ffffff; --text: #141a2e; --muted: #6b7390; --line: #e8eaf3;
+    --ok: #0f9d6b; --ok-soft: #dcf7ec; --warn: #b45309; --warn-soft: #fff1d6; --bad: #d92d3a; --bad-soft: #ffe3e5;
+    --card-c: #7c3aed; --card-soft: #efe7ff;
+    --shadow: 0 1px 2px rgba(20,26,46,.04), 0 8px 24px rgba(20,26,46,.06);
+  }}
+  @media (prefers-color-scheme: dark) {{
+    :root {{ --bg: #0d1020; --card: #171b2e; --text: #eef0fa; --muted: #9aa2c0; --line: #262b44;
+      --ok: #34d399; --ok-soft: #0f3326; --warn: #fbbf24; --warn-soft: #3a2a0c; --bad: #f87171; --bad-soft: #3d1419;
+      --card-c: #a78bfa; --card-soft: #2a1c4d;
+      --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25); }}
+  }}
   * {{ box-sizing: border-box; }}
-  body {{ margin:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); padding: 16px; }}
-  .portal-wrap {{ max-width: 480px; margin: 0 auto; }}
-  .portal-header {{ text-align:center; margin: 12px 0 20px; }}
-  .portal-header .avatar {{ width: 56px; height:56px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; margin: 0 auto 10px; }}
-  .portal-header h1 {{ font-size: 20px; margin: 0 0 4px; }}
-  .portal-header p {{ color: var(--muted); font-size: 13px; margin:0; }}
-  .portal-balance {{ background: var(--card); border-radius: 14px; padding: 18px; text-align:center; margin-bottom:18px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }}
-  .portal-balance .amount {{ font-size: 28px; font-weight: 700; margin-top:4px; }}
-  .portal-balance.debt .amount {{ color: #dc2626; }}
-  .portal-balance.credit .amount {{ color: #16a34a; }}
-  .portal-balance.even .amount {{ color: var(--muted); }}
-  .portal-section {{ background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }}
-  .portal-section h2 {{ font-size: 14px; margin: 0 0 10px; }}
-  .portal-lesson {{ padding: 10px 0; border-bottom: 1px solid var(--border); }}
-  .portal-lesson:last-child {{ border-bottom: none; }}
-  .portal-lesson-head {{ display:flex; justify-content:space-between; align-items:center; }}
-  .portal-lesson-date {{ font-weight:600; font-size: 13.5px; }}
-  .portal-lesson-extra {{ font-size: 12.5px; color: var(--muted); margin-top: 4px; }}
-  .portal-badge {{ font-size: 11px; font-weight:700; padding: 2px 9px; border-radius: 10px; }}
-  .portal-badge.paid {{ background:#dcfce7; color:#166534; }}
-  .portal-badge.partial {{ background:#fef3c7; color:#92400e; }}
-  .portal-badge.unpaid {{ background:#fee2e2; color:#991b1b; }}
-  .portal-badge.card {{ background:#ede9fe; color:#5b21b6; }}
-  .portal-empty {{ color: var(--muted); font-size: 13px; text-align:center; padding: 10px 0; }}
-  .portal-footer {{ text-align:center; color: var(--muted); font-size: 11.5px; margin-top: 20px; }}
-  .portal-card + .portal-card {{ margin-top: 14px; }}
-  .portal-card-head {{ display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size:14px; }}
-  .portal-card-left {{ font-size:12px; background:#ede9fe; color:#5b21b6; padding:2px 9px; border-radius:10px; }}
-  .portal-card-left.low {{ background:#fee2e2; color:#991b1b; }}
-  .portal-bar {{ height:8px; background:var(--border); border-radius:6px; margin:10px 0 6px; overflow:hidden; }}
-  .portal-bar div {{ height:100%; background:#7c3aed; border-radius:6px; }}
-  .portal-card-sub {{ font-size:12px; color:var(--muted); }}
-  .slot-day {{ margin-bottom: 12px; }}
-  .slot-day-label {{ font-size: 12.5px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }}
-  .slot-chips {{ display:flex; flex-wrap:wrap; gap:6px; }}
-  .slot {{ border:1px solid var(--border); background:var(--bg); color:var(--text); border-radius:8px; padding:7px 12px; font-size:13.5px; font-family:inherit; cursor:pointer; direction:ltr; }}
-  .slot.selected {{ background:var(--primary); border-color:var(--primary); color:#fff; font-weight:700; }}
-  .book-box {{ position: sticky; bottom: 10px; background: var(--card); border:2px solid var(--primary); border-radius: 12px; padding: 12px; margin-top: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); }}
-  .book-chosen {{ font-weight:700; margin-bottom:8px; }}
-  .book-box textarea {{ width:100%; border:1px solid var(--border); border-radius:8px; padding:8px; font-family:inherit; font-size:13.5px; margin-bottom:8px; resize: vertical; }}
-  .book-btn {{ width:100%; background:var(--primary); color:#fff; border:none; border-radius:8px; padding:11px; font-size:15px; font-weight:700; font-family:inherit; cursor:pointer; margin-bottom:6px; }}
-  .book-btn:disabled {{ opacity:.6; }}
-  .req-list {{ margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px dashed var(--border); }}
-  .req-list h3 {{ font-size: 13px; margin: 0; color: var(--muted); }}
-  .portal-link-btn {{ background:none; border:none; color:#dc2626; font-size:12.5px; padding:4px 0 0; cursor:pointer; font-family:inherit; }}
+  html {{ scroll-behavior: smooth; }}
+  body {{ margin: 0; font-family: 'Rubik', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }}
+  .wrap {{ max-width: 520px; margin: 0 auto; padding: 0 16px 40px; }}
+
+  .hero {{ position: relative; overflow: hidden; color: #fff; padding: 28px 20px 22px; margin: 0 -16px 18px;
+    background: var(--accent); background: linear-gradient(150deg, var(--accent) 0%, var(--accent-deep) 100%);
+    border-radius: 0 0 28px 28px; }}
+  .hero::before, .hero::after {{ content: ''; position: absolute; border-radius: 50%; background: rgba(255,255,255,.09); pointer-events: none; }}
+  .hero::before {{ width: 220px; height: 220px; top: -90px; left: -60px; }}
+  .hero::after {{ width: 140px; height: 140px; bottom: -50px; right: -30px; }}
+  .hero-top {{ display: flex; align-items: center; gap: 14px; position: relative; }}
+  .avatar {{ width: 54px; height: 54px; border-radius: 18px; background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.35);
+    display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; }}
+  .hello {{ font-size: 24px; font-weight: 800; letter-spacing: -.3px; }}
+  .hero-sub {{ font-size: 13.5px; opacity: .85; margin-top: 2px; }}
+  .next {{ position: relative; margin-top: 20px; padding: 16px; border-radius: 20px; background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.25); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }}
+  .next-label {{ font-size: 12px; font-weight: 600; opacity: .85; }}
+  .next-row {{ display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 6px; }}
+  .next-date {{ font-size: 19px; font-weight: 700; margin-top: 4px; }}
+  .next-time {{ font-size: 15px; margin-top: 4px; opacity: .95; }}
+  .next-topic {{ font-size: 13px; margin-top: 6px; opacity: .9; }}
+  .countdown {{ flex-shrink: 0; background: #fff; color: var(--accent-deep); font-weight: 800; font-size: 14px; padding: 8px 12px; border-radius: 14px; }}
+  .next-cta {{ display: inline-block; margin-top: 12px; background: #fff; color: var(--accent-deep); font-weight: 700; padding: 9px 16px; border-radius: 12px; text-decoration: none; font-size: 14px; }}
+
+  .sec {{ background: var(--card); border-radius: 22px; padding: 18px 16px; margin-bottom: 14px; box-shadow: var(--shadow); scroll-margin-top: 12px; }}
+  .sec-head {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }}
+  .sec h2 {{ font-size: 16px; margin: 0; font-weight: 700; }}
+  .sec-desc {{ margin: -4px 0 14px; color: var(--muted); font-size: 13px; line-height: 1.5; }}
+  .muted {{ color: var(--muted); font-size: 12.5px; }}
+  .tr {{ unicode-bidi: isolate; display: inline-block; }}
+  .empty {{ color: var(--muted); font-size: 13.5px; text-align: center; padding: 14px 0 6px; }}
+
+  .li {{ display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }}
+  .li:last-child {{ border-bottom: none; }}
+  .li-main {{ flex: 1; min-width: 0; }}
+  .li-title {{ font-weight: 600; font-size: 15px; }}
+  .li-sub {{ color: var(--muted); font-size: 12.5px; margin-top: 3px; line-height: 1.45; }}
+  .tile {{ width: 52px; flex-shrink: 0; border-radius: 14px; background: var(--accent); background: linear-gradient(160deg, var(--accent), var(--accent-deep)); color: #fff;
+    display: flex; flex-direction: column; align-items: center; padding: 6px 0 7px; line-height: 1.05; }}
+  .tile-wd, .tile-mon {{ font-size: 10.5px; opacity: .9; }}
+  .tile-day {{ font-size: 20px; font-weight: 800; margin: 2px 0; }}
+  .tile-ghost {{ background: transparent; color: var(--accent); border: 2px dashed var(--accent); }}
+  .tile-soft {{ background: var(--accent-soft); color: var(--text); }}
+  .li-pending .li-title {{ color: var(--accent); }}
+  .li-declined {{ opacity: .7; }}
+  .li-declined .tile {{ border-color: var(--muted); color: var(--muted); }}
+  .li-x {{ background: none; border: 1px solid var(--line); color: var(--bad); border-radius: 10px; padding: 6px 10px; font: inherit; font-size: 12.5px; cursor: pointer; }}
+  .pill {{ flex-shrink: 0; font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }}
+  .pill-card {{ background: var(--card-soft); color: var(--card-c); }}
+  .pill-paid {{ background: var(--ok-soft); color: var(--ok); }}
+  .pill-partial {{ background: var(--warn-soft); color: var(--warn); }}
+  .pill-unpaid {{ background: var(--bad-soft); color: var(--bad); }}
+
+  .days {{ display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; margin: 0 -2px; scrollbar-width: none; scroll-snap-type: x proximity; }}
+  .days::-webkit-scrollbar {{ display: none; }}
+  .day {{ flex: 0 0 auto; width: 62px; scroll-snap-align: start; border: 1.5px solid var(--line); background: var(--card); color: var(--text); border-radius: 16px;
+    padding: 8px 0; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; font: inherit; transition: all .15s; }}
+  .day-wd, .day-mon {{ font-size: 11.5px; color: var(--muted); }}
+  .day-num {{ font-size: 20px; font-weight: 800; }}
+  .day.on {{ background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 35%, transparent); transform: translateY(-2px); }}
+  .day.on .day-wd, .day.on .day-mon {{ color: rgba(255,255,255,.85); }}
+  .times-label {{ font-size: 13px; font-weight: 600; color: var(--muted); margin: 8px 0; }}
+  .times {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }}
+  .slot {{ border: 1.5px solid var(--line); background: var(--bg); color: var(--text); border-radius: 12px; padding: 11px 0; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; direction: ltr; transition: all .12s; }}
+  .slot:hover {{ border-color: var(--accent); }}
+  .slot.on {{ background: var(--accent); border-color: var(--accent); color: #fff; }}
+
+  .sheet {{ position: fixed; inset-inline: 0; bottom: 0; z-index: 20; display: flex; justify-content: center; pointer-events: none;
+    transform: translateY(110%); visibility: hidden; transition: transform .28s cubic-bezier(.2,.8,.2,1), visibility 0s .28s; }}
+  .sheet.show {{ transform: none; visibility: visible; transition: transform .28s cubic-bezier(.2,.8,.2,1); }}
+  .sheet-in {{ pointer-events: auto; width: 100%; max-width: 520px; background: var(--card); border-radius: 24px 24px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    box-shadow: 0 -10px 40px rgba(20,26,46,.18); }}
+  .sheet-grip {{ width: 40px; height: 4px; background: var(--line); border-radius: 4px; margin: 0 auto 12px; }}
+  .sheet-when {{ font-size: 17px; font-weight: 700; }}
+  .sheet-when small {{ display: block; font-size: 12.5px; font-weight: 400; color: var(--muted); margin-top: 2px; }}
+  .sheet textarea {{ width: 100%; margin: 12px 0 10px; border: 1.5px solid var(--line); background: var(--bg); color: var(--text); border-radius: 12px; padding: 10px; font: inherit; font-size: 14px; resize: none; }}
+  .sheet textarea:focus {{ outline: none; border-color: var(--accent); }}
+  .btn {{ width: 100%; border: none; border-radius: 14px; padding: 14px; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; background: var(--accent); color: #fff; }}
+  .btn:disabled {{ opacity: .6; }}
+  .btn-ghost {{ background: transparent; color: var(--muted); font-weight: 500; font-size: 14px; padding: 10px; }}
+
+  .punch {{ border-radius: 18px; padding: 14px; margin-bottom: 12px; background: var(--card-soft); }}
+  .punch-head {{ display: flex; justify-content: space-between; align-items: center; }}
+  .punch-title {{ font-weight: 700; font-size: 15px; color: var(--card-c); margin-bottom: 2px; }}
+  .punch-left {{ text-align: center; background: var(--card); border-radius: 14px; padding: 6px 12px; line-height: 1.1; }}
+  .punch-left b {{ display: block; font-size: 22px; color: var(--card-c); }}
+  .punch-left span {{ font-size: 11px; color: var(--muted); }}
+  .punch-left.low b {{ color: var(--bad); }}
+  .holes {{ display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 14px 0 8px; }}
+  .hole {{ aspect-ratio: 1; max-width: 46px; width: 100%; justify-self: center; border-radius: 50%; border: 2px dashed color-mix(in srgb, var(--card-c) 45%, transparent);
+    display: flex; align-items: center; justify-content: center; font-size: 12px; color: color-mix(in srgb, var(--card-c) 60%, transparent); font-weight: 600; }}
+  .hole.used {{ border: none; background: var(--card-c); color: #fff; font-size: 16px; transform: rotate(-8deg); box-shadow: inset 0 0 0 3px rgba(255,255,255,.25); }}
+  .bar {{ height: 10px; background: var(--card); border-radius: 8px; margin: 14px 0 8px; overflow: hidden; }}
+  .bar div {{ height: 100%; background: var(--card-c); border-radius: 8px; }}
+  .balance {{ display: flex; justify-content: space-between; align-items: center; border-radius: 16px; padding: 14px 16px; font-weight: 600; }}
+  .balance b {{ font-size: 20px; }}
+  .balance.debt {{ background: var(--bad-soft); color: var(--bad); }}
+  .balance.credit {{ background: var(--ok-soft); color: var(--ok); }}
+  .balance.even {{ background: var(--bg); color: var(--muted); }}
+
+  .hw {{ border-radius: 16px; padding: 14px; margin-bottom: 8px; background: var(--warn-soft); border-inline-start: 4px solid #f59e0b; }}
+  .hw-label {{ font-size: 12.5px; font-weight: 700; color: var(--warn); }}
+  .hw-text {{ font-size: 15px; margin-top: 6px; line-height: 1.5; white-space: pre-wrap; }}
+
+  .toast {{ position: fixed; top: 16px; inset-inline: 16px; max-width: 488px; margin: 0 auto; z-index: 40; background: #141a2e; color: #fff; border-radius: 14px; padding: 12px 16px;
+    font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); transform: translateY(-160%); transition: transform .25s; }}
+  .toast.show {{ transform: none; }}
+  .done {{ position: fixed; inset: 0; z-index: 30; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center; padding: 24px; text-align: center; }}
+  .done.show {{ display: flex; }}
+  .done > div {{ max-width: 340px; }}
+  .done-ring {{ width: 84px; height: 84px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 40px; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px; animation: pop .45s cubic-bezier(.2,1.6,.4,1); }}
+  .done h3 {{ font-size: 22px; margin: 0 0 6px; }}
+  .done p {{ color: var(--muted); margin: 0 0 20px; font-size: 14.5px; line-height: 1.5; }}
+  @keyframes pop {{ from {{ transform: scale(.3); opacity: 0; }} to {{ transform: scale(1); opacity: 1; }} }}
+  .footer {{ text-align: center; color: var(--muted); font-size: 11.5px; margin-top: 22px; }}
+  @media (prefers-reduced-motion: reduce) {{ * {{ transition: none !important; animation: none !important; }} }}
 </style>
 </head>
 <body>
-  <div class="portal-wrap">
-    <div class="portal-header">
-      <div class="avatar">{esc((student.get("name") or "?")[0])}</div>
-      <h1>{esc(student.get("name"))}</h1>
-      <p>מעקב שיעורים ותשלומים</p>
-    </div>
-    <div class="portal-balance {balance_class}">
-      <div>{balance_label}</div>
-      <div class="amount">₪{balance_abs:,.0f}</div>
-    </div>
-    {cards_section}
+  <div class="wrap">
+    <header class="hero">
+      <div class="hero-top">
+        <div class="avatar">{initial}</div>
+        <div><div class="hello">היי {first_name} 👋</div>{teacher_line}</div>
+      </div>
+      {next_html}
+    </header>
+
+    <section class="sec">
+      <div class="sec-head"><h2>📅 השיעורים שלי</h2></div>
+      {lessons_html}
+    </section>
+
     {booking_section}
-    <div class="portal-section">
-      <h2>📅 שיעורים קרובים</h2>
-      {upcoming_html}
-    </div>
-    <div class="portal-section">
-      <h2>📚 שיעורים אחרונים</h2>
+
+    {money_section}
+
+    <section class="sec">
+      <div class="sec-head"><h2>📚 מה למדנו לאחרונה</h2></div>
+      {hw_html}
       {past_html}
-    </div>
-    <div class="portal-footer">עמוד זה מתעדכן אוטומטית · ניהול שיעורים פרטיים</div>
+    </section>
+
+    <div class="footer">העמוד מתעדכן אוטומטית · כדאי לשמור אותו במסך הבית 📌</div>
   </div>
+
+  <div class="sheet" id="sheet"><div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-when" id="sheet-when"></div>
+    <textarea id="book-note" rows="2" maxlength="300" placeholder="רוצה להוסיף משהו למורה? (לא חובה)"></textarea>
+    <button id="book-btn" class="btn" onclick="submitBooking()">שליחת בקשה</button>
+    <button class="btn btn-ghost" onclick="closeSheet()">ביטול</button>
+  </div></div>
+
+  <div class="done" id="done"><div>
+    <div class="done-ring">✓</div>
+    <h3>הבקשה נשלחה!</h3>
+    <p id="done-text"></p>
+    <button class="btn" onclick="location.reload()">מעולה</button>
+  </div></div>
+  <div class="toast" id="toast"></div>
+
 <script>
   const TOKEN = {token_js};
+  const SLOTS = {slots_json};
+  const DAYS = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
   let chosen = null;
+  function toast(msg) {{
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 3500);
+  }}
+  function niceDate(iso) {{
+    const d = new Date(iso + 'T00:00:00');
+    return 'יום ' + DAYS[d.getDay()] + ', ' + d.getDate() + '/' + (d.getMonth() + 1);
+  }}
+  function pickDay(btn) {{
+    document.querySelectorAll('.day.on').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    const date = btn.dataset.date;
+    document.getElementById('times-label').textContent = 'שעות פנויות ב' + niceDate(date);
+    document.getElementById('times').innerHTML = (SLOTS[date] || []).map(t =>
+      '<button type="button" class="slot" data-date="' + date + '" data-time="' + t + '" onclick="pickSlot(this)">' + t + '</button>').join('');
+    closeSheet();
+  }}
   function pickSlot(btn) {{
-    document.querySelectorAll('.slot.selected').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
+    document.querySelectorAll('.slot.on').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
     chosen = {{ date: btn.dataset.date, time: btn.dataset.time }};
-    const [y, m, d] = chosen.date.split('-');
-    document.getElementById('book-chosen').textContent = 'מועד שנבחר: ' + d + '/' + m + ' בשעה ' + chosen.time;
-    document.getElementById('book-box').style.display = '';
+    document.getElementById('sheet-when').innerHTML = niceDate(chosen.date) + ' · <span dir="ltr">' + chosen.time + '</span><small>השיעור ייקבע אחרי אישור המורה</small>';
+    document.getElementById('sheet').classList.add('show');
+  }}
+  function closeSheet() {{
+    document.getElementById('sheet').classList.remove('show');
+    document.querySelectorAll('.slot.on').forEach(b => b.classList.remove('on'));
+    chosen = null;
   }}
   async function submitBooking() {{
     if (!chosen) return;
     const btn = document.getElementById('book-btn');
-    btn.disabled = true;
+    btn.disabled = true; btn.textContent = 'שולח...';
     try {{
       const r = await fetch('/portal/' + encodeURIComponent(TOKEN) + '/book', {{
         method: 'POST', headers: {{ 'Content-Type': 'application/json' }},
         body: JSON.stringify({{ date: chosen.date, time: chosen.time, note: document.getElementById('book-note').value }})
       }});
       const j = await r.json().catch(() => ({{}}));
-      if (!r.ok) {{ alert(j.error || 'שגיאה בשליחת הבקשה'); btn.disabled = false; if (r.status === 409) location.reload(); return; }}
-      alert('הבקשה נשלחה! השיעור ייקבע אחרי אישור המורה.');
-      location.reload();
-    }} catch (e) {{ alert('שגיאת תקשורת, נסו שוב'); btn.disabled = false; }}
+      if (!r.ok) {{
+        toast(j.error || 'שגיאה בשליחת הבקשה');
+        btn.disabled = false; btn.textContent = 'שליחת בקשה';
+        if (r.status === 409) setTimeout(() => location.reload(), 1800);
+        return;
+      }}
+      document.getElementById('sheet').classList.remove('show');
+      document.getElementById('done-text').textContent = 'ביקשת שיעור ב' + niceDate(chosen.date) + ' בשעה ' + chosen.time + '. ברגע שהמורה יאשר/תאשר, השיעור יופיע ברשימת השיעורים שלך.';
+      document.getElementById('done').classList.add('show');
+    }} catch (e) {{ toast('שגיאת תקשורת, נסו שוב'); btn.disabled = false; btn.textContent = 'שליחת בקשה'; }}
   }}
   async function cancelReq(id) {{
     if (!confirm('לבטל את הבקשה?')) return;
     const r = await fetch('/portal/' + encodeURIComponent(TOKEN) + '/cancel/' + encodeURIComponent(id), {{ method: 'POST' }});
-    if (!r.ok) alert('לא ניתן לבטל');
+    if (!r.ok) {{ toast('לא ניתן לבטל — ייתכן שהבקשה כבר טופלה'); setTimeout(() => location.reload(), 1500); return; }}
     location.reload();
   }}
+  const firstDay = document.querySelector('.day');
+  if (firstDay) pickDay(firstDay);
 </script>
 </body>
 </html>'''
-    return page

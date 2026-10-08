@@ -331,8 +331,12 @@ def student_portal(token):
     settings = portal_core.normalize_settings(d.get('bookingSettings'))
     booking_enabled = settings['enabled'] and student.get('isActive') is not False
     slots = portal_free_slots(d, student) if booking_enabled else []
+    c = get_db()
+    owner_row = c.execute('SELECT name FROM users WHERE id=?', [owner]).fetchone()
+    c.close()
     page = portal_core.render_portal(token, student, mine('lessons'), mine('payments'),
-                                     mine('packages'), mine('bookings'), slots, booking_enabled)
+                                     mine('packages'), mine('bookings'), slots, booking_enabled,
+                                     teacher_name=(owner_row['name'] if owner_row else '') or '')
     return page, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 @app.route('/portal/<token>/book', methods=['POST'])
