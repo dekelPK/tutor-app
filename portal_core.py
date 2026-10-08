@@ -247,10 +247,8 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
     upcoming = sorted([l for l in lessons if l['date'] >= today], key=lambda l: (l['date'], l.get('time', '')))
     past = sorted([l for l in lessons if l['date'] < today], key=lambda l: (l['date'], l.get('time', '')), reverse=True)[:8]
 
-    total_lessons = sum(l.get('amount', 0) or 0 for l in lessons)
-    total_lesson_paid = sum(l.get('paidAmount', 0) or 0 for l in lessons)
-    total_payments = sum(p.get('amount', 0) or 0 for p in payments)
-    balance = total_payments + total_lesson_paid - total_lessons
+    # The balance is deliberately not shown on the portal — money talk stays
+    # between the teacher and the family (payments is still accepted for callers).
 
     name = student.get('name') or ''
     first_name = name.split()[0] if name.split() else name
@@ -276,35 +274,37 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
           <div class="next-date">עוד לא נקבע שיעור</div>{cta}
         </div>'''
     teacher_line = (f'<div class="hero-sub">השיעורים שלך אצל {esc(teacher_name)}</div>' if teacher_name
-                    else '<div class="hero-sub">השיעורים, הכרטיסייה והתשלומים שלך</div>')
+                    else '<div class="hero-sub">השיעורים והכרטיסייה שלך</div>')
 
-    # ── My lessons: upcoming lessons + my pending/declined requests, by date ──
-    rows = []
-    for l in upcoming:
-        topic = f'<div class="li-sub">📘 {esc(l.get("topic"))}</div>' if l.get('topic') else ''
-        card = '<span class="pill pill-card">🎟 מהכרטיסייה</span>' if l.get('packageId') else ''
-        rows.append((l['date'], l.get('time', ''), f'''<div class="li">
-          {_date_tile(l["date"])}
-          <div class="li-main"><div class="li-title">{_time_range(l, student)}</div>{topic}</div>
-          {card}
-        </div>'''))
-    week_ago = (now - timedelta(days=7)).isoformat()
+    # ── Coming up: a compact swipeable strip (the next lesson is already in the
+    # hero) plus the student's own pending requests. Declined requests aren't
+    # shown here — the teacher tells the student via WhatsApp.
+    cards = []
+    for l in upcoming[1:]:
+        dt = _parse(l['date'])
+        if not dt:
+            continue
+        tag = '<span class="lc-tag">🎟</span>' if l.get('packageId') else ''
+        cards.append((l['date'], l.get('time', ''), f'''<div class="lc">{tag}
+          <span class="lc-wd">{_weekday(dt)}</span><span class="lc-day">{dt.day}</span>
+          <span class="lc-mon">{_HE_MONTHS_SHORT[dt.month - 1]}</span>
+          <span class="lc-time" dir="ltr">{esc(l.get("time"))}</span></div>'''))
     for b in bookings:
-        if b.get('status') == 'pending' and b.get('date', '') >= today:
-            rows.append((b['date'], b.get('time', ''), f'''<div class="li li-pending">
-              {_date_tile(b["date"], 'tile-ghost')}
-              <div class="li-main"><div class="li-title">{esc(b.get("time"))} · בקשה שנשלחה</div>
-                <div class="li-sub">⏳ מחכה לאישור המורה</div></div>
-              <button class="li-x" onclick="cancelReq('{esc(b["id"])}')">ביטול</button>
-            </div>'''))
-        elif b.get('status') == 'rejected' and (b.get('decidedAt') or '') >= week_ago:
-            reason = f'<div class="li-sub">💬 {esc(b.get("rejectReason"))}</div>' if b.get('rejectReason') else ''
-            rows.append((b['date'], b.get('time', ''), f'''<div class="li li-declined">
-              {_date_tile(b["date"], 'tile-ghost')}
-              <div class="li-main"><div class="li-title">{esc(b.get("time"))} · המועד לא התאים</div>{reason}</div>
-            </div>'''))
-    rows.sort(key=lambda r: (r[0], r[1]))
-    lessons_html = ''.join(r[2] for r in rows) or '<div class="empty">אין שיעורים קרובים כרגע</div>'
+        dt = _parse(b.get('date', ''))
+        if b.get('status') == 'pending' and dt and b['date'] >= today:
+            cards.append((b['date'], b.get('time', ''), f'''<div class="lc lc-pending">
+              <span class="lc-wd">{_weekday(dt)}</span><span class="lc-day">{dt.day}</span>
+              <span class="lc-mon">{_HE_MONTHS_SHORT[dt.month - 1]}</span>
+              <span class="lc-time" dir="ltr">{esc(b.get("time"))}</span>
+              <span class="lc-state">⏳ ממתין</span>
+              <button class="lc-x" onclick="cancelReq('{esc(b["id"])}')">ביטול</button></div>'''))
+    cards.sort(key=lambda r: (r[0], r[1]))
+    lessons_section = ''
+    if cards:
+        lessons_section = f'''<section class="sec">
+      <div class="sec-head"><h2>📅 בהמשך</h2><span class="muted">{len(cards)} {"שיעור" if len(cards) == 1 else "שיעורים"}</span></div>
+      <div class="strip">{''.join(c[2] for c in cards)}</div>
+    </section>'''
 
     # ── Book a lesson: day strip → time grid → bottom-sheet confirm ──
     by_date = {}
@@ -332,7 +332,7 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
     # Server-generated dates/times only; '</' escaped anyway so it can't close the <script>.
     slots_json = json.dumps(by_date).replace('</', '<\\/')
 
-    # ── Punch card + balance ──
+    # ── Punch card ──
     # Every card with units left; otherwise the most recent one so "10/10 used" stays visible.
     all_cards = [(p, package_status(p, lessons, today)) for p in sorted(packages, key=lambda p: p.get('date', ''))]
     live = [(p, st) for p, st in all_cards if st['remaining'] > 0 and not st['expired']]
@@ -355,14 +355,7 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
             <div class="punch-left {left_cls}"><b>{st["remaining"]}</b><span>נותרו</span></div></div>
           {visual}{exp}
         </div>'''
-    balance_label = 'לתשלום' if balance < 0 else ('זכות' if balance > 0 else 'הכול מאוזן')
-    balance_class = 'debt' if balance < 0 else ('credit' if balance > 0 else 'even')
-    balance_amount = f'₪{abs(balance):,.0f}' if balance else '✓'
-    money_section = f'''<section class="sec">
-      <div class="sec-head"><h2>💳 כרטיסייה ותשלומים</h2></div>
-      {cards_html}
-      <div class="balance {balance_class}"><span>{balance_label}</span><b>{balance_amount}</b></div>
-    </section>'''
+    money_section = f'<section class="sec sec-card">{cards_html}</section>' if cards_html else ''
 
     # ── What we learned ──
     hw = next((l for l in past if l.get('homework')), None)
@@ -388,7 +381,7 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
     token_js = json.dumps(token)
     return PAGE_TEMPLATE.format(
         accent=accent, title=esc(name), initial=esc(name[:1] or '?'), first_name=esc(first_name),
-        teacher_line=teacher_line, next_html=next_html, lessons_html=lessons_html,
+        teacher_line=teacher_line, next_html=next_html, lessons_section=lessons_section,
         booking_section=booking_section, money_section=money_section, hw_html=hw_html,
         past_html=past_html, token_js=token_js, slots_json=slots_json)
 
@@ -465,12 +458,7 @@ PAGE_TEMPLATE = '''<!doctype html>
     display: flex; flex-direction: column; align-items: center; padding: 6px 0 7px; line-height: 1.05; }}
   .tile-wd, .tile-mon {{ font-size: 10.5px; opacity: .9; }}
   .tile-day {{ font-size: 20px; font-weight: 800; margin: 2px 0; }}
-  .tile-ghost {{ background: transparent; color: var(--accent); border: 2px dashed var(--accent); }}
   .tile-soft {{ background: var(--accent-soft); color: var(--text); }}
-  .li-pending .li-title {{ color: var(--accent); }}
-  .li-declined {{ opacity: .7; }}
-  .li-declined .tile {{ border-color: var(--muted); color: var(--muted); }}
-  .li-x {{ background: none; border: 1px solid var(--line); color: var(--bad); border-radius: 10px; padding: 6px 10px; font: inherit; font-size: 12.5px; cursor: pointer; }}
   .pill {{ flex-shrink: 0; font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }}
   .pill-card {{ background: var(--card-soft); color: var(--card-c); }}
   .pill-paid {{ background: var(--ok-soft); color: var(--ok); }}
@@ -518,11 +506,22 @@ PAGE_TEMPLATE = '''<!doctype html>
   .hole.used {{ border: none; background: var(--card-c); color: #fff; font-size: 16px; transform: rotate(-8deg); box-shadow: inset 0 0 0 3px rgba(255,255,255,.25); }}
   .bar {{ height: 10px; background: var(--card); border-radius: 8px; margin: 14px 0 8px; overflow: hidden; }}
   .bar div {{ height: 100%; background: var(--card-c); border-radius: 8px; }}
-  .balance {{ display: flex; justify-content: space-between; align-items: center; border-radius: 16px; padding: 14px 16px; font-weight: 600; }}
-  .balance b {{ font-size: 20px; }}
-  .balance.debt {{ background: var(--bad-soft); color: var(--bad); }}
-  .balance.credit {{ background: var(--ok-soft); color: var(--ok); }}
-  .balance.even {{ background: var(--bg); color: var(--muted); }}
+  .sec-card {{ padding: 6px; }}
+  .sec-card .punch {{ margin: 0; }}
+  .sec-card .punch + .punch {{ margin-top: 6px; }}
+  .strip {{ display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 6px; margin: 0 -2px; scrollbar-width: none; scroll-snap-type: x proximity; }}
+  .strip::-webkit-scrollbar {{ display: none; }}
+  .lc {{ position: relative; flex: 0 0 auto; width: 84px; scroll-snap-align: start; border-radius: 18px; padding: 10px 0 9px; color: #fff;
+    background: var(--accent); background: linear-gradient(160deg, var(--accent), var(--accent-deep));
+    display: flex; flex-direction: column; align-items: center; line-height: 1.1; }}
+  .lc-wd, .lc-mon {{ font-size: 11.5px; opacity: .9; }}
+  .lc-day {{ font-size: 26px; font-weight: 800; margin: 2px 0; }}
+  .lc-time {{ margin-top: 8px; font-size: 13px; font-weight: 700; background: rgba(255,255,255,.2); border-radius: 8px; padding: 3px 8px; }}
+  .lc-tag {{ position: absolute; top: 6px; inset-inline-end: 7px; font-size: 11px; }}
+  .lc-pending {{ background: var(--card); color: var(--accent); border: 2px dashed var(--accent); padding-bottom: 6px; }}
+  .lc-pending .lc-time {{ background: var(--accent-soft); }}
+  .lc-state {{ font-size: 11px; margin-top: 6px; font-weight: 600; }}
+  .lc-x {{ background: none; border: none; color: var(--bad); font: inherit; font-size: 11.5px; padding: 3px 6px 0; cursor: pointer; text-decoration: underline; }}
 
   .hw {{ border-radius: 16px; padding: 14px; margin-bottom: 8px; background: var(--warn-soft); border-inline-start: 4px solid #f59e0b; }}
   .hw-label {{ font-size: 12.5px; font-weight: 700; color: var(--warn); }}
@@ -554,10 +553,7 @@ PAGE_TEMPLATE = '''<!doctype html>
       {next_html}
     </header>
 
-    <section class="sec">
-      <div class="sec-head"><h2>📅 השיעורים שלי</h2></div>
-      {lessons_html}
-    </section>
+    {lessons_section}
 
     {booking_section}
 
