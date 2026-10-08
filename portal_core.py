@@ -20,7 +20,6 @@ Data shapes (all stored as JSON blobs, same as students/lessons/payments):
 """
 import html as html_mod
 import json
-import re
 from datetime import datetime, timedelta
 
 try:
@@ -174,7 +173,7 @@ _HE_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', '�
 _HE_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט',
               'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר']
 _HE_MONTHS_SHORT = ['ינו׳', 'פבר׳', 'מרץ', 'אפר׳', 'מאי', 'יוני', 'יולי', 'אוג׳', 'ספט׳', 'אוק׳', 'נוב׳', 'דצמ׳']
-_HEX_COLOR = re.compile(r'^#[0-9a-fA-F]{6}$')
+APP_BLUE = '#2563eb'
 
 
 def _esc(x):
@@ -255,8 +254,8 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
 
     name = student.get('name') or ''
     first_name = name.split()[0] if name.split() else name
-    # The student's color from the app tints the whole page — validated, since it lands in CSS.
-    accent = student.get('color') if _HEX_COLOR.match(str(student.get('color') or '')) else '#4f46e5'
+    # Same blue as the app (its --primary), so the portal feels like part of it.
+    accent = APP_BLUE
 
     # ── Hero: greeting + the next lesson, front and centre ──
     if upcoming:
