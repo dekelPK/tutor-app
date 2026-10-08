@@ -1350,11 +1350,58 @@
     .breq-when { font-weight: 700; }
     .breq-note { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
     .breq-warn { font-size: 12px; color: var(--danger); margin-top: 2px; }
-    .avail-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
-    .avail-row select, .avail-row input { flex: 1; min-width: 0; }
-    .avail-section { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
-    .avail-section h4 { font-size: 13.5px; margin: 0 0 4px; }
-    .avail-hint { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+    .av-switch-card { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 14px; border: 1.5px solid var(--border); background: var(--bg); cursor: pointer; margin-bottom: 14px; transition: all .15s; }
+    .av-switch-card.on { border-color: var(--success); background: var(--success-light); }
+    [data-theme="dark"] .av-switch-card.on { background: #064e3b; }
+    .av-switch-title { font-weight: 700; font-size: 15px; }
+    .av-switch-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+    .av-switch { position: relative; flex-shrink: 0; width: 48px; height: 28px; }
+    .av-switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; z-index: 1; }
+    .av-switch span { position: absolute; inset: 0; border-radius: 14px; background: var(--border); transition: background .15s; }
+    .av-switch span::after { content: ''; position: absolute; top: 3px; inset-inline-start: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: inset-inline-start .15s; }
+    .av-switch input:checked + span { background: var(--success); }
+    .av-switch input:checked + span::after { inset-inline-start: 23px; }
+    .av-card { border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; background: var(--card); }
+    .av-card-title { font-weight: 700; font-size: 14.5px; }
+    .av-hint { font-size: 12.5px; color: var(--text-muted); margin: 2px 0 10px; }
+    .av-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .av-presets button { border: 1px dashed var(--primary); background: var(--primary-light); color: var(--primary); border-radius: 20px; padding: 5px 12px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+    .av-presets .av-preset-clear { border-color: var(--border); background: transparent; color: var(--text-muted); }
+    .av-scale { padding: 0 10px; margin-bottom: 2px; }
+    .av-scale-track { flex: 1; position: relative; height: 14px; font-size: 10px; color: var(--text-muted); }
+    .av-scale-track span { position: absolute; top: 0; transform: translateX(50%); }
+    .av-add-spacer { width: 28px; flex-shrink: 0; }
+    .av-week { display: flex; flex-direction: column; gap: 6px; }
+    .av-day { border-radius: 12px; background: var(--bg); padding: 8px 10px; }
+    .av-day-head { display: flex; align-items: center; gap: 8px; }
+    .av-day-name { width: 46px; flex-shrink: 0; font-weight: 700; font-size: 13.5px; }
+    .av-day.off .av-day-name { color: var(--text-muted); font-weight: 500; }
+    .av-day-off { flex: 1; font-size: 12px; color: var(--text-muted); }
+    .av-track { flex: 1; position: relative; height: 10px; border-radius: 6px; background: var(--border); overflow: hidden; }
+    .av-block { position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg, var(--primary), #7c3aed); border-radius: 6px; }
+    .av-day-total { width: 44px; flex-shrink: 0; font-size: 11.5px; color: var(--text-muted); text-align: end; }
+    .av-add { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; border: 1.5px solid var(--primary); background: var(--card); color: var(--primary); font-size: 17px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+    .av-day.off .av-add { border-style: dashed; }
+    .av-wins { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .av-win, .av-extra { display: flex; align-items: center; gap: 6px; }
+    .av-win input, .av-extra input { flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; padding: 6px 6px; font: inherit; font-size: 14px; text-align: center; }
+    .av-extra { margin-bottom: 8px; }
+    .av-extra input[type="date"] { flex: 1.4; }
+    .av-dash { font-size: 12px; color: var(--text-muted); }
+    .av-x { width: 28px; height: 28px; flex-shrink: 0; border: none; border-radius: 8px; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px; }
+    .av-x:hover { background: var(--danger-light); color: var(--danger); }
+    .av-link { border: none; background: none; color: var(--primary); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; padding: 4px 0; }
+    .av-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .av-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--danger-light); color: var(--danger); border-radius: 20px; padding: 4px 6px 4px 12px; font-size: 12.5px; font-weight: 600; }
+    [data-theme="dark"] .av-chip { background: #450a0a; color: #fca5a5; }
+    .av-chip button { border: none; background: rgba(0,0,0,.08); color: inherit; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 10px; padding: 0; }
+    .av-block-add { display: flex; gap: 8px; align-items: center; }
+    .av-block-add input { flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; padding: 6px 8px; font: inherit; }
+    .av-rule { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+    .av-rule > span { font-size: 12.5px; font-weight: 600; color: var(--text-muted); }
+    .av-seg { display: flex; background: var(--bg); border-radius: 10px; padding: 3px; gap: 2px; }
+    .av-seg button { flex: 1; border: none; background: transparent; color: var(--text-muted); border-radius: 8px; padding: 7px 2px; font: inherit; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+    .av-seg button.on { background: var(--card); color: var(--primary); font-weight: 700; box-shadow: var(--shadow); }
   </style>
 </head>
 <body>
@@ -2829,104 +2876,193 @@ async function reloadBookings() {
 }
 
 // ===== AVAILABILITY (what the portal offers students) =====
+// Edited on a draft copy; every control writes straight into the draft and
+// re-renders, so there's no DOM→state syncing step to forget.
 let _availDraft = null;
+const AV_TRACK_START = 7 * 60, AV_TRACK_END = 23 * 60; // timeline spans 07:00–23:00
+const AV_NOTICE = [[0, 'ללא'], [2, '2 שע׳'], [12, '12 שע׳'], [24, 'יום'], [48, 'יומיים']];
+const AV_HORIZON = [[7, 'שבוע'], [14, 'שבועיים'], [21, '3 שבועות'], [30, 'חודש'], [60, 'חודשיים']];
+const AV_STEP = [[15, '15 דק׳'], [30, '30 דק׳'], [60, 'שעה']];
+
 function openAvailabilityModal() {
-  _availDraft = JSON.parse(JSON.stringify(_bookingSettings || {}));
-  _availDraft.windows = _availDraft.windows || [];
-  _availDraft.extraSlots = _availDraft.extraSlots || [];
-  _availDraft.blockedDates = _availDraft.blockedDates || [];
-  const opt = (vals, cur, fmt) => vals.map(v => `<option value="${v}" ${v == cur ? 'selected' : ''}>${fmt(v)}</option>`).join('');
-  const html = `
-    <label class="checkbox-label" style="font-weight:700;font-size:15px">
-      <input type="checkbox" id="f-av-enabled" ${_availDraft.enabled ? 'checked' : ''}> לאפשר לתלמידים לבקש שיעור דרך קישור המעקב
-    </label>
-    <div class="avail-hint" style="margin-top:6px">התלמיד רואה רק זמנים פנויים באורך השיעור שלו (זמנים שיש בהם שיעור או בקשה ממתינה מוסתרים). כל בקשה מחכה לאישור שלך.</div>
-    <div class="avail-section">
-      <h4>🔁 זמינות שבועית קבועה</h4>
-      <div class="avail-hint">למשל: ראשון 16:00–20:00</div>
-      <div id="av-windows"></div>
-      <button class="btn btn-ghost btn-xs" onclick="availAdd('windows')">+ הוספת חלון זמן</button>
-    </div>
-    <div class="avail-section">
-      <h4>➕ מועדים חד-פעמיים</h4>
-      <div class="avail-hint">זמינות נוספת בתאריך מסוים</div>
-      <div id="av-extra"></div>
-      <button class="btn btn-ghost btn-xs" onclick="availAdd('extraSlots')">+ הוספת מועד</button>
-    </div>
-    <div class="avail-section">
-      <h4>⛔ תאריכים חסומים</h4>
-      <div class="avail-hint">חופשה / יום עמוס — לא יוצעו בו זמנים</div>
-      <div id="av-blocked"></div>
-      <button class="btn btn-ghost btn-xs" onclick="availAdd('blockedDates')">+ חסימת תאריך</button>
-    </div>
-    <div class="avail-section">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div class="form-group"><label style="font-size:12px">התראה מראש</label>
-          <select id="f-av-notice">${opt([0, 2, 6, 12, 24, 48, 72], _availDraft.minNoticeHours ?? 24, v => v ? `${v} שעות` : 'ללא')}</select></div>
-        <div class="form-group"><label style="font-size:12px">כמה קדימה</label>
-          <select id="f-av-horizon">${opt([7, 14, 21, 30, 45, 60], _availDraft.horizonDays ?? 21, v => `${v} ימים`)}</select></div>
-        <div class="form-group"><label style="font-size:12px">מרווח בין זמנים</label>
-          <select id="f-av-step">${opt([15, 30, 60], _availDraft.stepMinutes ?? 30, v => `${v} דק'`)}</select></div>
-      </div>
-    </div>`;
-  openModal('זמינות לתלמידים', html, async () => {
-    availSync();
-    const bad = _availDraft.windows.concat(_availDraft.extraSlots).find(w => !w.start || !w.end || w.start >= w.end);
-    if (bad) { showToast('בכל חלון זמן שעת הסיום צריכה להיות אחרי שעת ההתחלה', 'error'); return; }
-    if (_availDraft.extraSlots.some(e => !e.date)) { showToast('נא לבחור תאריך לכל מועד חד-פעמי', 'error'); return; }
-    const settings = {
-      enabled: document.getElementById('f-av-enabled').checked,
-      windows: _availDraft.windows,
-      extraSlots: _availDraft.extraSlots,
-      blockedDates: _availDraft.blockedDates.filter(Boolean),
-      minNoticeHours: parseInt(document.getElementById('f-av-notice').value),
-      horizonDays: parseInt(document.getElementById('f-av-horizon').value),
-      stepMinutes: parseInt(document.getElementById('f-av-step').value),
-    };
-    if (settings.enabled && !settings.windows.length && !settings.extraSlots.length) {
-      showToast('הוסיפי לפחות חלון זמן אחד כדי שלתלמידים יהיה מה לבחור', 'error'); return;
-    }
-    _bookingSettings = await apiCall('PUT', '/api/booking-settings', settings);
-    closeModal();
-    showToast(settings.enabled ? 'הזמינות נשמרה — התלמידים יכולים לבקש שיעור בקישור ✓' : 'הזמינות נשמרה (קביעה עצמית כבויה)');
-  });
+  const src = _bookingSettings || {};
+  _availDraft = {
+    enabled: !!src.enabled,
+    windows: (src.windows || []).map(w => ({ ...w })),
+    extraSlots: (src.extraSlots || []).map(e => ({ ...e })),
+    blockedDates: [...(src.blockedDates || [])],
+    minNoticeHours: src.minNoticeHours ?? 24,
+    horizonDays: src.horizonDays ?? 21,
+    stepMinutes: src.stepMinutes ?? 30,
+  };
+  openModal('זמינות לתלמידים', '<div id="av-root"></div>', saveAvailability);
+  const saveBtn = document.getElementById('modal-save-btn');
+  if (saveBtn) saveBtn.textContent = 'שמירת זמינות';
   availRender();
 }
-// Pull the current input values back into the draft before re-rendering.
-function availSync() {
-  if (!_availDraft) return;
-  document.querySelectorAll('#av-windows .avail-row').forEach((row, i) => {
-    _availDraft.windows[i] = { day: parseInt(row.querySelector('.av-day').value), start: row.querySelector('.av-start').value, end: row.querySelector('.av-end').value };
-  });
-  document.querySelectorAll('#av-extra .avail-row').forEach((row, i) => {
-    _availDraft.extraSlots[i] = { ..._availDraft.extraSlots[i], date: row.querySelector('.av-date').value, start: row.querySelector('.av-start').value, end: row.querySelector('.av-end').value };
-  });
-  document.querySelectorAll('#av-blocked .avail-row').forEach((row, i) => {
-    _availDraft.blockedDates[i] = row.querySelector('.av-date').value;
-  });
+
+async function saveAvailability() {
+  const d = _availDraft;
+  const bad = d.windows.concat(d.extraSlots).find(w => !w.start || !w.end || w.start >= w.end);
+  if (bad) { showToast('בכל חלון זמן שעת הסיום צריכה להיות אחרי שעת ההתחלה', 'error'); return; }
+  if (d.extraSlots.some(e => !e.date)) { showToast('נא לבחור תאריך לכל מועד נוסף', 'error'); return; }
+  if (d.enabled && !d.windows.length && !d.extraSlots.length) {
+    showToast('הוסיפי לפחות חלון זמן אחד כדי שלתלמידים יהיה מה לבחור', 'error'); return;
+  }
+  const settings = { ...d, blockedDates: [...new Set(d.blockedDates.filter(Boolean))].sort() };
+  _bookingSettings = await apiCall('PUT', '/api/booking-settings', settings);
+  closeModal();
+  showToast(settings.enabled ? 'הזמינות נשמרה — התלמידים יכולים לבקש שיעור בקישור ✓' : 'הזמינות נשמרה (קביעה עצמית כבויה)');
 }
+
+function avMinutes(w) { return Math.max(0, timeToMin(w.end) - timeToMin(w.start)); }
+function avFmtHours(min) {
+  const h = Math.floor(min / 60), m = min % 60;
+  return m ? `${h}:${String(m).padStart(2, '0')} ש׳` : `${h} ש׳`;
+}
+function avTrack(wins) {
+  const span = AV_TRACK_END - AV_TRACK_START;
+  const blocks = wins.map(w => {
+    const s = Math.max(AV_TRACK_START, timeToMin(w.start)), e = Math.min(AV_TRACK_END, timeToMin(w.end));
+    if (e <= s) return '';
+    return `<span class="av-block" style="inset-inline-start:${(s - AV_TRACK_START) / span * 100}%;width:${(e - s) / span * 100}%"></span>`;
+  }).join('');
+  return `<div class="av-track">${blocks}</div>`;
+}
+function avSeg(field, options) {
+  return `<div class="av-seg">${options.map(([v, label]) =>
+    `<button type="button" class="${_availDraft[field] == v ? 'on' : ''}" onclick="avSetField('${field}',${v})">${label}</button>`).join('')}</div>`;
+}
+
 function availRender() {
-  const del = (kind, i) => `<button class="btn btn-ghost btn-xs btn-icon" onclick="availRemove('${kind}',${i})" title="הסר"><svg class="icon icon-sm"><use href="#icon-trash"/></svg></button>`;
-  document.getElementById('av-windows').innerHTML = _availDraft.windows.map((w, i) => `<div class="avail-row">
-      <select class="av-day">${DAY_NAMES.map((d, di) => `<option value="${di}" ${di == w.day ? 'selected' : ''}>${d}</option>`).join('')}</select>
-      <input type="time" class="av-start" value="${w.start || ''}"><span>–</span><input type="time" class="av-end" value="${w.end || ''}">${del('windows', i)}</div>`).join('');
-  document.getElementById('av-extra').innerHTML = _availDraft.extraSlots.map((e, i) => `<div class="avail-row">
-      <input type="date" class="av-date" value="${e.date || ''}">
-      <input type="time" class="av-start" value="${e.start || ''}"><span>–</span><input type="time" class="av-end" value="${e.end || ''}">${del('extraSlots', i)}</div>`).join('');
-  document.getElementById('av-blocked').innerHTML = _availDraft.blockedDates.map((d, i) => `<div class="avail-row">
-      <input type="date" class="av-date" value="${d || ''}">${del('blockedDates', i)}</div>`).join('');
+  const d = _availDraft;
+  const root = document.getElementById('av-root');
+  if (!root) return;
+  const weekMin = d.windows.reduce((t, w) => t + avMinutes(w), 0);
+  const activeDays = new Set(d.windows.map(w => +w.day)).size;
+  const today = isoDate(new Date());
+
+  const days = [0, 1, 2, 3, 4, 5, 6].map(day => {
+    const idx = d.windows.map((w, i) => [w, i]).filter(([w]) => +w.day === day)
+      .sort((a, b) => a[0].start.localeCompare(b[0].start));
+    const total = idx.reduce((t, [w]) => t + avMinutes(w), 0);
+    const wins = idx.map(([w, i]) => `<div class="av-win">
+        <input type="time" value="${w.start}" onchange="avSetWin(${i},'start',this.value)">
+        <span class="av-dash">עד</span>
+        <input type="time" value="${w.end}" onchange="avSetWin(${i},'end',this.value)">
+        <button type="button" class="av-x" onclick="avRemove('windows',${i})" title="הסרה">✕</button>
+      </div>`).join('');
+    return `<div class="av-day ${idx.length ? '' : 'off'}">
+      <div class="av-day-head">
+        <span class="av-day-name">${DAY_NAMES[day]}</span>
+        ${idx.length ? avTrack(idx.map(([w]) => w)) : '<span class="av-day-off">לא זמינה</span>'}
+        <span class="av-day-total">${idx.length ? avFmtHours(total) : ''}</span>
+        <button type="button" class="av-add" onclick="avAddWindow(${day})" title="הוספת שעות ליום ${DAY_NAMES[day]}">+</button>
+      </div>
+      ${wins ? `<div class="av-wins">${wins}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  const extras = d.extraSlots.map((e, i) => `<div class="av-extra">
+      <input type="date" value="${e.date || ''}" min="${today}" onchange="avSetExtra(${i},'date',this.value)">
+      <input type="time" value="${e.start}" onchange="avSetExtra(${i},'start',this.value)">
+      <span class="av-dash">עד</span>
+      <input type="time" value="${e.end}" onchange="avSetExtra(${i},'end',this.value)">
+      <button type="button" class="av-x" onclick="avRemove('extraSlots',${i})" title="הסרה">✕</button>
+    </div>`).join('');
+  const blocked = d.blockedDates.map((b, i) => {
+    const dt = new Date(b + 'T00:00:00');
+    return `<span class="av-chip">⛔ ${getDayName(dt.getDay())} ${formatDate(b).slice(0, 5)}
+      <button type="button" onclick="avRemove('blockedDates',${i})" title="הסרה">✕</button></span>`;
+  }).join('');
+
+  root.innerHTML = `
+    <label class="av-switch-card ${d.enabled ? 'on' : ''}">
+      <div>
+        <div class="av-switch-title">קביעת שיעורים דרך הקישור</div>
+        <div class="av-switch-sub">${d.enabled ? 'פעיל — תלמידים רואים זמנים פנויים ושולחים בקשה לאישורך' : 'כבוי — הקישור מציג רק שיעורים ותשלומים'}</div>
+      </div>
+      <span class="av-switch"><input type="checkbox" id="f-av-enabled" ${d.enabled ? 'checked' : ''} onchange="avSetField('enabled',this.checked)"><span></span></span>
+    </label>
+
+    <div class="av-card">
+      <div class="av-card-head">
+        <div><div class="av-card-title">🔁 השבוע הקבוע שלך</div>
+          <div class="av-hint">${weekMin ? `${avFmtHours(weekMin)} זמינות ב-${activeDays} ימים בשבוע` : 'מתי בדרך כלל יש לך זמן לשיעורים?'}</div></div>
+      </div>
+      <div class="av-presets">
+        <button type="button" onclick="avPreset('afternoons')">א׳–ה׳ · <bdi dir="ltr">16:00–20:00</bdi></button>
+        <button type="button" onclick="avPreset('mornings')">א׳–ה׳ · <bdi dir="ltr">09:00–13:00</bdi></button>
+        ${d.windows.length ? '<button type="button" class="av-preset-clear" onclick="avPreset(\'clear\')">ניקוי</button>' : ''}
+      </div>
+      <div class="av-day-head av-scale"><span class="av-day-name"></span><div class="av-scale-track">${[8, 12, 16, 20].map(h =>
+        `<span style="inset-inline-start:${(h * 60 - AV_TRACK_START) / (AV_TRACK_END - AV_TRACK_START) * 100}%">${String(h).padStart(2, '0')}:00</span>`).join('')}</div><span class="av-day-total"></span><span class="av-add-spacer"></span></div>
+      <div class="av-week">${days}</div>
+    </div>
+
+    <div class="av-card">
+      <div class="av-card-title">➕ זמינות נוספת בתאריך מסוים</div>
+      <div class="av-hint">למשל יום שבדרך כלל לא פנוי, אבל השבוע כן</div>
+      ${extras}
+      <button type="button" class="av-link" onclick="avAddExtra()">+ הוספת מועד</button>
+    </div>
+
+    <div class="av-card">
+      <div class="av-card-title">🏖️ ימים חסומים</div>
+      <div class="av-hint">חופשה, חג או יום עמוס — לא יוצעו בהם זמנים</div>
+      ${blocked ? `<div class="av-chips">${blocked}</div>` : ''}
+      <div class="av-block-add">
+        <input type="date" id="av-block-date" value="${today}" min="${today}">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="avAddBlocked()">חסימת יום</button>
+      </div>
+    </div>
+
+    <div class="av-card">
+      <div class="av-card-title">⚙️ כללי הזמנה</div>
+      <div class="av-rule"><span>כמה זמן מראש</span>${avSeg('minNoticeHours', AV_NOTICE)}</div>
+      <div class="av-rule"><span>כמה קדימה רואים</span>${avSeg('horizonDays', AV_HORIZON)}</div>
+      <div class="av-rule"><span>שעות התחלה כל</span>${avSeg('stepMinutes', AV_STEP)}</div>
+      <div class="av-hint" style="margin-top:8px">כל תלמיד רואה זמנים באורך השיעור שלו; זמנים עם שיעור או בקשה ממתינה מוסתרים.</div>
+    </div>`;
 }
-function availAdd(kind) {
-  availSync();
-  const last = _availDraft[kind][_availDraft[kind].length - 1];
-  if (kind === 'windows') _availDraft.windows.push({ day: last ? (last.day + 1) % 7 : 0, start: last?.start || '16:00', end: last?.end || '20:00' });
-  if (kind === 'extraSlots') _availDraft.extraSlots.push({ id: generateId(), date: isoDate(new Date()), start: '16:00', end: '18:00' });
-  if (kind === 'blockedDates') _availDraft.blockedDates.push(isoDate(new Date()));
+
+function avSetField(field, value) { _availDraft[field] = value; availRender(); }
+function avSetWin(i, field, value) { _availDraft.windows[i][field] = value; availRender(); }
+function avSetExtra(i, field, value) { _availDraft.extraSlots[i][field] = value; availRender(); }
+function avRemove(kind, i) { _availDraft[kind].splice(i, 1); availRender(); }
+function avAddWindow(day) {
+  const same = _availDraft.windows.filter(w => +w.day === day).sort((a, b) => a.end.localeCompare(b.end));
+  const last = same[same.length - 1];
+  if (last) {
+    const s = Math.min(timeToMin(last.end) + 60, 22 * 60);
+    const fmt = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+    _availDraft.windows.push({ day, start: fmt(s), end: fmt(Math.min(s + 120, 23 * 60 + 59)) });
+  } else {
+    // Copy the hours of the nearest configured day — usually what you want.
+    const ref = _availDraft.windows[_availDraft.windows.length - 1];
+    _availDraft.windows.push({ day, start: ref?.start || '16:00', end: ref?.end || '20:00' });
+  }
   availRender();
 }
-function availRemove(kind, i) {
-  availSync();
-  _availDraft[kind].splice(i, 1);
+function avPreset(kind) {
+  if (kind === 'clear') _availDraft.windows = [];
+  else {
+    const [start, end] = kind === 'mornings' ? ['09:00', '13:00'] : ['16:00', '20:00'];
+    const keep = _availDraft.windows.filter(w => +w.day > 4);
+    _availDraft.windows = [...[0, 1, 2, 3, 4].map(day => ({ day, start, end })), ...keep];
+    if (!_availDraft.enabled) _availDraft.enabled = true;
+  }
+  availRender();
+}
+function avAddExtra() {
+  _availDraft.extraSlots.push({ id: generateId(), date: isoDate(new Date()), start: '16:00', end: '18:00' });
+  availRender();
+}
+function avAddBlocked() {
+  const v = document.getElementById('av-block-date')?.value;
+  if (!v) return;
+  if (!_availDraft.blockedDates.includes(v)) _availDraft.blockedDates.push(v);
+  _availDraft.blockedDates.sort();
   availRender();
 }
 
