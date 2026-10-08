@@ -1,0 +1,30 @@
+name: Notify teacher of a booking request
+
+on:
+  workflow_dispatch:
+    inputs:
+      booking_id:
+        description: 'Booking request id (details are fetched from the app, never passed here)'
+        required: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests pywebpush
+
+      - name: Notify teacher
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_CONTACT_EMAIL: ${{ secrets.VAPID_CONTACT_EMAIL }}
+          BOOKING_ID: ${{ inputs.booking_id }}
+        run: python scripts/notify_booking_request.py

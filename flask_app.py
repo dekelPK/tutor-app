@@ -6,7 +6,7 @@ flask_app.py — PythonAnywhere WSGI entry point
 """
 from flask import Flask, jsonify, request, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
-import sqlite3, json, os, hashlib, secrets, uuid, hmac, subprocess, urllib.request, urllib.error, shutil, glob
+import sqlite3, json, os, sys, hashlib, secrets, uuid, hmac, subprocess, urllib.request, urllib.error, shutil, glob
 from datetime import datetime, timedelta
 try:
     from zoneinfo import ZoneInfo
@@ -15,6 +15,8 @@ except Exception:
     ISRAEL_TZ = None  # falls back to naive UTC date — a few hours off around midnight
 
 BASE_DIR = '/home/DekelPA/mysite'
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import portal_core
 DB_PATH  = os.path.join(BASE_DIR, 'tutor.db')
 
 app = Flask(__name__, static_folder=BASE_DIR)
@@ -145,6 +147,20 @@ def init_db():
                 date      TEXT NOT NULL,
                 data      TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS packages (
+                id        TEXT PRIMARY KEY,
+                user_id   TEXT,
+                studentId TEXT NOT NULL,
+                date      TEXT NOT NULL,
+                data      TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS bookings (
+                id        TEXT PRIMARY KEY,
+                user_id   TEXT,
+                studentId TEXT NOT NULL,
+                date      TEXT NOT NULL,
+                data      TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS push_subscriptions (
                 id         TEXT PRIMARY KEY,
                 user_id    TEXT NOT NULL,
@@ -173,6 +189,8 @@ def init_db():
             db.execute('ALTER TABLE users ADD COLUMN reset_token TEXT')
         if 'reset_token_expires' not in user_cols:
             db.execute('ALTER TABLE users ADD COLUMN reset_token_expires TEXT')
+        if 'booking_settings' not in user_cols:
+            db.execute('ALTER TABLE users ADD COLUMN booking_settings TEXT')
 
     # One-time migration from data.json if it exists
     json_path = os.path.join(BASE_DIR, 'data.json')
@@ -510,6 +528,32 @@ def push_admin_subscriptions():
                            [admin_row['id']]).fetchall()
     return jsonify([dict(s) for s in subs])
 
+@app.route('/api/push/booking-notice')
+def push_booking_notice():
+    # Used by notify-booking-request.yml: given a booking id, returns the
+    # owning teacher's push subscriptions plus the notification text, so the
+    # student's name/time never pass through GitHub workflow inputs or logs.
+    if request.args.get('token') != CRON_SECRET:
+        return jsonify({'error': 'Unauthorized'}), 401
+    bid = request.args.get('booking_id')
+    with get_db() as db:
+        row = db.execute('SELECT user_id, data FROM bookings WHERE id=?', [bid]).fetchone()
+        if not row:
+            return jsonify({'subscriptions': []})
+        b = json.loads(row['data'])
+        srow = db.execute('SELECT data FROM students WHERE id=? AND user_id=?', [b['studentId'], row['user_id']]).fetchone()
+        name = json.loads(srow['data']).get('name', 'תלמיד/ה') if srow else 'תלמיד/ה'
+        subs = db.execute('SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=?',
+                          [row['user_id']]).fetchall()
+    try:
+        y, m, d = b['date'].split('-')
+        when = f'{d}/{m} בשעה {b["time"]}'
+    except Exception:
+        when = b.get('date', '')
+    return jsonify({'subscriptions': [dict(s) for s in subs],
+                    'title': '🗓️ בקשה חדשה לשיעור',
+                    'body': f'{name} מבקש/ת שיעור ב-{when}. לחצי לאישור.'})
+
 # ── Daily DB backup ───────────────────────────────────────────────────────────
 # PythonAnywhere's free tier doesn't include Scheduled Tasks (that needs a
 # paid plan), so this is triggered the same way as everything else that needs
@@ -721,6 +765,8 @@ def delete_student(sid):
         db.execute('DELETE FROM students WHERE id=? AND user_id=?', [sid, uid()])
         db.execute('DELETE FROM lessons  WHERE studentId=? AND user_id=?', [sid, uid()])
         db.execute('DELETE FROM payments WHERE studentId=? AND user_id=?', [sid, uid()])
+        db.execute('DELETE FROM packages WHERE studentId=? AND user_id=?', [sid, uid()])
+        db.execute('DELETE FROM bookings WHERE studentId=? AND user_id=?', [sid, uid()])
     return '', 204
 
 @app.route('/api/students/<sid>/share-link', methods=['GET'])
@@ -742,135 +788,206 @@ def student_share_link(sid):
     return jsonify({'token': s['shareToken']})
 
 # ── Parent/student portal (public, no login — found by share token) ─────────────
+# Page rendering, free-slot computation and punch-card math live in
+# portal_core.py, shared with server.py so both backends behave the same.
+def find_student_by_token(db, token):
+    if not token:
+        return None, None
+    for r in db.execute('SELECT * FROM students').fetchall():
+        data = json.loads(r['data'])
+        if data.get('shareToken') == token:
+            return r['user_id'], data
+    return None, None
+
+def load_booking_settings(db, user_id):
+    row = db.execute('SELECT booking_settings FROM users WHERE id=?', [user_id]).fetchone()
+    raw = None
+    if row and row['booking_settings']:
+        try: raw = json.loads(row['booking_settings'])
+        except Exception: raw = None
+    return portal_core.normalize_settings(raw)
+
+def free_slots_for(db, owner_id, student, settings):
+    students = rows_to_list(db.execute('SELECT data FROM students WHERE user_id=?', [owner_id]).fetchall())
+    today = portal_core.now_local().strftime('%Y-%m-%d')
+    lessons = rows_to_list(db.execute('SELECT data FROM lessons WHERE user_id=? AND date>=?', [owner_id, today]).fetchall())
+    bookings = rows_to_list(db.execute('SELECT data FROM bookings WHERE user_id=? AND date>=?', [owner_id, today]).fetchall())
+    return portal_core.compute_free_slots(settings, student, students, lessons, bookings)
+
 @app.route('/portal/<token>')
 def student_portal(token):
-    import html as html_mod
     with get_db() as db:
-        row = None
-        for r in db.execute('SELECT * FROM students').fetchall():
-            data = json.loads(r['data'])
-            if data.get('shareToken') == token:
-                row = (r, data)
-                break
-        if not row:
+        owner_id, student = find_student_by_token(db, token)
+        if not student:
             return 'הקישור לא נמצא או שפג תוקפו', 404
-        student_row, student = row
-        owner_id = student_row['user_id']
-        student_id = student['id']
+        sid_ = student['id']
         lessons = rows_to_list(db.execute(
-            'SELECT data FROM lessons WHERE user_id=? AND studentId=? ORDER BY date', [owner_id, student_id]
-        ).fetchall())
+            'SELECT data FROM lessons WHERE user_id=? AND studentId=? ORDER BY date', [owner_id, sid_]).fetchall())
         payments = rows_to_list(db.execute(
-            'SELECT data FROM payments WHERE user_id=? AND studentId=?', [owner_id, student_id]
-        ).fetchall())
-
-    today = datetime.now().strftime('%Y-%m-%d')
-    upcoming = sorted([l for l in lessons if l['date'] >= today], key=lambda l: (l['date'], l.get('time', '')))
-    past = sorted([l for l in lessons if l['date'] < today], key=lambda l: (l['date'], l.get('time', '')), reverse=True)[:8]
-
-    total_lessons = sum(l.get('amount', 0) or 0 for l in lessons)
-    total_lesson_paid = sum(l.get('paidAmount', 0) or 0 for l in lessons)
-    total_payments = sum(p.get('amount', 0) or 0 for p in payments)
-    balance = total_payments + total_lesson_paid - total_lessons
-
-    def esc(x):
-        return html_mod.escape(str(x or ''))
-
-    def fmt_date(iso):
-        try:
-            y, m, d = iso.split('-')
-            return f'{d}/{m}/{y}'
-        except Exception:
-            return iso or ''
-
-    def lesson_row(l, show_status):
-        topic = esc(l.get('topic'))
-        homework = esc(l.get('homework'))
-        extra = ''
-        if topic:
-            extra += f'<div class="portal-lesson-extra">📘 {topic}</div>'
-        if homework:
-            extra += f'<div class="portal-lesson-extra">📝 שיעורי בית: {homework}</div>'
-        status_html = ''
-        if show_status:
-            paid = l.get('isPaid')
-            partial = (l.get('paidAmount') or 0) > 0
-            label = 'שולם' if paid else ('שולם חלקית' if partial else 'ממתין לתשלום')
-            cls = 'paid' if paid else ('partial' if partial else 'unpaid')
-            status_html = f'<span class="portal-badge {cls}">{label}</span>'
-        return f'''<div class="portal-lesson">
-          <div class="portal-lesson-head">
-            <span class="portal-lesson-date">{esc(fmt_date(l["date"]))} {esc(l.get("time",""))}</span>
-            {status_html}
-          </div>
-          {extra}
-        </div>'''
-
-    upcoming_html = ''.join(lesson_row(l, False) for l in upcoming) or '<p class="portal-empty">אין שיעורים קרובים כרגע</p>'
-    past_html = ''.join(lesson_row(l, True) for l in past) or '<p class="portal-empty">אין שיעורים קודמים</p>'
-    balance_label = 'לתשלום' if balance < 0 else ('זכות' if balance > 0 else 'מאוזן')
-    balance_abs = abs(balance)
-    balance_class = 'debt' if balance < 0 else ('credit' if balance > 0 else 'even')
-
-    page = f'''<!doctype html>
-<html lang="he" dir="rtl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{esc(student.get("name"))} — מעקב שיעורים</title>
-<style>
-  :root {{ --primary: #2563eb; --bg: #f1f5f9; --card: #fff; --text: #1e293b; --muted: #64748b; --border: #e2e8f0; }}
-  * {{ box-sizing: border-box; }}
-  body {{ margin:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); padding: 16px; }}
-  .portal-wrap {{ max-width: 480px; margin: 0 auto; }}
-  .portal-header {{ text-align:center; margin: 12px 0 20px; }}
-  .portal-header .avatar {{ width: 56px; height:56px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; margin: 0 auto 10px; }}
-  .portal-header h1 {{ font-size: 20px; margin: 0 0 4px; }}
-  .portal-header p {{ color: var(--muted); font-size: 13px; margin:0; }}
-  .portal-balance {{ background: var(--card); border-radius: 14px; padding: 18px; text-align:center; margin-bottom:18px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }}
-  .portal-balance .amount {{ font-size: 28px; font-weight: 700; margin-top:4px; }}
-  .portal-balance.debt .amount {{ color: #dc2626; }}
-  .portal-balance.credit .amount {{ color: #16a34a; }}
-  .portal-balance.even .amount {{ color: var(--muted); }}
-  .portal-section {{ background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }}
-  .portal-section h2 {{ font-size: 14px; margin: 0 0 10px; }}
-  .portal-lesson {{ padding: 10px 0; border-bottom: 1px solid var(--border); }}
-  .portal-lesson:last-child {{ border-bottom: none; }}
-  .portal-lesson-head {{ display:flex; justify-content:space-between; align-items:center; }}
-  .portal-lesson-date {{ font-weight:600; font-size: 13.5px; }}
-  .portal-lesson-extra {{ font-size: 12.5px; color: var(--muted); margin-top: 4px; }}
-  .portal-badge {{ font-size: 11px; font-weight:700; padding: 2px 9px; border-radius: 10px; }}
-  .portal-badge.paid {{ background:#dcfce7; color:#166534; }}
-  .portal-badge.partial {{ background:#fef3c7; color:#92400e; }}
-  .portal-badge.unpaid {{ background:#fee2e2; color:#991b1b; }}
-  .portal-empty {{ color: var(--muted); font-size: 13px; text-align:center; padding: 10px 0; }}
-  .portal-footer {{ text-align:center; color: var(--muted); font-size: 11.5px; margin-top: 20px; }}
-</style>
-</head>
-<body>
-  <div class="portal-wrap">
-    <div class="portal-header">
-      <div class="avatar">{esc((student.get("name") or "?")[0])}</div>
-      <h1>{esc(student.get("name"))}</h1>
-      <p>מעקב שיעורים ותשלומים</p>
-    </div>
-    <div class="portal-balance {balance_class}">
-      <div>{balance_label}</div>
-      <div class="amount">₪{balance_abs:,.0f}</div>
-    </div>
-    <div class="portal-section">
-      <h2>📅 שיעורים קרובים</h2>
-      {upcoming_html}
-    </div>
-    <div class="portal-section">
-      <h2>📚 שיעורים אחרונים</h2>
-      {past_html}
-    </div>
-    <div class="portal-footer">עמוד זה מתעדכן אוטומטית · ניהול שיעורים פרטיים</div>
-  </div>
-</body>
-</html>'''
+            'SELECT data FROM payments WHERE user_id=? AND studentId=?', [owner_id, sid_]).fetchall())
+        packages = rows_to_list(db.execute(
+            'SELECT data FROM packages WHERE user_id=? AND studentId=?', [owner_id, sid_]).fetchall())
+        bookings = rows_to_list(db.execute(
+            'SELECT data FROM bookings WHERE user_id=? AND studentId=?', [owner_id, sid_]).fetchall())
+        settings = load_booking_settings(db, owner_id)
+        booking_enabled = settings['enabled'] and student.get('isActive') is not False
+        slots = free_slots_for(db, owner_id, student, settings) if booking_enabled else []
+    page = portal_core.render_portal(token, student, lessons, payments, packages, bookings, slots, booking_enabled)
     return page, 200, {'Content-Type': 'text/html; charset=utf-8'}
+
+@app.route('/portal/<token>/book', methods=['POST'])
+def portal_book(token):
+    body = request.json or {}
+    with get_db() as db:
+        owner_id, student = find_student_by_token(db, token)
+        if not student:
+            return jsonify({'error': 'הקישור לא נמצא'}), 404
+        settings = load_booking_settings(db, owner_id)
+        if not settings['enabled'] or student.get('isActive') is False:
+            return jsonify({'error': 'קביעת שיעורים דרך הקישור כבויה כרגע'}), 403
+        mine = rows_to_list(db.execute('SELECT data FROM bookings WHERE user_id=? AND studentId=?',
+                                       [owner_id, student['id']]).fetchall())
+        if sum(1 for b in mine if b.get('status') == 'pending') >= portal_core.MAX_PENDING_PER_STUDENT:
+            return jsonify({'error': f'אפשר להחזיק עד {portal_core.MAX_PENDING_PER_STUDENT} בקשות ממתינות בו-זמנית'}), 429
+        try:
+            date, time_, note = portal_core.validate_booking_request(
+                body, free_slots_for(db, owner_id, student, settings))
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 409
+        b = {'id': uuid.uuid4().hex[:16], 'studentId': student['id'], 'date': date, 'time': time_,
+             'durationMinutes': int(student.get('lessonDurationMinutes') or 50), 'note': note,
+             'status': 'pending', 'createdAt': portal_core.now_local().isoformat(timespec='seconds')}
+        db.execute('INSERT INTO bookings(id,user_id,studentId,date,data) VALUES (?,?,?,?,?)',
+                   [b['id'], owner_id, student['id'], date, json.dumps(b, ensure_ascii=False)])
+    # Best effort push to the teacher's own device(s) — only the booking id
+    # goes to GitHub; the script fetches the text from us with CRON_SECRET.
+    try:
+        trigger_github_workflow('notify-booking-request.yml', {'booking_id': b['id']})
+    except Exception:
+        pass
+    return jsonify({'ok': True}), 201
+
+@app.route('/portal/<token>/cancel/<bid>', methods=['POST'])
+def portal_cancel_booking(token, bid):
+    with get_db() as db:
+        owner_id, student = find_student_by_token(db, token)
+        if not student:
+            return jsonify({'error': 'הקישור לא נמצא'}), 404
+        row = db.execute('SELECT data FROM bookings WHERE id=? AND user_id=? AND studentId=?',
+                         [bid, owner_id, student['id']]).fetchone()
+        if not row:
+            return jsonify({'error': 'Not found'}), 404
+        b = json.loads(row['data'])
+        if b.get('status') != 'pending':
+            return jsonify({'error': 'הבקשה כבר טופלה'}), 409
+        b['status'] = 'cancelled'
+        b['decidedAt'] = portal_core.now_local().isoformat(timespec='seconds')
+        db.execute('UPDATE bookings SET data=? WHERE id=?', [json.dumps(b, ensure_ascii=False), bid])
+    return jsonify({'ok': True})
+
+# ── Booking settings & requests (teacher side) ───────────────────────────────────
+@app.route('/api/booking-settings', methods=['GET'])
+def get_booking_settings():
+    err = require_auth()
+    if err: return err
+    with get_db() as db:
+        return jsonify(load_booking_settings(db, uid()))
+
+@app.route('/api/booking-settings', methods=['PUT'])
+def put_booking_settings():
+    err = require_auth()
+    if err: return err
+    s = portal_core.normalize_settings(request.json or {})
+    with get_db() as db:
+        db.execute('UPDATE users SET booking_settings=? WHERE id=?', [json.dumps(s, ensure_ascii=False), uid()])
+    return jsonify(s)
+
+@app.route('/api/bookings', methods=['GET'])
+def get_bookings():
+    err = require_auth()
+    if err: return err
+    with get_db() as db:
+        rows = db.execute('SELECT data FROM bookings WHERE user_id=? ORDER BY date', [uid()]).fetchall()
+    return jsonify(rows_to_list(rows))
+
+@app.route('/api/bookings/<bid>/approve', methods=['POST'])
+def approve_booking(bid):
+    # The client builds the lesson (same code path as a manual "add lesson",
+    # including punch-card assignment); we insert it and flip the request in
+    # one transaction so a request can never yield two lessons.
+    err = require_auth()
+    if err: return err
+    lesson = (request.json or {}).get('lesson') or {}
+    if not lesson.get('id'):
+        return jsonify({'error': 'missing lesson'}), 400
+    with get_db() as db:
+        row = db.execute('SELECT data FROM bookings WHERE id=? AND user_id=?', [bid, uid()]).fetchone()
+        if not row:
+            return jsonify({'error': 'Not found'}), 404
+        b = json.loads(row['data'])
+        if b.get('status') != 'pending':
+            return jsonify({'error': 'הבקשה כבר טופלה או בוטלה'}), 409
+        db.execute('INSERT INTO lessons(id,user_id,studentId,date,data) VALUES (?,?,?,?,?)',
+                   [lesson['id'], uid(), lesson.get('studentId', ''), lesson.get('date', ''),
+                    json.dumps(lesson, ensure_ascii=False)])
+        b.update(status='approved', lessonId=lesson['id'],
+                 decidedAt=portal_core.now_local().isoformat(timespec='seconds'))
+        db.execute('UPDATE bookings SET data=? WHERE id=?', [json.dumps(b, ensure_ascii=False), bid])
+    return jsonify({'booking': b, 'lesson': lesson})
+
+@app.route('/api/bookings/<bid>/reject', methods=['POST'])
+def reject_booking(bid):
+    err = require_auth()
+    if err: return err
+    reason = str((request.json or {}).get('reason') or '').strip()[:300]
+    with get_db() as db:
+        row = db.execute('SELECT data FROM bookings WHERE id=? AND user_id=?', [bid, uid()]).fetchone()
+        if not row:
+            return jsonify({'error': 'Not found'}), 404
+        b = json.loads(row['data'])
+        if b.get('status') != 'pending':
+            return jsonify({'error': 'הבקשה כבר טופלה או בוטלה'}), 409
+        b.update(status='rejected', rejectReason=reason,
+                 decidedAt=portal_core.now_local().isoformat(timespec='seconds'))
+        db.execute('UPDATE bookings SET data=? WHERE id=?', [json.dumps(b, ensure_ascii=False), bid])
+    return jsonify(b)
+
+# ── Punch cards (כרטיסיות) ───────────────────────────────────────────────────────
+@app.route('/api/packages', methods=['GET'])
+def get_packages():
+    err = require_auth()
+    if err: return err
+    with get_db() as db:
+        rows = db.execute('SELECT data FROM packages WHERE user_id=? ORDER BY date', [uid()]).fetchall()
+    return jsonify(rows_to_list(rows))
+
+@app.route('/api/packages', methods=['POST'])
+def add_package():
+    err = require_auth()
+    if err: return err
+    p = request.json
+    with get_db() as db:
+        db.execute('INSERT INTO packages(id,user_id,studentId,date,data) VALUES (?,?,?,?,?)',
+                   [p['id'], uid(), p.get('studentId', ''), p.get('date', ''), json.dumps(p, ensure_ascii=False)])
+    return jsonify(p), 201
+
+@app.route('/api/packages/<pid>', methods=['PUT'])
+def update_package(pid):
+    err = require_auth()
+    if err: return err
+    p = request.json
+    with get_db() as db:
+        db.execute('UPDATE packages SET studentId=?, date=?, data=? WHERE id=? AND user_id=?',
+                   [p.get('studentId', ''), p.get('date', ''), json.dumps(p, ensure_ascii=False), pid, uid()])
+    return jsonify(p)
+
+@app.route('/api/packages/<pid>', methods=['DELETE'])
+def delete_package(pid):
+    err = require_auth()
+    if err: return err
+    with get_db() as db:
+        db.execute('DELETE FROM packages WHERE id=? AND user_id=?', [pid, uid()])
+    return '', 204
 
 # ── Lessons ───────────────────────────────────────────────────────────────────
 @app.route('/api/lessons', methods=['GET'])

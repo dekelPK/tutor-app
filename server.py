@@ -2,6 +2,7 @@
 from flask import Flask, jsonify, request, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 import json, os, threading, webbrowser, sqlite3, hashlib, secrets, uuid
+import portal_core
 from datetime import datetime, timedelta
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -66,7 +67,7 @@ def user_data_file(uid):
     return os.path.join(BASE_DIR, f'data_{uid}.json')
 
 def empty_data():
-    return {'students': [], 'lessons': [], 'payments': []}
+    return {'students': [], 'lessons': [], 'payments': [], 'packages': [], 'bookings': [], 'bookingSettings': None}
 
 def read_data(uid=None):
     uid = uid or session.get('user_id')
@@ -74,7 +75,11 @@ def read_data(uid=None):
     if not os.path.exists(f):
         return empty_data()
     with open(f, encoding='utf-8') as fp:
-        return json.load(fp)
+        d = json.load(fp)
+    # Files written before punch cards / self-booking existed lack these keys.
+    for k, v in empty_data().items():
+        d.setdefault(k, v)
+    return d
 
 def write_data(data, uid=None):
     uid = uid or session.get('user_id')
@@ -275,6 +280,8 @@ def delete_student(sid):
     data['students'] = [s for s in data['students'] if s['id'] != sid]
     data['lessons']  = [l for l in data['lessons']  if l['studentId'] != sid]
     data['payments'] = [p for p in data['payments'] if p['studentId'] != sid]
+    data['packages'] = [p for p in data['packages'] if p['studentId'] != sid]
+    data['bookings'] = [b for b in data['bookings'] if b['studentId'] != sid]
     write_data(data)
     return '', 204
 
@@ -292,137 +299,166 @@ def student_share_link(sid):
     return jsonify({'token': student['shareToken']})
 
 # ── Parent/student portal (public, no login — found by share token) ─────────────
-@app.route('/portal/<token>')
-def student_portal(token):
-    import html as html_mod
-    found = None
+# Rendering, free-slot computation and punch-card math are in portal_core.py,
+# shared with flask_app.py.
+def find_by_token(token):
+    """(owner_uid, data, student) for a share token, or (None, None, None)."""
+    if not token:
+        return None, None, None
     for fn in os.listdir(BASE_DIR):
         if fn.startswith('data_') and fn.endswith('.json'):
+            owner = fn[len('data_'):-len('.json')]
             try:
-                with open(os.path.join(BASE_DIR, fn), encoding='utf-8') as f:
-                    d = json.load(f)
-                for s in d.get('students', []):
-                    if s.get('shareToken') == token:
-                        found = (d, s)
-                        break
+                d = read_data(owner)
             except Exception:
-                pass
-        if found:
-            break
-    if not found:
+                continue
+            for s in d.get('students', []):
+                if s.get('shareToken') == token:
+                    return owner, d, s
+    return None, None, None
+
+def portal_free_slots(d, student):
+    settings = portal_core.normalize_settings(d.get('bookingSettings'))
+    return portal_core.compute_free_slots(settings, student, d['students'], d['lessons'], d['bookings'])
+
+@app.route('/portal/<token>')
+def student_portal(token):
+    owner, d, student = find_by_token(token)
+    if not student:
         return 'הקישור לא נמצא או שפג תוקפו', 404
-    d, student = found
     sid_ = student['id']
-    lessons  = [l for l in d.get('lessons', [])  if l['studentId'] == sid_]
-    payments = [p for p in d.get('payments', []) if p['studentId'] == sid_]
-
-    today = datetime.now().strftime('%Y-%m-%d')
-    upcoming = sorted([l for l in lessons if l['date'] >= today], key=lambda l: (l['date'], l.get('time', '')))
-    past = sorted([l for l in lessons if l['date'] < today], key=lambda l: (l['date'], l.get('time', '')), reverse=True)[:8]
-
-    total_lessons = sum(l.get('amount', 0) or 0 for l in lessons)
-    total_lesson_paid = sum(l.get('paidAmount', 0) or 0 for l in lessons)
-    total_payments = sum(p.get('amount', 0) or 0 for p in payments)
-    balance = total_payments + total_lesson_paid - total_lessons
-
-    def esc(x):
-        return html_mod.escape(str(x or ''))
-
-    def fmt_date(iso):
-        try:
-            y, m, d = iso.split('-')
-            return f'{d}/{m}/{y}'
-        except Exception:
-            return iso or ''
-
-    def lesson_row(l, show_status):
-        topic = esc(l.get('topic'))
-        homework = esc(l.get('homework'))
-        extra = ''
-        if topic:
-            extra += f'<div class="portal-lesson-extra">📘 {topic}</div>'
-        if homework:
-            extra += f'<div class="portal-lesson-extra">📝 שיעורי בית: {homework}</div>'
-        status_html = ''
-        if show_status:
-            paid = l.get('isPaid')
-            partial = (l.get('paidAmount') or 0) > 0
-            label = 'שולם' if paid else ('שולם חלקית' if partial else 'ממתין לתשלום')
-            cls = 'paid' if paid else ('partial' if partial else 'unpaid')
-            status_html = f'<span class="portal-badge {cls}">{label}</span>'
-        return f'''<div class="portal-lesson">
-          <div class="portal-lesson-head">
-            <span class="portal-lesson-date">{esc(fmt_date(l["date"]))} {esc(l.get("time",""))}</span>
-            {status_html}
-          </div>
-          {extra}
-        </div>'''
-
-    upcoming_html = ''.join(lesson_row(l, False) for l in upcoming) or '<p class="portal-empty">אין שיעורים קרובים כרגע</p>'
-    past_html = ''.join(lesson_row(l, True) for l in past) or '<p class="portal-empty">אין שיעורים קודמים</p>'
-    balance_label = 'לתשלום' if balance < 0 else ('זכות' if balance > 0 else 'מאוזן')
-    balance_abs = abs(balance)
-    balance_class = 'debt' if balance < 0 else ('credit' if balance > 0 else 'even')
-
-    page = f'''<!doctype html>
-<html lang="he" dir="rtl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{esc(student.get("name"))} — מעקב שיעורים</title>
-<style>
-  :root {{ --primary: #2563eb; --bg: #f1f5f9; --card: #fff; --text: #1e293b; --muted: #64748b; --border: #e2e8f0; }}
-  * {{ box-sizing: border-box; }}
-  body {{ margin:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); padding: 16px; }}
-  .portal-wrap {{ max-width: 480px; margin: 0 auto; }}
-  .portal-header {{ text-align:center; margin: 12px 0 20px; }}
-  .portal-header .avatar {{ width: 56px; height:56px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; margin: 0 auto 10px; }}
-  .portal-header h1 {{ font-size: 20px; margin: 0 0 4px; }}
-  .portal-header p {{ color: var(--muted); font-size: 13px; margin:0; }}
-  .portal-balance {{ background: var(--card); border-radius: 14px; padding: 18px; text-align:center; margin-bottom:18px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }}
-  .portal-balance .amount {{ font-size: 28px; font-weight: 700; margin-top:4px; }}
-  .portal-balance.debt .amount {{ color: #dc2626; }}
-  .portal-balance.credit .amount {{ color: #16a34a; }}
-  .portal-balance.even .amount {{ color: var(--muted); }}
-  .portal-section {{ background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }}
-  .portal-section h2 {{ font-size: 14px; margin: 0 0 10px; }}
-  .portal-lesson {{ padding: 10px 0; border-bottom: 1px solid var(--border); }}
-  .portal-lesson:last-child {{ border-bottom: none; }}
-  .portal-lesson-head {{ display:flex; justify-content:space-between; align-items:center; }}
-  .portal-lesson-date {{ font-weight:600; font-size: 13.5px; }}
-  .portal-lesson-extra {{ font-size: 12.5px; color: var(--muted); margin-top: 4px; }}
-  .portal-badge {{ font-size: 11px; font-weight:700; padding: 2px 9px; border-radius: 10px; }}
-  .portal-badge.paid {{ background:#dcfce7; color:#166534; }}
-  .portal-badge.partial {{ background:#fef3c7; color:#92400e; }}
-  .portal-badge.unpaid {{ background:#fee2e2; color:#991b1b; }}
-  .portal-empty {{ color: var(--muted); font-size: 13px; text-align:center; padding: 10px 0; }}
-  .portal-footer {{ text-align:center; color: var(--muted); font-size: 11.5px; margin-top: 20px; }}
-</style>
-</head>
-<body>
-  <div class="portal-wrap">
-    <div class="portal-header">
-      <div class="avatar">{esc((student.get("name") or "?")[0])}</div>
-      <h1>{esc(student.get("name"))}</h1>
-      <p>מעקב שיעורים ותשלומים</p>
-    </div>
-    <div class="portal-balance {balance_class}">
-      <div>{balance_label}</div>
-      <div class="amount">₪{balance_abs:,.0f}</div>
-    </div>
-    <div class="portal-section">
-      <h2>📅 שיעורים קרובים</h2>
-      {upcoming_html}
-    </div>
-    <div class="portal-section">
-      <h2>📚 שיעורים אחרונים</h2>
-      {past_html}
-    </div>
-    <div class="portal-footer">עמוד זה מתעדכן אוטומטית · ניהול שיעורים פרטיים</div>
-  </div>
-</body>
-</html>'''
+    mine = lambda key: [x for x in d.get(key, []) if x.get('studentId') == sid_]
+    settings = portal_core.normalize_settings(d.get('bookingSettings'))
+    booking_enabled = settings['enabled'] and student.get('isActive') is not False
+    slots = portal_free_slots(d, student) if booking_enabled else []
+    page = portal_core.render_portal(token, student, mine('lessons'), mine('payments'),
+                                     mine('packages'), mine('bookings'), slots, booking_enabled)
     return page, 200, {'Content-Type': 'text/html; charset=utf-8'}
+
+@app.route('/portal/<token>/book', methods=['POST'])
+def portal_book(token):
+    owner, d, student = find_by_token(token)
+    if not student:
+        return jsonify({'error': 'הקישור לא נמצא'}), 404
+    settings = portal_core.normalize_settings(d.get('bookingSettings'))
+    if not settings['enabled'] or student.get('isActive') is False:
+        return jsonify({'error': 'קביעת שיעורים דרך הקישור כבויה כרגע'}), 403
+    pending = [b for b in d['bookings'] if b['studentId'] == student['id'] and b.get('status') == 'pending']
+    if len(pending) >= portal_core.MAX_PENDING_PER_STUDENT:
+        return jsonify({'error': f'אפשר להחזיק עד {portal_core.MAX_PENDING_PER_STUDENT} בקשות ממתינות בו-זמנית'}), 429
+    try:
+        date, time_, note = portal_core.validate_booking_request(request.json or {}, portal_free_slots(d, student))
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 409
+    d['bookings'].append({'id': uuid.uuid4().hex[:16], 'studentId': student['id'], 'date': date, 'time': time_,
+                          'durationMinutes': int(student.get('lessonDurationMinutes') or 50), 'note': note,
+                          'status': 'pending', 'createdAt': portal_core.now_local().isoformat(timespec='seconds')})
+    write_data(d, owner)
+    return jsonify({'ok': True}), 201
+
+@app.route('/portal/<token>/cancel/<bid>', methods=['POST'])
+def portal_cancel_booking(token, bid):
+    owner, d, student = find_by_token(token)
+    if not student:
+        return jsonify({'error': 'הקישור לא נמצא'}), 404
+    b = next((b for b in d['bookings'] if b['id'] == bid and b['studentId'] == student['id']), None)
+    if not b:
+        return jsonify({'error': 'Not found'}), 404
+    if b.get('status') != 'pending':
+        return jsonify({'error': 'הבקשה כבר טופלה'}), 409
+    b['status'] = 'cancelled'
+    b['decidedAt'] = portal_core.now_local().isoformat(timespec='seconds')
+    write_data(d, owner)
+    return jsonify({'ok': True})
+
+# ── Booking settings & requests (teacher side) ───────────────────────────────────
+@app.route('/api/booking-settings', methods=['GET'])
+def get_booking_settings():
+    err = require_auth()
+    if err: return err
+    return jsonify(portal_core.normalize_settings(read_data().get('bookingSettings')))
+
+@app.route('/api/booking-settings', methods=['PUT'])
+def put_booking_settings():
+    err = require_auth()
+    if err: return err
+    data = read_data()
+    data['bookingSettings'] = portal_core.normalize_settings(request.json or {})
+    write_data(data)
+    return jsonify(data['bookingSettings'])
+
+@app.route('/api/bookings', methods=['GET'])
+def get_bookings():
+    err = require_auth()
+    if err: return err
+    return jsonify(read_data()['bookings'])
+
+@app.route('/api/bookings/<bid>/approve', methods=['POST'])
+def approve_booking(bid):
+    err = require_auth()
+    if err: return err
+    lesson = (request.json or {}).get('lesson') or {}
+    if not lesson.get('id'):
+        return jsonify({'error': 'missing lesson'}), 400
+    data = read_data()
+    b = next((b for b in data['bookings'] if b['id'] == bid), None)
+    if not b:
+        return jsonify({'error': 'Not found'}), 404
+    if b.get('status') != 'pending':
+        return jsonify({'error': 'הבקשה כבר טופלה או בוטלה'}), 409
+    data['lessons'].append(lesson)
+    b.update(status='approved', lessonId=lesson['id'], decidedAt=portal_core.now_local().isoformat(timespec='seconds'))
+    write_data(data)
+    return jsonify({'booking': b, 'lesson': lesson})
+
+@app.route('/api/bookings/<bid>/reject', methods=['POST'])
+def reject_booking(bid):
+    err = require_auth()
+    if err: return err
+    data = read_data()
+    b = next((b for b in data['bookings'] if b['id'] == bid), None)
+    if not b:
+        return jsonify({'error': 'Not found'}), 404
+    if b.get('status') != 'pending':
+        return jsonify({'error': 'הבקשה כבר טופלה או בוטלה'}), 409
+    b.update(status='rejected', rejectReason=str((request.json or {}).get('reason') or '').strip()[:300],
+             decidedAt=portal_core.now_local().isoformat(timespec='seconds'))
+    write_data(data)
+    return jsonify(b)
+
+# ── Punch cards (כרטיסיות) ───────────────────────────────────────────────────────
+@app.route('/api/packages', methods=['GET'])
+def get_packages():
+    err = require_auth()
+    if err: return err
+    return jsonify(read_data()['packages'])
+
+@app.route('/api/packages', methods=['POST'])
+def add_package():
+    err = require_auth()
+    if err: return err
+    data = read_data()
+    data['packages'].append(request.json)
+    write_data(data)
+    return jsonify(request.json), 201
+
+@app.route('/api/packages/<pid>', methods=['PUT'])
+def update_package(pid):
+    err = require_auth()
+    if err: return err
+    data = read_data()
+    data['packages'] = [request.json if p['id'] == pid else p for p in data['packages']]
+    write_data(data)
+    return jsonify(request.json)
+
+@app.route('/api/packages/<pid>', methods=['DELETE'])
+def delete_package(pid):
+    err = require_auth()
+    if err: return err
+    data = read_data()
+    data['packages'] = [p for p in data['packages'] if p['id'] != pid]
+    write_data(data)
+    return '', 204
 
 # ── Lessons ────────────────────────────────────────────────────────────────────
 @app.route('/api/lessons', methods=['GET'])

@@ -1328,6 +1328,33 @@
       .modal-header { position: static; border-bottom: 2px solid #000; }
       .modal-handle, .modal-close, .modal-footer { display: none !important; }
     }
+
+    /* ===== PUNCH CARDS & BOOKING REQUESTS ===== */
+    .badge-card { background: #7c3aed; color: white; }
+    .pkg-line { color: #6d28d9; font-weight: 600; }
+    .pkg-line.low { color: var(--danger); }
+    .pkg-box { background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 10px; padding: 12px; }
+    [data-theme="dark"] .pkg-box { background: #2e1065; border-color: #5b21b6; }
+    .pkg-item { border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+    .pkg-item-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; }
+    .pkg-bar { height: 7px; background: var(--border); border-radius: 6px; margin: 8px 0 6px; overflow: hidden; }
+    .pkg-bar > div { height: 100%; background: #7c3aed; border-radius: 6px; }
+    .pkg-sub { font-size: 12.5px; color: var(--text-muted); }
+    .nav-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; margin-inline-start: 6px; vertical-align: middle; }
+    .bottom-nav-item { position: relative; }
+    .bottom-nav-item .nav-badge { position: absolute; top: 2px; inset-inline-start: 50%; margin: 0 0 0 -22px; }
+    #booking-requests .card { border: 2px solid var(--primary); margin-bottom: 20px; }
+    .breq { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .breq:last-child { border-bottom: none; }
+    .breq-main { flex: 1; min-width: 160px; }
+    .breq-when { font-weight: 700; }
+    .breq-note { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+    .breq-warn { font-size: 12px; color: var(--danger); margin-top: 2px; }
+    .avail-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+    .avail-row select, .avail-row input { flex: 1; min-width: 0; }
+    .avail-section { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
+    .avail-section h4 { font-size: 13.5px; margin: 0 0 4px; }
+    .avail-hint { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
   </style>
 </head>
 <body>
@@ -1359,6 +1386,7 @@
     <symbol id="icon-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
     <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
     <symbol id="icon-share" viewBox="0 0 24 24"><path d="M12 2v13"/><path d="m8 6 4-4 4 4"/><path d="M8 21h8a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2Z"/></symbol>
+    <symbol id="icon-ticket" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></symbol>
   </defs>
 </svg>
 
@@ -1491,7 +1519,7 @@
 
   <!-- NAV -->
   <nav class="nav-tabs">
-    <button class="nav-tab" data-page="dashboard">דשבורד</button>
+    <button class="nav-tab" data-page="dashboard">דשבורד<span class="nav-badge" data-booking-badge style="display:none"></span></button>
     <button class="nav-tab" data-page="students">תלמידים</button>
     <button class="nav-tab" data-page="lessons">שיעורים</button>
     <button class="nav-tab" data-page="payments">תשלומים</button>
@@ -1505,6 +1533,8 @@
       <div id="dash-greeting"></div>
       <!-- Debt Banner -->
       <div id="debt-banner"></div>
+      <!-- Pending lesson requests from student portal links -->
+      <div id="booking-requests"></div>
       <!-- Month Filter -->
       <div id="dash-month-wrap">
         <label style="font-size:13px;font-weight:500;color:var(--text-muted)">תקופה:</label>
@@ -1611,6 +1641,7 @@
       <div class="page-header">
         <h2 class="page-title">שיעורים</h2>
         <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="openAvailabilityModal()"><svg class="icon icon-sm"><use href="#icon-clock"/></svg> זמינות לתלמידים</button>
           <button class="btn btn-ghost btn-sm" onclick="showCalSubscribeInfo()"><svg class="icon icon-sm"><use href="#icon-link"/></svg> מנוי לוח שנה</button>
           <button class="btn btn-ghost btn-sm" onclick="exportToICS()"><svg class="icon icon-sm"><use href="#icon-calendar"/></svg> ייצוא ללוח שנה</button>
           <button class="btn btn-primary" onclick="openAddLessonModal(null)">+ הוסף שיעור</button>
@@ -1769,7 +1800,7 @@
       <span class="bn-icon"><svg class="icon"><use href="#icon-users"/></svg></span>תלמידים
     </button>
     <button class="bottom-nav-item" data-page="dashboard" onclick="showPage('dashboard')">
-      <span class="bn-icon"><svg class="icon"><use href="#icon-home"/></svg></span>דשבורד
+      <span class="bn-icon"><svg class="icon"><use href="#icon-home"/></svg></span>דשבורד<span class="nav-badge" data-booking-badge style="display:none"></span>
     </button>
   </div>
 </nav>
@@ -1834,20 +1865,29 @@ function escapeHtml(str) {
 }
 
 // ===== STORAGE (in-memory cache + REST API) =====
-let _students = [], _lessons = [], _payments = [];
+let _students = [], _lessons = [], _payments = [], _packages = [], _bookings = [], _bookingSettings = null;
 const getStudents = () => _students;
 const getLessons  = () => _lessons;
 const getPayments = () => _payments;
+const getPackages = () => _packages;
+const getBookings = () => _bookings;
 
 async function loadData() {
   showLoading();
   try {
-    const [s, l, p] = await Promise.all([
+    // Cards/bookings/settings are optional extras — a failure there (e.g. an
+    // older server) must never block the core app from loading.
+    const optional = (url, fallback) => fetch(url).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
+    const [s, l, p, pk, bk, bs] = await Promise.all([
       fetch('/api/students').then(r => { if (r.status === 401) { showAuthOverlay(); throw new Error('unauth'); } return r.json(); }),
       fetch('/api/lessons').then(r => r.json()),
       fetch('/api/payments').then(r => r.json()),
+      optional('/api/packages', []),
+      optional('/api/bookings', []),
+      optional('/api/booking-settings', null),
     ]);
-    _students = s; _lessons = l; _payments = p;
+    _students = s; _lessons = l; _payments = p; _packages = pk; _bookings = bk; _bookingSettings = bs;
+    updateBookingBadge();
     checkOnboarding();
   } finally {
     hideLoading();
@@ -2150,6 +2190,7 @@ function getLessonPayStatus(l) {
   return 'unpaid';
 }
 function lessonBadge(l) {
+  if (l.packageId) return `<span class="badge badge-card" title="נוצל מכרטיסייה">🎟 ${lessonPackagePosition(l) || 'כרטיסייה'}</span>`;
   const s = getLessonPayStatus(l);
   if (s === 'paid')    return '<span class="badge badge-success">שולם</span>';
   if (s === 'partial') return `<span class="badge badge-partial">חלקי: ${formatCurrency(l.paidAmount)}</span>`;
@@ -2369,9 +2410,11 @@ async function openShareLinkModal(studentId) {
   }
   const url = `${location.origin}/portal/${token}`;
   const intl = phoneToIntl(s.phone);
-  const waMsg = `היי ${s.name} 😊\nהנה קישור למעקב אחר השיעורים והתשלומים שלך:\n${url}`;
+  const waMsg = _bookingSettings?.enabled
+    ? `היי ${s.name} 😊\nהנה קישור למעקב אחר השיעורים והתשלומים שלך — אפשר גם לבחור בו מועד לשיעור הבא:\n${url}`
+    : `היי ${s.name} 😊\nהנה קישור למעקב אחר השיעורים והתשלומים שלך:\n${url}`;
   const html = `
-    <p style="margin-bottom:12px;font-size:13.5px;color:var(--text-muted)">קישור קבוע, בלי צורך בהתחברות — מראה להורה/תלמיד את השיעורים הקרובים, היתרה, ומה שסימנת כ"מה עשינו היום" ו"שיעורי בית" בכל שיעור.</p>
+    <p style="margin-bottom:12px;font-size:13.5px;color:var(--text-muted)">קישור קבוע, בלי צורך בהתחברות — מראה להורה/תלמיד את השיעורים הקרובים, היתרה, הכרטיסייה, ומה שסימנת כ"מה עשינו היום" ו"שיעורי בית" בכל שיעור.${_bookingSettings?.enabled ? ' התלמיד יכול גם לבקש שיעור במועד פנוי — הבקשה מחכה לאישורך.' : ' <a href="#" onclick="closeModal();openAvailabilityModal();return false">אפשר גם לתת לתלמיד לבקש שיעור לפי הזמינות שלך</a>.'}</p>
     <div style="display:flex;gap:8px;align-items:center;background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:12px">
       <input type="text" readonly value="${url}" id="share-link-input" style="flex:1;border:none;background:transparent;font-size:13px;direction:ltr;text-align:left;color:var(--text)" onclick="this.select()">
     </div>
@@ -2442,6 +2485,449 @@ function showToastWithCalendar(lesson) {
   window._lastLesson = lesson;
   clearTimeout(t._timer);
   t._timer = setTimeout(() => { t.className = 'toast'; }, 7000);
+}
+
+// ===== PUNCH CARDS (כרטיסיות) =====
+// A card is prepaid credit: selling it records a normal payment (credit on the
+// balance), and every lesson drawn from it carries packageId, isPaid:true,
+// paidAmount:0 and amount = card price per unit × units — so each lesson
+// consumes its share of that credit and monthly income stays per-lesson.
+function getStudentPackages(studentId) {
+  return getPackages().filter(p => p.studentId === studentId).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+}
+function packageUsedUnits(pkg, excludeLessonId) {
+  return getLessons().filter(l => l.packageId === pkg.id && l.id !== excludeLessonId)
+    .reduce((s, l) => s + (l.durationHours || 1), 0);
+}
+function packageStatus(pkg, excludeLessonId) {
+  const total = pkg.totalUnits || 0;
+  const used = packageUsedUnits(pkg, excludeLessonId);
+  const expired = !!pkg.expiresAt && pkg.expiresAt < isoDate(new Date());
+  return { total, used, remaining: Math.max(0, total - used), expired };
+}
+function packageUnitPrice(pkg) {
+  return pkg.totalUnits ? Math.round((pkg.price || 0) / pkg.totalUnits * 100) / 100 : 0;
+}
+// The card a new lesson should draw from: the oldest non-expired card with
+// enough units left for this lesson.
+function getActivePackage(studentId, units = 1, excludeLessonId) {
+  return getStudentPackages(studentId).find(p => {
+    const st = packageStatus(p, excludeLessonId);
+    return !st.expired && st.remaining >= units;
+  }) || null;
+}
+// "3/10" — this lesson's position (in units) within its card, by date.
+function lessonPackagePosition(lesson) {
+  const pkg = getPackages().find(p => p.id === lesson.packageId);
+  if (!pkg) return '';
+  const inPkg = getLessons().filter(l => l.packageId === pkg.id)
+    .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+  let n = 0;
+  for (const l of inPkg) { n += (l.durationHours || 1); if (l.id === lesson.id) break; }
+  return `${n}/${pkg.totalUnits}`;
+}
+function applyPackageToLesson(lesson, pkg) {
+  if (pkg) {
+    lesson.packageId = pkg.id;
+    lesson.amount = Math.round(packageUnitPrice(pkg) * (lesson.durationHours || 1) * 100) / 100;
+    lesson.isPaid = true;
+    lesson.paidAmount = 0;
+  } else {
+    delete lesson.packageId;
+  }
+  return lesson;
+}
+// Shown after saving lessons — nudges the teacher when a card is about to run out.
+function packageLowNotice(studentId) {
+  const s = getStudentById(studentId);
+  const pkgs = getStudentPackages(studentId).filter(p => !packageStatus(p).expired);
+  if (!pkgs.length) return;
+  const remaining = pkgs.reduce((t, p) => t + packageStatus(p).remaining, 0);
+  if (remaining === 0) showToast(`🎟 הכרטיסייה של ${s?.name || ''} נוצלה במלואה — זמן לחדש`, 'warning');
+  else if (remaining === 1) showToast(`🎟 נותר שיעור אחד בכרטיסייה של ${s?.name || ''}`, 'warning');
+}
+function studentPackageLine(studentId) {
+  const pkgs = getStudentPackages(studentId);
+  if (!pkgs.length) return '';
+  const live = pkgs.filter(p => { const st = packageStatus(p); return !st.expired && st.remaining > 0; });
+  if (!live.length) return `<span class="pkg-line low">🎟 הכרטיסייה נוצלה — אפשר לחדש</span>`;
+  const remaining = live.reduce((t, p) => t + packageStatus(p).remaining, 0);
+  const total = live.reduce((t, p) => t + (p.totalUnits || 0), 0);
+  return `<span class="pkg-line ${remaining <= 1 ? 'low' : ''}">🎟 כרטיסייה: נותרו ${remaining} מתוך ${total}</span>`;
+}
+
+// Lesson form: the "draw from card" box. Re-rendered when student/units change.
+function renderLessonPackageBox() {
+  const box = document.getElementById('f-pkg-box');
+  if (!box) return;
+  const sid = document.getElementById('f-student')?.value;
+  const units = parseFloat(document.getElementById('f-duration')?.value || 1);
+  const editingId = box.dataset.lessonId || undefined;
+  const currentPkgId = box.dataset.currentPkg || '';
+  const prevChecked = document.getElementById('f-use-pkg')?.checked;
+  let pkg = null;
+  if (sid) {
+    const cur = currentPkgId && getPackages().find(p => p.id === currentPkgId && p.studentId === sid);
+    pkg = (cur && packageStatus(cur, editingId).remaining >= units) ? cur : getActivePackage(sid, units, editingId);
+  }
+  if (!pkg) {
+    box.innerHTML = '';
+    box.style.display = 'none';
+    box.dataset.pkg = '';
+    togglePayStatusForPackage(false);
+    return;
+  }
+  const st = packageStatus(pkg, editingId);
+  const checked = prevChecked === undefined ? (editingId ? !!currentPkgId : true) : prevChecked;
+  box.dataset.pkg = pkg.id;
+  box.style.display = '';
+  box.innerHTML = `<label class="checkbox-label" style="font-weight:600;color:#6d28d9">
+      <input type="checkbox" id="f-use-pkg" ${checked ? 'checked' : ''} onchange="togglePayStatusForPackage(this.checked);updateLessonAmount()">
+      🎟 לנכות מהכרטיסייה
+    </label>
+    <div class="pkg-sub" style="margin-top:4px">נותרו ${st.remaining} מתוך ${st.total} · שווי שיעור ${formatCurrency(packageUnitPrice(pkg))}${pkg.expiresAt ? ` · בתוקף עד ${formatDate(pkg.expiresAt)}` : ''}</div>`;
+  togglePayStatusForPackage(checked);
+}
+function togglePayStatusForPackage(usePkg) {
+  const g = document.getElementById('f-pay-status-group');
+  if (g) g.style.display = usePkg ? 'none' : '';
+}
+function selectedLessonPackage() {
+  const box = document.getElementById('f-pkg-box');
+  if (!box || !box.dataset.pkg || !document.getElementById('f-use-pkg')?.checked) return null;
+  return getPackages().find(p => p.id === box.dataset.pkg) || null;
+}
+
+function openPackagesModal(studentId) {
+  const s = getStudentById(studentId);
+  if (!s) return;
+  const pkgs = getStudentPackages(studentId).slice().reverse();
+  const list = pkgs.length ? pkgs.map(p => {
+    const st = packageStatus(p);
+    const pct = st.total ? Math.round(100 * st.used / st.total) : 0;
+    const state = st.expired ? '<span class="badge badge-muted">פג תוקף</span>'
+      : st.remaining === 0 ? '<span class="badge badge-muted">נוצלה</span>'
+      : `<span class="badge badge-card">נותרו ${st.remaining}</span>`;
+    return `<div class="pkg-item">
+      <div class="pkg-item-head"><span>🎟 ${st.total} שיעורים · ${formatCurrency(p.price)}</span>${state}</div>
+      <div class="pkg-bar"><div style="width:${pct}%"></div></div>
+      <div class="pkg-sub">נוצלו ${st.used} מתוך ${st.total} · נרכשה ${formatDate(p.date)}${p.expiresAt ? ` · בתוקף עד ${formatDate(p.expiresAt)}` : ''}${p.notes ? ` · ${escapeHtml(p.notes)}` : ''}</div>
+      <button class="btn btn-ghost btn-xs text-danger" style="margin-top:6px" onclick="deletePackage('${p.id}')">מחק כרטיסייה</button>
+    </div>`;
+  }).join('') : '<p class="text-muted" style="margin-bottom:12px">עדיין אין כרטיסיות לתלמיד/ה</p>';
+  const defUnits = 10;
+  const html = `
+    ${list}
+    <div class="pkg-box" style="margin-top:6px">
+      <div style="font-weight:700;color:#6d28d9;margin-bottom:10px">+ כרטיסייה חדשה</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>מספר שיעורים</label>
+          <input type="number" id="f-pkg-units" value="${defUnits}" min="1" step="1" oninput="document.getElementById('f-pkg-price').value = (${s.hourlyRate || 0}) * (parseInt(this.value)||0)"></div>
+        <div class="form-group"><label>מחיר הכרטיסייה (₪)</label>
+          <input type="number" id="f-pkg-price" value="${(s.hourlyRate || 0) * defUnits}" min="0" step="10"></div>
+        <div class="form-group"><label>תאריך רכישה</label>
+          <input type="date" id="f-pkg-date" value="${isoDate(new Date())}"></div>
+        <div class="form-group"><label>תוקף עד (לא חובה)</label>
+          <input type="date" id="f-pkg-expires"></div>
+      </div>
+      <div class="form-group"><label>הערה</label><input type="text" id="f-pkg-notes" placeholder="למשל: כרטיסיית חורף"></div>
+      <label class="checkbox-label"><input type="checkbox" id="f-pkg-paid" checked> התקבל תשלום על הכרטיסייה (יירשם בתשלומים)</label>
+      <div class="pkg-sub" style="margin-top:8px">שיעורים חדשים של ${escapeHtml(s.name)} ינוכו אוטומטית מהכרטיסייה עד שתיגמר.</div>
+    </div>`;
+  openModal(`כרטיסיות — ${escapeHtml(s.name)}`, html, async () => {
+    const totalUnits = parseInt(document.getElementById('f-pkg-units').value);
+    const price = parseFloat(document.getElementById('f-pkg-price').value) || 0;
+    const date = document.getElementById('f-pkg-date').value || isoDate(new Date());
+    if (!totalUnits || totalUnits < 1) { showToast('נא להזין מספר שיעורים', 'error'); return; }
+    const pkg = { id: generateId(), studentId, date, totalUnits, price,
+      expiresAt: document.getElementById('f-pkg-expires').value || '',
+      notes: document.getElementById('f-pkg-notes').value.trim(), createdAt: new Date().toISOString() };
+    await apiCall('POST', '/api/packages', pkg);
+    _packages.push(pkg);
+    if (document.getElementById('f-pkg-paid').checked && price > 0) {
+      const payment = { id: generateId(), studentId, date, amount: price, packageId: pkg.id,
+        notes: `כרטיסייה ${totalUnits} שיעורים` };
+      await apiCall('POST', '/api/payments', payment);
+      _payments.push(payment);
+    }
+    closeModal();
+    refreshAfterDataChange();
+    showToast(`כרטיסייה של ${totalUnits} שיעורים נוספה 🎟`);
+  });
+  const saveBtn = document.getElementById('modal-save-btn');
+  if (saveBtn) saveBtn.textContent = 'הוסף כרטיסייה';
+}
+
+async function deletePackage(id) {
+  const pkg = _packages.find(p => p.id === id);
+  if (!pkg) return;
+  const linked = _lessons.filter(l => l.packageId === id);
+  const linkedPay = _payments.filter(p => p.packageId === id);
+  let msg = 'למחוק את הכרטיסייה?';
+  if (linked.length) msg += `\n${linked.length} שיעורים שנוצלו ממנה יחזרו להיות שיעורים רגילים שממתינים לתשלום.`;
+  if (linkedPay.length) msg += `\nהתשלום שנרשם עבורה (${formatCurrency(linkedPay.reduce((t, p) => t + p.amount, 0))}) יימחק גם הוא.`;
+  confirmAction(msg, async () => {
+    const st = getStudentById(pkg.studentId);
+    for (const l of linked) {
+      const updated = { ...l, isPaid: false, paidAmount: 0, amount: st ? st.hourlyRate * (l.durationHours || 1) : l.amount };
+      delete updated.packageId;
+      await apiCall('PUT', `/api/lessons/${l.id}`, updated);
+      _lessons = _lessons.map(x => x.id === l.id ? updated : x);
+    }
+    for (const p of linkedPay) {
+      await apiCall('DELETE', `/api/payments/${p.id}`);
+      _payments = _payments.filter(x => x.id !== p.id);
+    }
+    await apiCall('DELETE', `/api/packages/${id}`);
+    _packages = _packages.filter(p => p.id !== id);
+    refreshAfterDataChange();
+    openPackagesModal(pkg.studentId);
+    showToast('הכרטיסייה נמחקה');
+  });
+}
+
+// Re-render whichever page is visible after data changed from a modal.
+function refreshAfterDataChange() {
+  const visible = [...document.querySelectorAll('.page')].find(p => p.style.display === 'block')?.id?.replace('page-', '');
+  if (visible === 'students') renderStudents();
+  else if (visible === 'lessons') renderLessonsTable();
+  else if (visible === 'payments') renderPayments();
+  else if (visible === 'dashboard') renderDashboard();
+  updateBookingBadge();
+}
+
+// ===== SELF-BOOKING: requests from the student portal link =====
+function pendingBookings() {
+  const today = isoDate(new Date());
+  return getBookings().filter(b => b.status === 'pending' && b.date >= today)
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+}
+function updateBookingBadge() {
+  const n = pendingBookings().length;
+  document.querySelectorAll('[data-booking-badge]').forEach(el => {
+    el.textContent = n;
+    el.style.display = n ? '' : 'none';
+  });
+}
+function timeToMin(t) { const [h, m] = (t || '0:0').split(':').map(Number); return h * 60 + m; }
+// Lessons added by hand after the request came in may now overlap it.
+function bookingConflict(b) {
+  const start = timeToMin(b.time), end = start + (b.durationMinutes || 50);
+  return getLessons().find(l => {
+    if (l.date !== b.date) return false;
+    const st = getStudentById(l.studentId);
+    const ls = timeToMin(l.time || '16:00');
+    const le = ls + (l.durationHours || 1) * (st?.lessonDurationMinutes || 50);
+    return start < le && end > ls;
+  });
+}
+function renderBookingRequests() {
+  const el = document.getElementById('booking-requests');
+  if (!el) return;
+  updateBookingBadge();
+  const list = pendingBookings();
+  if (!list.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="card">
+    <div class="dash-card-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <span>🗓️ בקשות לשיעור (${list.length})</span>
+      <button class="btn btn-ghost btn-xs" onclick="openAvailabilityModal()">ניהול זמינות</button>
+    </div>
+    ${list.map(b => {
+      const s = getStudentById(b.studentId);
+      const d = new Date(b.date + 'T00:00:00');
+      const clash = bookingConflict(b);
+      const pkg = getActivePackage(b.studentId, 1);
+      return `<div class="breq">
+        <span class="student-dot" style="background:${s?.color || '#2563eb'}"></span>
+        <div class="breq-main">
+          <div class="breq-when">${escapeHtml(s?.name || '?')} · יום ${getDayName(d.getDay())} ${formatDate(b.date)} · ${escapeHtml(b.time)}</div>
+          ${b.note ? `<div class="breq-note">💬 ${escapeHtml(b.note)}</div>` : ''}
+          ${pkg ? `<div class="breq-note pkg-line">🎟 ינוכה מהכרטיסייה</div>` : ''}
+          ${clash ? `<div class="breq-warn">⚠ חופף לשיעור קיים של ${escapeHtml(getStudentById(clash.studentId)?.name || '')} ב-${escapeHtml(clash.time)}</div>` : ''}
+        </div>
+        <button class="btn btn-success btn-sm" onclick="approveBooking('${b.id}')">✓ אישור</button>
+        <button class="btn btn-ghost btn-sm" onclick="openRejectBookingModal('${b.id}')">✕ דחייה</button>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+async function approveBooking(id) {
+  const b = _bookings.find(x => x.id === id);
+  if (!b) return;
+  const s = getStudentById(b.studentId);
+  const lesson = {
+    id: generateId(), studentId: b.studentId, date: b.date, time: b.time,
+    durationHours: 1, amount: s?.hourlyRate || 0, isPaid: false, paidAmount: 0,
+    notes: b.note ? `בקשת תלמיד: ${b.note}` : '', topic: '', homework: '', bookingId: b.id,
+  };
+  applyPackageToLesson(lesson, getActivePackage(b.studentId, 1));
+  let res;
+  try {
+    res = await apiCall('POST', `/api/bookings/${id}/approve`, { lesson });
+  } catch (e) {
+    showToast('הבקשה כבר טופלה או בוטלה על ידי התלמיד', 'warning');
+    await reloadBookings();
+    return;
+  }
+  _lessons.push(res.lesson);
+  _bookings = _bookings.map(x => x.id === id ? res.booking : x);
+  refreshAfterDataChange();
+  renderBookingRequests();
+  showBookingDecisionToast(res.lesson, s, true);
+  if (lesson.packageId) setTimeout(() => packageLowNotice(b.studentId), 7500);
+}
+
+function openRejectBookingModal(id) {
+  const b = _bookings.find(x => x.id === id);
+  if (!b) return;
+  const s = getStudentById(b.studentId);
+  const html = `<p style="margin-bottom:12px">לדחות את הבקשה של <strong>${escapeHtml(s?.name || '')}</strong> ל-${formatDate(b.date)} בשעה ${escapeHtml(b.time)}?</p>
+    <div class="form-group"><label>סיבה / הצעה למועד אחר (לא חובה — תוצג לתלמיד בקישור)</label>
+    <textarea id="f-reject-reason" rows="2" placeholder="למשל: אפשר ביום שלישי ב-17:00?"></textarea></div>`;
+  openModal('דחיית בקשה', html, async () => {
+    const reason = document.getElementById('f-reject-reason').value.trim();
+    let res;
+    try {
+      res = await apiCall('POST', `/api/bookings/${id}/reject`, { reason });
+    } catch (e) {
+      closeModal();
+      showToast('הבקשה כבר טופלה או בוטלה', 'warning');
+      await reloadBookings();
+      return;
+    }
+    _bookings = _bookings.map(x => x.id === id ? res : x);
+    closeModal();
+    renderBookingRequests();
+    showBookingDecisionToast(res, s, false);
+  });
+  const saveBtn = document.getElementById('modal-save-btn');
+  if (saveBtn) { saveBtn.textContent = 'דחה בקשה'; saveBtn.classList.replace('btn-primary', 'btn-danger'); }
+}
+
+function showBookingDecisionToast(item, s, approved) {
+  const intl = phoneToIntl(s?.phone);
+  const [y, m, d] = item.date.split('-');
+  const msg = approved
+    ? `היי ${s?.name || ''} 😊\nהשיעור ב-${d}/${m} בשעה ${item.time} אושר ✅\nנתראה!`
+    : `היי ${s?.name || ''},\nלצערי המועד ${d}/${m} בשעה ${item.time} לא מתאים.${item.rejectReason ? `\n${item.rejectReason}` : ''}\nאפשר לבחור מועד אחר בקישור 🙏`;
+  const t = document.getElementById('toast');
+  const btnStyle = 'background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 10px;border-radius:6px;cursor:pointer;font-size:12.5px;font-family:inherit;margin-top:6px;margin-inline-end:4px;font-weight:600';
+  window._lastLesson = approved ? item : null;
+  window._decisionWa = intl ? `https://wa.me/${intl}?text=${encodeURIComponent(msg)}` : null;
+  t.innerHTML = `${toastIconHTML('success')}<span>${approved ? 'השיעור נקבע!' : 'הבקשה נדחתה'}<br>
+    ${intl ? `<button onclick="window.open(window._decisionWa,'_blank')" style="${btnStyle}">💬 עדכון לתלמיד</button>` : ''}
+    ${approved ? `<button onclick="exportSingleLesson(window._lastLesson)" style="${btnStyle}">📅 לוח שנה</button>` : ''}</span>`;
+  t.className = 'toast toast-success show';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = 'toast'; }, 7000);
+}
+
+async function reloadBookings() {
+  try { _bookings = await apiCall('GET', '/api/bookings'); } catch (e) { /* keep what we have */ }
+  renderBookingRequests();
+}
+
+// ===== AVAILABILITY (what the portal offers students) =====
+let _availDraft = null;
+function openAvailabilityModal() {
+  _availDraft = JSON.parse(JSON.stringify(_bookingSettings || {}));
+  _availDraft.windows = _availDraft.windows || [];
+  _availDraft.extraSlots = _availDraft.extraSlots || [];
+  _availDraft.blockedDates = _availDraft.blockedDates || [];
+  const opt = (vals, cur, fmt) => vals.map(v => `<option value="${v}" ${v == cur ? 'selected' : ''}>${fmt(v)}</option>`).join('');
+  const html = `
+    <label class="checkbox-label" style="font-weight:700;font-size:15px">
+      <input type="checkbox" id="f-av-enabled" ${_availDraft.enabled ? 'checked' : ''}> לאפשר לתלמידים לבקש שיעור דרך קישור המעקב
+    </label>
+    <div class="avail-hint" style="margin-top:6px">התלמיד רואה רק זמנים פנויים באורך השיעור שלו (זמנים שיש בהם שיעור או בקשה ממתינה מוסתרים). כל בקשה מחכה לאישור שלך.</div>
+    <div class="avail-section">
+      <h4>🔁 זמינות שבועית קבועה</h4>
+      <div class="avail-hint">למשל: ראשון 16:00–20:00</div>
+      <div id="av-windows"></div>
+      <button class="btn btn-ghost btn-xs" onclick="availAdd('windows')">+ הוספת חלון זמן</button>
+    </div>
+    <div class="avail-section">
+      <h4>➕ מועדים חד-פעמיים</h4>
+      <div class="avail-hint">זמינות נוספת בתאריך מסוים</div>
+      <div id="av-extra"></div>
+      <button class="btn btn-ghost btn-xs" onclick="availAdd('extraSlots')">+ הוספת מועד</button>
+    </div>
+    <div class="avail-section">
+      <h4>⛔ תאריכים חסומים</h4>
+      <div class="avail-hint">חופשה / יום עמוס — לא יוצעו בו זמנים</div>
+      <div id="av-blocked"></div>
+      <button class="btn btn-ghost btn-xs" onclick="availAdd('blockedDates')">+ חסימת תאריך</button>
+    </div>
+    <div class="avail-section">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="form-group"><label style="font-size:12px">התראה מראש</label>
+          <select id="f-av-notice">${opt([0, 2, 6, 12, 24, 48, 72], _availDraft.minNoticeHours ?? 24, v => v ? `${v} שעות` : 'ללא')}</select></div>
+        <div class="form-group"><label style="font-size:12px">כמה קדימה</label>
+          <select id="f-av-horizon">${opt([7, 14, 21, 30, 45, 60], _availDraft.horizonDays ?? 21, v => `${v} ימים`)}</select></div>
+        <div class="form-group"><label style="font-size:12px">מרווח בין זמנים</label>
+          <select id="f-av-step">${opt([15, 30, 60], _availDraft.stepMinutes ?? 30, v => `${v} דק'`)}</select></div>
+      </div>
+    </div>`;
+  openModal('זמינות לתלמידים', html, async () => {
+    availSync();
+    const bad = _availDraft.windows.concat(_availDraft.extraSlots).find(w => !w.start || !w.end || w.start >= w.end);
+    if (bad) { showToast('בכל חלון זמן שעת הסיום צריכה להיות אחרי שעת ההתחלה', 'error'); return; }
+    if (_availDraft.extraSlots.some(e => !e.date)) { showToast('נא לבחור תאריך לכל מועד חד-פעמי', 'error'); return; }
+    const settings = {
+      enabled: document.getElementById('f-av-enabled').checked,
+      windows: _availDraft.windows,
+      extraSlots: _availDraft.extraSlots,
+      blockedDates: _availDraft.blockedDates.filter(Boolean),
+      minNoticeHours: parseInt(document.getElementById('f-av-notice').value),
+      horizonDays: parseInt(document.getElementById('f-av-horizon').value),
+      stepMinutes: parseInt(document.getElementById('f-av-step').value),
+    };
+    if (settings.enabled && !settings.windows.length && !settings.extraSlots.length) {
+      showToast('הוסיפי לפחות חלון זמן אחד כדי שלתלמידים יהיה מה לבחור', 'error'); return;
+    }
+    _bookingSettings = await apiCall('PUT', '/api/booking-settings', settings);
+    closeModal();
+    showToast(settings.enabled ? 'הזמינות נשמרה — התלמידים יכולים לבקש שיעור בקישור ✓' : 'הזמינות נשמרה (קביעה עצמית כבויה)');
+  });
+  availRender();
+}
+// Pull the current input values back into the draft before re-rendering.
+function availSync() {
+  if (!_availDraft) return;
+  document.querySelectorAll('#av-windows .avail-row').forEach((row, i) => {
+    _availDraft.windows[i] = { day: parseInt(row.querySelector('.av-day').value), start: row.querySelector('.av-start').value, end: row.querySelector('.av-end').value };
+  });
+  document.querySelectorAll('#av-extra .avail-row').forEach((row, i) => {
+    _availDraft.extraSlots[i] = { ..._availDraft.extraSlots[i], date: row.querySelector('.av-date').value, start: row.querySelector('.av-start').value, end: row.querySelector('.av-end').value };
+  });
+  document.querySelectorAll('#av-blocked .avail-row').forEach((row, i) => {
+    _availDraft.blockedDates[i] = row.querySelector('.av-date').value;
+  });
+}
+function availRender() {
+  const del = (kind, i) => `<button class="btn btn-ghost btn-xs btn-icon" onclick="availRemove('${kind}',${i})" title="הסר"><svg class="icon icon-sm"><use href="#icon-trash"/></svg></button>`;
+  document.getElementById('av-windows').innerHTML = _availDraft.windows.map((w, i) => `<div class="avail-row">
+      <select class="av-day">${DAY_NAMES.map((d, di) => `<option value="${di}" ${di == w.day ? 'selected' : ''}>${d}</option>`).join('')}</select>
+      <input type="time" class="av-start" value="${w.start || ''}"><span>–</span><input type="time" class="av-end" value="${w.end || ''}">${del('windows', i)}</div>`).join('');
+  document.getElementById('av-extra').innerHTML = _availDraft.extraSlots.map((e, i) => `<div class="avail-row">
+      <input type="date" class="av-date" value="${e.date || ''}">
+      <input type="time" class="av-start" value="${e.start || ''}"><span>–</span><input type="time" class="av-end" value="${e.end || ''}">${del('extraSlots', i)}</div>`).join('');
+  document.getElementById('av-blocked').innerHTML = _availDraft.blockedDates.map((d, i) => `<div class="avail-row">
+      <input type="date" class="av-date" value="${d || ''}">${del('blockedDates', i)}</div>`).join('');
+}
+function availAdd(kind) {
+  availSync();
+  const last = _availDraft[kind][_availDraft[kind].length - 1];
+  if (kind === 'windows') _availDraft.windows.push({ day: last ? (last.day + 1) % 7 : 0, start: last?.start || '16:00', end: last?.end || '20:00' });
+  if (kind === 'extraSlots') _availDraft.extraSlots.push({ id: generateId(), date: isoDate(new Date()), start: '16:00', end: '18:00' });
+  if (kind === 'blockedDates') _availDraft.blockedDates.push(isoDate(new Date()));
+  availRender();
+}
+function availRemove(kind, i) {
+  availSync();
+  _availDraft[kind].splice(i, 1);
+  availRender();
 }
 
 // ===== MODAL =====
@@ -2524,6 +3010,7 @@ function renderDashGreeting() {
 
 function renderDashboard() {
   renderDashGreeting();
+  renderBookingRequests();
   populateDashMonthFilter();
   const students = getStudents();
   const lessons  = getLessons();
@@ -2785,6 +3272,7 @@ function renderStudents() {
         <span>⏱ ${s.lessonDurationMinutes || 50} דק' לשיעור</span>
         <span>📅 ${days || 'ימים לא הוגדרו'}</span>
         ${s.phone ? `<span>📞 <a href="tel:${escapeHtml(s.phone)}" style="color:var(--primary);text-decoration:none">${escapeHtml(s.phone)}</a></span>` : ''}
+        ${studentPackageLine(s.id)}
         <span style="display:flex;gap:10px;flex-wrap:wrap">
           <span>📊 ${lessonCount} שיעורים</span>
           <span class="text-success">✅ ${paidCount} שולמו</span>
@@ -2796,6 +3284,7 @@ function renderStudents() {
         ${!inactive ? `<button class="btn btn-primary btn-sm" onclick="openAddLessonModal('${s.id}')">+ שיעור</button>` : ''}
         <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditStudentModal('${s.id}')" title="ערוך פרטי תלמיד"><svg class="icon icon-sm"><use href="#icon-pencil"/></svg></button>
         <button class="btn btn-ghost btn-sm btn-icon" onclick="viewStudentHistory('${s.id}')" title="היסטוריית שיעורים"><svg class="icon icon-sm"><use href="#icon-clock"/></svg></button>
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openPackagesModal('${s.id}')" title="כרטיסיות"><svg class="icon icon-sm"><use href="#icon-ticket"/></svg></button>
         <button class="btn btn-ghost btn-sm btn-icon" onclick="openShareLinkModal('${s.id}')" title="קישור מעקב להורה/תלמיד"><svg class="icon icon-sm"><use href="#icon-link"/></svg></button>
         ${s.phone ? `<button class="btn btn-ghost btn-sm btn-icon" onclick="openSendLessonsListModal('${s.id}')" title="שלח רשימת שיעורים בווצאפ"><svg class="icon icon-sm"><use href="#icon-message-circle"/></svg></button>` : ''}
         ${balance < 0 ? `<button class="btn btn-warning btn-sm btn-icon" onclick="openDebtReport('${s.id}')" title="דוח תשלום"><svg class="icon icon-sm"><use href="#icon-file-text"/></svg></button>` : ''}
@@ -2928,11 +3417,15 @@ function openEditStudentModal(id) {
 async function deleteStudent(id) {
   const s = getStudentById(id);
   confirmAction(`למחוק את ${s?.name}?\nכל השיעורים והתשלומים שלו יימחקו גם כן.`, async () => {
-    const deleted = { student: s, lessons: _lessons.filter(l => l.studentId === id), payments: _payments.filter(p => p.studentId === id) };
+    const deleted = { student: s, lessons: _lessons.filter(l => l.studentId === id), payments: _payments.filter(p => p.studentId === id),
+      packages: _packages.filter(p => p.studentId === id) };
     await apiCall('DELETE', `/api/students/${id}`);
     _students = _students.filter(st => st.id !== id);
     _lessons  = _lessons.filter(l => l.studentId !== id);
     _payments = _payments.filter(p => p.studentId !== id);
+    _packages = _packages.filter(p => p.studentId !== id);
+    _bookings = _bookings.filter(b => b.studentId !== id);
+    updateBookingBadge();
     closeModal();
     renderStudents();
     showUndoToast(`תלמיד "${s?.name}" נמחק`, async () => {
@@ -2940,6 +3433,7 @@ async function deleteStudent(id) {
       _students.push(deleted.student);
       for (const l of deleted.lessons) { await apiCall('POST', '/api/lessons', l); _lessons.push(l); }
       for (const p of deleted.payments) { await apiCall('POST', '/api/payments', p); _payments.push(p); }
+      for (const p of deleted.packages) { await apiCall('POST', '/api/packages', p); _packages.push(p); }
       renderStudents();
     });
   });
@@ -3114,7 +3608,7 @@ function renderLessonsTable() {
       <td data-label="סטטוס">${lessonBadge(l)}</td>
       <td data-label="הערות" class="text-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.notes)}</td>
       <td class="cell-actions"><div class="actions-cell">
-        <button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}')" title="${getLessonPayStatus(l) === 'paid' ? 'בטל סימון' : 'סמן שולם'}">${toggleBtnLabel(l)}</button>
+        ${l.packageId ? '' : `<button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}')" title="${getLessonPayStatus(l) === 'paid' ? 'בטל סימון' : 'סמן שולם'}">${toggleBtnLabel(l)}</button>`}
         ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ לתלמיד">💬 ווצאפ</button>` : ''}
         <button class="btn btn-ghost btn-xs" onclick="openEditLessonModal('${l.id}')">ערוך</button>
         <button class="btn btn-ghost btn-xs text-danger" onclick="deleteLesson('${l.id}')">מחק</button>
@@ -3134,10 +3628,11 @@ function buildLessonForm(l, defaultStudentId, defaultDate) {
   const students = getStudents().filter(s => s.isActive !== false || s.id === l?.studentId);
   const sid = l?.studentId || defaultStudentId || '';
   const today = defaultDate || new Date().toISOString().split('T')[0];
+  const payL = l?.packageId ? null : l; // card lessons' isPaid is bookkeeping, not a real payment
   return `
     <div class="form-group">
       <label>תלמיד</label>
-      <select id="f-student" onchange="updateLessonAmount()">
+      <select id="f-student" onchange="renderLessonPackageBox();updateLessonAmount()">
         <option value="">בחר תלמיד...</option>
         ${students.map(s => `<option value="${s.id}" ${s.id===sid ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
       </select>
@@ -3155,7 +3650,7 @@ function buildLessonForm(l, defaultStudentId, defaultDate) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group">
         <label>מספר שיעורים</label>
-        <select id="f-duration" onchange="updateLessonAmount()">
+        <select id="f-duration" onchange="renderLessonPackageBox();updateLessonAmount()">
           ${[1,2,3,4].map(n => `<option value="${n}" ${(l?.durationHours||1)==n ? 'selected' : ''}>${n} שיעור${n>1?'ים':''}</option>`).join('')}
         </select>
       </div>
@@ -3175,22 +3670,23 @@ function buildLessonForm(l, defaultStudentId, defaultDate) {
       <label>הערות (פנימי, לא מוצג להורה)</label>
       <textarea id="f-notes" rows="2">${escapeHtml(l?.notes)}</textarea>
     </div>
-    <div class="form-group">
+    <div class="form-group pkg-box" id="f-pkg-box" data-lesson-id="${l?.id || ''}" data-current-pkg="${l?.packageId || ''}" style="display:none"></div>
+    <div class="form-group" id="f-pay-status-group">
       <label>סטטוס תשלום</label>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:6px">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-          <input type="radio" name="f-pay-status" value="unpaid" ${!l?.isPaid && !(l?.paidAmount > 0) ? 'checked' : ''} onchange="updatePayStatusUI()"> לא שולם
+          <input type="radio" name="f-pay-status" value="unpaid" ${!payL?.isPaid && !(payL?.paidAmount > 0) ? 'checked' : ''} onchange="updatePayStatusUI()"> לא שולם
         </label>
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-          <input type="radio" name="f-pay-status" value="partial" ${!l?.isPaid && (l?.paidAmount > 0) ? 'checked' : ''} onchange="updatePayStatusUI()"> שולם חלקית
+          <input type="radio" name="f-pay-status" value="partial" ${!payL?.isPaid && (payL?.paidAmount > 0) ? 'checked' : ''} onchange="updatePayStatusUI()"> שולם חלקית
         </label>
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-          <input type="radio" name="f-pay-status" value="paid" ${l?.isPaid ? 'checked' : ''} onchange="updatePayStatusUI()"> שולם במלואו
+          <input type="radio" name="f-pay-status" value="paid" ${payL?.isPaid ? 'checked' : ''} onchange="updatePayStatusUI()"> שולם במלואו
         </label>
       </div>
-      <div id="f-partial-group" style="display:${!l?.isPaid && (l?.paidAmount > 0) ? '' : 'none'};margin-top:10px">
+      <div id="f-partial-group" style="display:${!payL?.isPaid && (payL?.paidAmount > 0) ? '' : 'none'};margin-top:10px">
         <label style="font-size:13px;color:var(--text-muted)">כמה שולם? (₪)</label>
-        <input type="number" id="f-paid-amount" min="0" value="${l?.paidAmount || ''}" placeholder="0" style="width:160px;margin-top:4px">
+        <input type="number" id="f-paid-amount" min="0" value="${payL?.paidAmount || ''}" placeholder="0" style="width:160px;margin-top:4px">
       </div>
     </div>
     ${!l ? '<div class="form-group"><label class="checkbox-label"><input type="checkbox" id="f-recurring" onchange="document.getElementById(\'recurring-weeks-group\').style.display=this.checked?\'\':\' none\'"> חזרה שבועית</label></div><div class="form-group" id="recurring-weeks-group" style="display:none"><label>כמה שבועות?</label><select id="f-recurring-count"><option value="2">2 שבועות</option><option value="3">3 שבועות</option><option value="4">4 שבועות</option><option value="6">6 שבועות</option><option value="8">8 שבועות</option><option value="10">10 שבועות</option><option value="12">12 שבועות</option></select></div>' : ''}`;
@@ -3205,8 +3701,10 @@ function updateLessonAmount() {
   const sid      = document.getElementById('f-student')?.value;
   const duration = parseFloat(document.getElementById('f-duration')?.value || 1);
   if (sid) {
+    const pkg = selectedLessonPackage();
     const s = getStudentById(sid);
-    if (s) document.getElementById('f-amount').value = s.hourlyRate * duration;
+    if (pkg) document.getElementById('f-amount').value = Math.round(packageUnitPrice(pkg) * duration * 100) / 100;
+    else if (s) document.getElementById('f-amount').value = s.hourlyRate * duration;
   }
 }
 
@@ -3241,19 +3739,34 @@ function openAddLessonModal(defaultStudentId, defaultDate) {
         allLessons.push({ ...lesson, id: generateId(), date: isoDate(d) });
       }
     }
+    // Card: each lesson (incl. recurring ones) draws from whichever card still
+    // has room at the moment it's added; once cards run out the rest are
+    // ordinary lessons with the payment status chosen in the form.
+    const usePkg = !!selectedLessonPackage();
+    let pkgCount = 0;
     for (const l of allLessons) {
+      if (usePkg) {
+        const pkg = getActivePackage(sid, duration);
+        if (pkg) { applyPackageToLesson(l, pkg); pkgCount++; }
+        else { l.amount = s ? s.hourlyRate * duration : l.amount; l.isPaid = false; l.paidAmount = 0; }
+      }
       await apiCall('POST', '/api/lessons', l);
       _lessons.push(l);
     }
     closeModal();
     renderLessonsTable();
+    if (usePkg && pkgCount < allLessons.length) {
+      setTimeout(() => showToast(`🎟 רק ${pkgCount} מתוך ${allLessons.length} השיעורים נוכו מהכרטיסייה — השאר כשיעורים רגילים`, 'warning'), 7500);
+    } else if (usePkg) {
+      setTimeout(() => packageLowNotice(sid), 7500);
+    }
     if (isRecurring) {
       showToast(`${allLessons.length} שיעורים נוספו! 🔄`);
     } else {
       showToastWithCalendar(lesson);
     }
   });
-  if (defaultStudentId) setTimeout(updateLessonAmount, 50);
+  setTimeout(() => { renderLessonPackageBox(); if (defaultStudentId) updateLessonAmount(); }, 50);
 }
 
 function openEditLessonModal(id) {
@@ -3276,12 +3789,16 @@ function openEditLessonModal(id) {
       notes: document.getElementById('f-notes').value.trim(),
       topic: document.getElementById('f-topic').value.trim(),
       homework: document.getElementById('f-homework').value.trim() };
+    const pkg = selectedLessonPackage();
+    applyPackageToLesson(updated, pkg);
+    if (!pkg && l.packageId && amount === l.amount && s) updated.amount = s.hourlyRate * duration;
     await apiCall('PUT', `/api/lessons/${id}`, updated);
     _lessons = _lessons.map(x => x.id === id ? updated : x);
     closeModal();
     renderLessonsTable();
     showToast('שיעור עודכן');
   });
+  setTimeout(renderLessonPackageBox, 50);
 }
 
 async function markAllLessonsPaid(studentId) {
@@ -3302,6 +3819,10 @@ async function markAllLessonsPaid(studentId) {
 async function toggleLessonPaid(id) {
   const lesson = _lessons.find(l => l.id === id);
   if (!lesson) return;
+  if (lesson.packageId) {
+    showToast('שיעור מכרטיסייה — לשינוי פתחי את עריכת השיעור', 'warning');
+    return Promise.resolve();
+  }
   const status = getLessonPayStatus(lesson);
   if (status === 'paid') {
     const updated = { ...lesson, isPaid: false, paidAmount: 0 };
@@ -3789,7 +4310,7 @@ function renderCalendar() {
           </div>
           <div class="cal-day-lesson-actions">
             <button class="btn btn-ghost btn-xs" onclick="openEditLessonModal('${l.id}')">ערוך</button>
-            <button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}').then(()=>renderCalendar())">${toggleBtnLabel(l)}</button>
+            ${l.packageId ? '' : `<button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}').then(()=>renderCalendar())">${toggleBtnLabel(l)}</button>`}
             ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ לתלמיד">💬</button>` : ''}
           </div>
         </div>`;
@@ -3817,7 +4338,7 @@ function showCalPopup(lessonId, e) {
     <div class="cal-popup-detail">${formatCurrency(l.amount)} &nbsp;·&nbsp; ${lessonBadge(l)}</div>
     ${l.notes ? `<div class="cal-popup-detail" style="font-style:italic">${escapeHtml(l.notes)}</div>` : ''}
     <div class="cal-popup-btns">
-      <button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}').then(()=>{hideCalPopup();renderCalendar()})">${getLessonPayStatus(l)==='paid'?'↩ בטל':'✓ שולם'}</button>
+      ${l.packageId ? '' : `<button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}').then(()=>{hideCalPopup();renderCalendar()})">${getLessonPayStatus(l)==='paid'?'↩ בטל':'✓ שולם'}</button>`}
       ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ לתלמיד">💬 ווצאפ</button>` : ''}
       <button class="btn btn-primary btn-xs" onclick="hideCalPopup();openEditLessonModal('${l.id}')">ערוך</button>
       <button class="btn btn-ghost btn-xs text-danger" onclick="hideCalPopup();deleteLesson('${l.id}').then(()=>renderCalendar())">מחק</button>
