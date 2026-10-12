@@ -550,9 +550,11 @@ def push_booking_notice():
         when = f'{d}/{m} בשעה {b["time"]}'
     except Exception:
         when = b.get('date', '')
+    units = int(b.get('units') or 1)
+    what = 'שיעור' if units == 1 else f'{units} שיעורים ברצף'
     return jsonify({'subscriptions': [dict(s) for s in subs],
                     'title': '🗓️ בקשה חדשה לשיעור',
-                    'body': f'{name} מבקש/ת שיעור ב-{when}. לחצי לאישור.'})
+                    'body': f'{name} מבקש/ת {what} ב-{when}. לחצי לאישור.'})
 
 # ── Daily DB backup ───────────────────────────────────────────────────────────
 # PythonAnywhere's free tier doesn't include Scheduled Tasks (that needs a
@@ -852,12 +854,12 @@ def portal_book(token):
         if sum(1 for b in mine if b.get('status') == 'pending') >= portal_core.MAX_PENDING_PER_STUDENT:
             return jsonify({'error': f'אפשר להחזיק עד {portal_core.MAX_PENDING_PER_STUDENT} בקשות ממתינות בו-זמנית'}), 429
         try:
-            date, time_, note = portal_core.validate_booking_request(
+            date, time_, units, note = portal_core.validate_booking_request(
                 body, free_slots_for(db, owner_id, student, settings))
         except ValueError as e:
             return jsonify({'error': str(e)}), 409
         b = {'id': uuid.uuid4().hex[:16], 'studentId': student['id'], 'date': date, 'time': time_,
-             'durationMinutes': int(student.get('lessonDurationMinutes') or 50), 'note': note,
+             'units': units, 'durationMinutes': units * int(student.get('lessonDurationMinutes') or 50), 'note': note,
              'status': 'pending', 'createdAt': portal_core.now_local().isoformat(timespec='seconds')}
         db.execute('INSERT INTO bookings(id,user_id,studentId,date,data) VALUES (?,?,?,?,?)',
                    [b['id'], owner_id, student['id'], date, json.dumps(b, ensure_ascii=False)])
