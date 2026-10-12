@@ -36,7 +36,7 @@ def main():
         print('teacher has no push subscription — nothing to send')
         return
 
-    payload = json.dumps({'title': notice['title'], 'body': notice['body'], 'url': '/'})
+    payload = json.dumps({'title': notice['title'], 'body': notice['body'], 'url': '/', 'tag': f'booking-{BOOKING_ID}'})
 
     sent, failed = 0, 0
     for sub in subs:
@@ -50,6 +50,10 @@ def main():
                 data=payload,
                 vapid_private_key=VAPID_PRIVATE_KEY,
                 vapid_claims=dict(VAPID_CLAIMS),
+                # pywebpush defaults to TTL=0 ("deliver now or drop"): Apple
+                # accepts it but silently drops it if the iPhone is asleep.
+                ttl=24 * 3600,
+                headers={'Urgency': 'high'},
             )
             sent += 1
         except WebPushException as e:

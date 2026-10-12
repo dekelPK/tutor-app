@@ -8,7 +8,9 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'תזכורת שיעור';
   const options = {
     body: data.body || '',
-    tag: 'lesson-reminder',       // replaces any earlier reminder instead of stacking
+    // Same tag replaces instead of stacking; other kinds (booking requests,
+    // signups) send their own tag so they don't wipe out a lesson reminder.
+    tag: data.tag || 'lesson-reminder',
     renotify: true,
     dir: 'rtl',
     lang: 'he',
