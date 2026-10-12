@@ -455,7 +455,9 @@
     [data-theme="dark"] .bottom-nav { background: #1e293b; border-top-color: #334155; }
     [data-theme="dark"] #confirm-box { background: #1e293b; }
     [data-theme="dark"] #loading-overlay { background: rgba(15,23,42,0.88); }
-    [data-theme="dark"] .form-group input,
+    /* input[type] — the base ".form-group input[type=text]" rule is declared later with the
+       same specificity, so a plain "input" here lost and left white text on a white field. */
+    [data-theme="dark"] .form-group input[type],
     [data-theme="dark"] .form-group select,
     [data-theme="dark"] .form-group textarea { background: #0f172a; color: #f1f5f9; border-color: #334155; }
     [data-theme="dark"] .filters-bar select,
@@ -824,6 +826,8 @@
     .form-group input[type="number"],
     .form-group input[type="date"],
     .form-group input[type="time"],
+    .form-group input[type="tel"],
+    .form-group input[type="email"],
     .form-group select,
     .form-group textarea {
       width: 100%;
