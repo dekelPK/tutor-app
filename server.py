@@ -351,11 +351,11 @@ def portal_book(token):
     if len(pending) >= portal_core.MAX_PENDING_PER_STUDENT:
         return jsonify({'error': f'אפשר להחזיק עד {portal_core.MAX_PENDING_PER_STUDENT} בקשות ממתינות בו-זמנית'}), 429
     try:
-        date, time_, note = portal_core.validate_booking_request(request.json or {}, portal_free_slots(d, student))
+        date, time_, units, note = portal_core.validate_booking_request(request.json or {}, portal_free_slots(d, student))
     except ValueError as e:
         return jsonify({'error': str(e)}), 409
     d['bookings'].append({'id': uuid.uuid4().hex[:16], 'studentId': student['id'], 'date': date, 'time': time_,
-                          'durationMinutes': int(student.get('lessonDurationMinutes') or 50), 'note': note,
+                          'units': units, 'durationMinutes': units * int(student.get('lessonDurationMinutes') or 50), 'note': note,
                           'status': 'pending', 'createdAt': portal_core.now_local().isoformat(timespec='seconds')})
     write_data(d, owner)
     return jsonify({'ok': True}), 201

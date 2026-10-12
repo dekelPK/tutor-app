@@ -2783,11 +2783,12 @@ function renderBookingRequests() {
       const s = getStudentById(b.studentId);
       const d = new Date(b.date + 'T00:00:00');
       const clash = bookingConflict(b);
-      const pkg = getActivePackage(b.studentId, 1);
+      const units = b.units || 1;
+      const pkg = getActivePackage(b.studentId, units);
       return `<div class="breq">
         <span class="student-dot" style="background:${s?.color || '#2563eb'}"></span>
         <div class="breq-main">
-          <div class="breq-when">${escapeHtml(s?.name || '?')} · יום ${getDayName(d.getDay())} ${formatDate(b.date)} · ${escapeHtml(b.time)}</div>
+          <div class="breq-when">${escapeHtml(s?.name || '?')} · יום ${getDayName(d.getDay())} ${formatDate(b.date)} · ${escapeHtml(b.time)}${units > 1 ? ` · ${units} שיעורים` : ''}</div>
           ${b.note ? `<div class="breq-note">💬 ${escapeHtml(b.note)}</div>` : ''}
           ${pkg ? `<div class="breq-note pkg-line">🎟 ינוכה מהכרטיסייה</div>` : ''}
           ${clash ? `<div class="breq-warn">⚠ חופף לשיעור קיים של ${escapeHtml(getStudentById(clash.studentId)?.name || '')} ב-${escapeHtml(clash.time)}</div>` : ''}
@@ -2803,12 +2804,13 @@ async function approveBooking(id) {
   const b = _bookings.find(x => x.id === id);
   if (!b) return;
   const s = getStudentById(b.studentId);
+  const units = b.units || 1;
   const lesson = {
     id: generateId(), studentId: b.studentId, date: b.date, time: b.time,
-    durationHours: 1, amount: s?.hourlyRate || 0, isPaid: false, paidAmount: 0,
+    durationHours: units, amount: (s?.hourlyRate || 0) * units, isPaid: false, paidAmount: 0,
     notes: b.note ? `בקשת תלמיד: ${b.note}` : '', topic: '', homework: '', bookingId: b.id,
   };
-  applyPackageToLesson(lesson, getActivePackage(b.studentId, 1));
+  applyPackageToLesson(lesson, getActivePackage(b.studentId, units));
   let res;
   try {
     res = await apiCall('POST', `/api/bookings/${id}/approve`, { lesson });

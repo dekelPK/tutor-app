@@ -12,7 +12,7 @@ Data shapes (all stored as JSON blobs, same as students/lessons/payments):
      extraSlots: [{id, date: 'YYYY-MM-DD', start, end}], blockedDates: ['YYYY-MM-DD'],
      minNoticeHours, horizonDays, stepMinutes}
   booking request:
-    {id, studentId, date, time, durationMinutes, note, status: pending|approved|rejected|cancelled,
+    {id, studentId, date, time, units, durationMinutes, note, status: pending|approved|rejected|cancelled,
      createdAt, decidedAt, lessonId, rejectReason}
   package (punch card):
     {id, studentId, date (purchase), totalUnits, price, expiresAt, notes}
@@ -39,6 +39,7 @@ DEFAULT_BOOKING_SETTINGS = {
 }
 
 MAX_PENDING_PER_STUDENT = 3
+MAX_UNITS_PER_BOOKING = 4  # same cap as the app's "מספר שיעורים" field
 
 
 def now_local():
@@ -79,12 +80,16 @@ def lesson_interval(lesson, students_by_id):
 
 
 def compute_free_slots(settings, student, students, lessons, bookings, now=None):
-    """Free start times for `student` (one lesson unit of their own length).
+    """Free start times for `student`, with how many back-to-back lessons fit.
 
-    Returns [{'date': 'YYYY-MM-DD', 'time': 'HH:MM'}] sorted. A slot is free when
-    it fits inside an availability window (weekly or one-off) on a non-blocked
+    Returns [{'date': 'YYYY-MM-DD', 'time': 'HH:MM', 'maxUnits': n}] sorted.
+    A start time is offered when at least one lesson (the student's own length)
+    fits inside an availability window (weekly or one-off) on a non-blocked
     date, is at least minNoticeHours away, and doesn't overlap any of the
     teacher's lessons (any student) or any still-pending booking request.
+    maxUnits is how many consecutive lessons from that start still end by the
+    window's end time without hitting anything busy (capped at
+    MAX_UNITS_PER_BOOKING).
     """
     settings = normalize_settings(settings)
     if not settings.get('enabled'):
@@ -127,22 +132,28 @@ def compute_free_slots(settings, student, students, lessons, bookings, now=None)
             continue
         js_day = (d.weekday() + 1) % 7  # Python Monday=0 → JS Sunday=0
         wins = windows_by_day.get(js_day, []) + extra_by_date.get(ds, [])
-        starts = set()
+        day_busy = busy.get(ds, [])
+        best = {}  # start minute -> most back-to-back lessons that fit
         for ws, we in wins:
             if ws is None or we is None:
                 continue
             t = ws
             while t + duration <= we:
-                starts.add(t)
+                fits = 0
+                for k in range(1, MAX_UNITS_PER_BOOKING + 1):
+                    end = t + k * duration
+                    # Must finish by this window's end — a 2nd lesson may not spill past it.
+                    if end > we or any(t < be and end > bs for bs, be in day_busy):
+                        break
+                    fits = k
+                if fits:
+                    best[t] = max(best.get(t, 0), fits)
                 t += step
-        day_busy = busy.get(ds, [])
-        for t in sorted(starts):
+        for t in sorted(best):
             slot_dt = datetime(d.year, d.month, d.day) + timedelta(minutes=t)
             if slot_dt < earliest:
                 continue
-            if any(t < be and t + duration > bs for bs, be in day_busy):
-                continue
-            out.append({'date': ds, 'time': _fmt_min(t)})
+            out.append({'date': ds, 'time': _fmt_min(t), 'maxUnits': best[t]})
     return out
 
 
@@ -159,13 +170,20 @@ def package_status(pkg, lessons, today=None):
 
 
 def validate_booking_request(body, free_slots):
-    """Returns (date, time, note) or raises ValueError with a Hebrew message."""
+    """Returns (date, time, units, note) or raises ValueError with a Hebrew message."""
     date = str(body.get('date') or '')
     time = str(body.get('time') or '')
     note = str(body.get('note') or '').strip()[:300]
-    if not any(s['date'] == date and s['time'] == time for s in free_slots):
+    try:
+        units = int(body.get('units') or 1)
+    except (TypeError, ValueError):
+        units = 0
+    if not 1 <= units <= MAX_UNITS_PER_BOOKING:
+        raise ValueError('מספר שיעורים לא תקין')
+    slot = next((s for s in free_slots if s['date'] == date and s['time'] == time), None)
+    if not slot or slot['maxUnits'] < units:
         raise ValueError('המועד הזה כבר לא פנוי — רעננו את העמוד ובחרו מועד אחר')
-    return date, time, note
+    return date, time, units, note
 
 
 # ── Portal page ─────────────────────────────────────────────────────────────────
@@ -296,7 +314,7 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
               <span class="lc-wd">{_weekday(dt)}</span><span class="lc-day">{dt.day}</span>
               <span class="lc-mon">{_HE_MONTHS_SHORT[dt.month - 1]}</span>
               <span class="lc-time" dir="ltr">{esc(b.get("time"))}</span>
-              <span class="lc-state">⏳ ממתין</span>
+              <span class="lc-state">⏳ ממתין{f" · {int(b.get('units') or 1)} שיעורים" if int(b.get('units') or 1) > 1 else ''}</span>
               <button class="lc-x" onclick="cancelReq('{esc(b["id"])}')">ביטול</button></div>'''))
     cards.sort(key=lambda r: (r[0], r[1]))
     lessons_section = ''
@@ -309,17 +327,24 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
     # ── Book a lesson: day strip → time grid → bottom-sheet confirm ──
     by_date = {}
     for sl in free_slots:
-        by_date.setdefault(sl['date'], []).append(sl['time'])
+        by_date.setdefault(sl['date'], []).append([sl['time'], sl.get('maxUnits', 1)])
+    max_units = max((sl.get('maxUnits', 1) for sl in free_slots), default=1)
     booking_section = ''
     if booking_enabled:
         if by_date:
+            # "How many lessons" only appears when some start time fits more than one.
+            units_html = ''
+            if max_units > 1:
+                btns = ''.join(f'<button type="button" class="{"on" if n == 1 else ""}" data-units="{n}" onclick="pickUnits({n})">'
+                               f'{"שיעור אחד" if n == 1 else f"{n} שיעורים"}</button>' for n in range(1, max_units + 1))
+                units_html = f'<div class="units-label">כמה שיעורים ברצף?</div><div class="units" id="units">{btns}</div>'
             days_html = ''
             for d in by_date:
                 dt = _parse(d)
                 days_html += (f'<button type="button" class="day" data-date="{esc(d)}" onclick="pickDay(this)">'
                               f'<span class="day-wd">{_weekday(dt)}</span><span class="day-num">{dt.day}</span>'
                               f'<span class="day-mon">{_HE_MONTHS_SHORT[dt.month - 1]}</span></button>')
-            picker = f'''<div class="days" id="days">{days_html}</div>
+            picker = f'''{units_html}<div class="days" id="days">{days_html}</div>
               <div class="times-label" id="times-label"></div>
               <div class="times" id="times"></div>'''
         else:
@@ -331,6 +356,7 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
         </section>'''
     # Server-generated dates/times only; '</' escaped anyway so it can't close the <script>.
     slots_json = json.dumps(by_date).replace('</', '<\\/')
+    lesson_minutes = int(student.get('lessonDurationMinutes') or 50)
 
     # ── Punch card ──
     # Every card with units left; otherwise the most recent one so "10/10 used" stays visible.
@@ -383,7 +409,7 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
         accent=accent, title=esc(name), initial=esc(name[:1] or '?'), first_name=esc(first_name),
         teacher_line=teacher_line, next_html=next_html, lessons_section=lessons_section,
         booking_section=booking_section, money_section=money_section, hw_html=hw_html,
-        past_html=past_html, token_js=token_js, slots_json=slots_json)
+        past_html=past_html, token_js=token_js, slots_json=slots_json, lesson_minutes=lesson_minutes)
 
 
 # Kept as a plain template (not an f-string) so the CSS/JS braces stay readable;
@@ -474,6 +500,13 @@ PAGE_TEMPLATE = '''<!doctype html>
   .day.on {{ background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 35%, transparent); transform: translateY(-2px); }}
   .day.on .day-wd, .day.on .day-mon {{ color: rgba(255,255,255,.85); }}
   .times-label {{ font-size: 13px; font-weight: 600; color: var(--muted); margin: 8px 0; }}
+  .units-label {{ font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 8px; }}
+  .units {{ display: flex; background: var(--bg); border-radius: 14px; padding: 4px; gap: 4px; margin-bottom: 14px; }}
+  .units button {{ flex: 1; border: none; background: transparent; color: var(--muted); border-radius: 10px; padding: 9px 4px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }}
+  .units button.on {{ background: var(--card); color: var(--accent); box-shadow: 0 2px 8px rgba(20,26,46,.1); }}
+  .day:disabled {{ opacity: .35; cursor: default; box-shadow: none; transform: none; }}
+  .slot small {{ display: block; font-size: 11px; font-weight: 500; color: var(--muted); margin-top: 2px; }}
+  .slot.on small {{ color: rgba(255,255,255,.85); }}
   .times {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }}
   .slot {{ border: 1.5px solid var(--line); background: var(--bg); color: var(--text); border-radius: 12px; padding: 11px 0; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; direction: ltr; transition: all .12s; }}
   .slot:hover {{ border-color: var(--accent); }}
@@ -586,9 +619,27 @@ PAGE_TEMPLATE = '''<!doctype html>
 
 <script>
   const TOKEN = {token_js};
-  const SLOTS = {slots_json};
+  const SLOTS = {slots_json};  // date -> [[start, max back-to-back lessons], ...]
+  const PER = {lesson_minutes};
   const DAYS = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-  let chosen = null;
+  let chosen = null, units = 1, activeDate = null;
+  const fmt = m => String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  const endOf = t => {{ const [h, m] = t.split(':').map(Number); return fmt(h * 60 + m + units * PER); }};
+  const fits = date => (SLOTS[date] || []).filter(([, max]) => max >= units);
+  function unitsText(n) {{ return n === 1 ? 'שיעור אחד' : n + ' שיעורים ברצף'; }}
+  function pickUnits(n) {{
+    units = n;
+    document.querySelectorAll('#units button').forEach(b => b.classList.toggle('on', +b.dataset.units === n));
+    // Days with no start time long enough for n lessons are greyed out.
+    let first = null;
+    document.querySelectorAll('.day').forEach(b => {{
+      const ok = fits(b.dataset.date).length > 0;
+      b.disabled = !ok;
+      if (ok && !first) first = b;
+    }});
+    const cur = document.querySelector('.day[data-date="' + activeDate + '"]');
+    pickDay(cur && !cur.disabled ? cur : first);
+  }}
   function toast(msg) {{
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('show');
@@ -600,18 +651,21 @@ PAGE_TEMPLATE = '''<!doctype html>
   }}
   function pickDay(btn) {{
     document.querySelectorAll('.day.on').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-    const date = btn.dataset.date;
-    document.getElementById('times-label').textContent = 'שעות פנויות ב' + niceDate(date);
-    document.getElementById('times').innerHTML = (SLOTS[date] || []).map(t =>
-      '<button type="button" class="slot" data-date="' + date + '" data-time="' + t + '" onclick="pickSlot(this)">' + t + '</button>').join('');
     closeSheet();
+    if (!btn) {{ document.getElementById('times-label').textContent = 'אין זמן פנוי ל' + unitsText(units) + ' — נסו פחות שיעורים'; document.getElementById('times').innerHTML = ''; return; }}
+    btn.classList.add('on');
+    const date = activeDate = btn.dataset.date;
+    document.getElementById('times-label').textContent = 'שעות פנויות ב' + niceDate(date);
+    document.getElementById('times').innerHTML = fits(date).map(([t]) =>
+      '<button type="button" class="slot" data-date="' + date + '" data-time="' + t + '" onclick="pickSlot(this)">' + t +
+      (units > 1 ? '<small>עד ' + endOf(t) + '</small>' : '') + '</button>').join('');
   }}
   function pickSlot(btn) {{
     document.querySelectorAll('.slot.on').forEach(b => b.classList.remove('on'));
     btn.classList.add('on');
-    chosen = {{ date: btn.dataset.date, time: btn.dataset.time }};
-    document.getElementById('sheet-when').innerHTML = niceDate(chosen.date) + ' · <span dir="ltr">' + chosen.time + '</span><small>השיעור ייקבע אחרי אישור המורה</small>';
+    chosen = {{ date: btn.dataset.date, time: btn.dataset.time, units }};
+    document.getElementById('sheet-when').innerHTML = niceDate(chosen.date) + ' · <span dir="ltr">' + chosen.time + '–' + endOf(chosen.time) + '</span>' +
+      '<small>' + unitsText(units) + ' · ייקבע אחרי אישור המורה</small>';
     document.getElementById('sheet').classList.add('show');
   }}
   function closeSheet() {{
@@ -626,7 +680,7 @@ PAGE_TEMPLATE = '''<!doctype html>
     try {{
       const r = await fetch('/portal/' + encodeURIComponent(TOKEN) + '/book', {{
         method: 'POST', headers: {{ 'Content-Type': 'application/json' }},
-        body: JSON.stringify({{ date: chosen.date, time: chosen.time, note: document.getElementById('book-note').value }})
+        body: JSON.stringify({{ date: chosen.date, time: chosen.time, units: chosen.units, note: document.getElementById('book-note').value }})
       }});
       const j = await r.json().catch(() => ({{}}));
       if (!r.ok) {{
@@ -636,7 +690,7 @@ PAGE_TEMPLATE = '''<!doctype html>
         return;
       }}
       document.getElementById('sheet').classList.remove('show');
-      document.getElementById('done-text').textContent = 'ביקשת שיעור ב' + niceDate(chosen.date) + ' בשעה ' + chosen.time + '. ברגע שהמורה יאשר/תאשר, השיעור יופיע ברשימת השיעורים שלך.';
+      document.getElementById('done-text').textContent = 'ביקשת ' + unitsText(chosen.units) + ' ב' + niceDate(chosen.date) + ' בשעה ' + chosen.time + '. ברגע שהמורה יאשר/תאשר, השיעור יופיע ברשימת השיעורים שלך.';
       document.getElementById('done').classList.add('show');
     }} catch (e) {{ toast('שגיאת תקשורת, נסו שוב'); btn.disabled = false; btn.textContent = 'שליחת בקשה'; }}
   }}
