@@ -1582,6 +1582,46 @@
       .adm-prow .adm-actions { width: 100%; padding-inline-start: 56px; }
     }
 
+    /* ===== PAYMENTS VIEWS ===== */
+    .pm-seg { display: inline-flex; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 4px; gap: 4px; }
+    .pm-seg button { border: none; background: transparent; color: var(--text-muted); border-radius: 9px; padding: 8px 16px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .pm-seg button.on { background: var(--primary); color: #fff; box-shadow: 0 2px 6px rgba(37,99,235,.3); }
+    .pm-month { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+    .pm-month span { font-weight: 700; font-size: 16px; min-width: 110px; text-align: center; }
+    .pm-link { background: none; border: none; color: var(--primary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .pm-explain { font-size: 13px; color: var(--text-muted); margin: 10px 0 14px; }
+    .pm-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .pm-kpi { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; }
+    .pm-kpi-label { font-size: 12.5px; color: var(--text-muted); font-weight: 500; }
+    .pm-kpi-val { font-size: 22px; font-weight: 800; margin-top: 2px; letter-spacing: -.3px; }
+    .pm-kpi-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .pm-ok .pm-kpi-val { color: var(--success); }
+    .pm-warn { border-color: #f59e0b; }
+    .pm-warn .pm-kpi-val { color: #b45309; }
+    [data-theme="dark"] .pm-warn .pm-kpi-val { color: #fbbf24; }
+    .pm-card { margin-bottom: 20px; }
+    .pm-row { display: flex; align-items: center; gap: 12px; padding: 10px 6px; border-bottom: 1px solid var(--border); }
+    .pm-row:last-child { border-bottom: none; }
+    .pm-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .pm-main { flex: 1; min-width: 0; }
+    .pm-name { font-weight: 600; font-size: 14.5px; }
+    .pm-muted { font-size: 11.5px; color: var(--text-muted); font-weight: 400; }
+    .pm-sub { font-size: 12.5px; color: var(--text-muted); }
+    .pm-bal { text-align: end; display: flex; flex-direction: column; line-height: 1.2; min-width: 84px; }
+    .pm-bal span { font-size: 11.5px; color: var(--text-muted); }
+    .pm-bal b { font-size: 15px; }
+    .pm-bal.neg b { color: var(--danger); }
+    .pm-bal.pos b { color: var(--success); }
+    .pm-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    @media (max-width: 768px) {
+      .pm-seg { display: flex; width: 100%; }
+      .pm-seg button { flex: 1; padding: 8px 4px; font-size: 13px; }
+      .pm-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .pm-kpi-val { font-size: 19px; }
+      .pm-row { flex-wrap: wrap; }
+      .pm-actions { width: 100%; justify-content: flex-end; }
+    }
+
     /* ===== STUDENT ACTIONS MENU ===== */
     .sa-more { margin-inline-start: auto; }
     .sa-dots { font-size: 16px; line-height: 0; position: relative; top: 1px; }
@@ -2009,8 +2049,13 @@
           <button class="btn btn-primary" onclick="openAddPaymentModal(null)">+ הוסף תשלום</button>
         </div>
       </div>
-      <div class="balance-grid" id="balance-cards"></div>
+      <div id="pay-controls"></div>
+      <section class="card dx-card pm-card">
+        <div class="dx-card-head"><h3 class="dx-title"><span class="dx-ic dx-ic-blue">👥</span>יתרה לפי תלמיד</h3></div>
+        <div id="balance-cards"></div>
+      </section>
       <div class="card">
+        <div class="dx-title" id="payments-list-title" style="margin-bottom:10px">תשלומים</div>
         <div class="table-wrapper">
           <table>
             <thead>
@@ -4760,37 +4805,137 @@ async function bulkDelete() {
 }
 
 // ===== PAYMENTS =====
-function renderPayments() {
-  const students = getStudents();
-  // Balance cards
-  const balanceEl = document.getElementById('balance-cards');
-  const visibleStudents = students.filter(s => {
-    if (s.isActive !== false) return true; // active — always show
-    return getStudentBalance(s.id) !== 0;  // inactive — show only if not balanced
-  });
-  balanceEl.innerHTML = visibleStudents.length === 0
-    ? '<p class="text-muted">אין תלמידים עדיין</p>'
-    : visibleStudents.map(s => {
-        const balance = getStudentBalance(s.id);
-        return `<div class="balance-card" style="border-inline-start-color:${s.color}">
-          <div class="balance-name">${escapeHtml(s.name)}${s.isActive === false ? ' <span style="font-size:11px;color:var(--text-muted)">(לא פעיל)</span>' : ''}</div>
-          <div class="balance-amount ${balance < 0 ? 'text-danger' : balance > 0 ? 'text-success' : 'text-muted'}">
-            ${balance < 0 ? `לתשלום: ${formatCurrency(Math.abs(balance))}` : balance > 0 ? `זכות: ${formatCurrency(balance)}` : 'מאוזן ✓'}
-          </div>
-        </div>`;
-      }).join('');
+// ===== PAYMENTS =====
+// Three ways to look at the money:
+//   now    — "נכון להיום": only lessons that already happened (date ≤ today)
+//            against what was received. The real balance right now.
+//   month  — "לפי חודש": that month's activity, plus each student's balance as
+//            of the end of the month (cumulative; capped at today).
+//   all    — "כולל עתידיים": every lesson, including ones scheduled ahead
+//            (the classic getStudentBalance).
+// Balance up to a date = payments dated ≤ D + paidAmount of lessons ≤ D − amount of lessons ≤ D.
+let payMode = (() => { try { return localStorage.getItem('payMode') || 'now'; } catch (e) { return 'now'; } })();
+let payMonthCursor = new Date();
 
-  const payments = [...getPayments()].sort((a,b) => b.date.localeCompare(a.date));
+function studentBalanceAsOf(studentId, asOf) {
+  const inScope = d => !asOf || (d || '') <= asOf;
+  const ls = getLessons().filter(l => l.studentId === studentId && inScope(l.date));
+  const pays = getPayments().filter(p => p.studentId === studentId && inScope(p.date));
+  return pays.reduce((t, p) => t + (p.amount || 0), 0)
+    + ls.reduce((t, l) => t + (l.paidAmount || 0), 0)
+    - ls.reduce((t, l) => t + (l.amount || 0), 0);
+}
+function setPayMode(m) {
+  payMode = m;
+  try { localStorage.setItem('payMode', m); } catch (e) { /* per-viewer convenience only */ }
+  renderPayments();
+}
+function payMonthNav(dir) {
+  payMonthCursor = new Date(payMonthCursor.getFullYear(), payMonthCursor.getMonth() + dir, 1);
+  renderPayments();
+}
+
+function renderPayments() {
+  const today = isoDate(new Date());
+  const y = payMonthCursor.getFullYear(), m = payMonthCursor.getMonth();
+  const monthStart = isoDate(new Date(y, m, 1)), monthEnd = isoDate(new Date(y, m + 1, 0));
+  const isCurrentMonth = monthStart <= today && today <= monthEnd;
+  const isFutureMonth = monthStart > today;
+
+  // Scope of each view
+  let from = null, to = null, asOf = null, explain = '';
+  if (payMode === 'now') {
+    to = today; asOf = today;
+    explain = `שיעורים שכבר התקיימו עד היום (${formatDate(today).slice(0, 5)}) מול התשלומים שהתקבלו`;
+  } else if (payMode === 'month') {
+    from = monthStart; to = isFutureMonth ? monthEnd : (isCurrentMonth ? today : monthEnd);
+    asOf = isFutureMonth ? monthEnd : to;
+    explain = isFutureMonth ? 'חודש עתידי — מוצגים השיעורים שכבר נקבעו בו'
+      : isCurrentMonth ? `מה שהתקיים החודש עד היום · היתרה של כל תלמיד נכונה להיום`
+      : `מה שהתקיים בחודש · היתרה של כל תלמיד נכונה לסוף החודש`;
+  } else {
+    explain = 'כל השיעורים — כולל שיעורים שנקבעו קדימה וטרם התקיימו';
+  }
+  const inRange = d => (!from || d >= from) && (!to || d <= to);
+
+  const lessons = getLessons().filter(l => inRange(l.date));
+  const payments = getPayments().filter(p => inRange(p.date));
+  const lessonsValue = lessons.reduce((t, l) => t + (l.amount || 0), 0);
+  const received = payments.reduce((t, p) => t + (p.amount || 0), 0) + lessons.reduce((t, l) => t + (l.paidAmount || 0), 0);
+
+  const rows = getStudents().map(s => {
+    const bal = studentBalanceAsOf(s.id, asOf);
+    const sl = lessons.filter(l => l.studentId === s.id);
+    return { s, bal, n: sl.length, value: sl.reduce((t, l) => t + (l.amount || 0), 0) };
+  }).filter(r => r.bal !== 0 || r.n > 0 || (r.s.isActive !== false && payMode !== 'month'))
+    .sort((a, b) => a.bal - b.bal || b.n - a.n);
+  const owed = rows.filter(r => r.bal < 0);
+  const owedSum = owed.reduce((t, r) => t - r.bal, 0);
+  const creditSum = rows.filter(r => r.bal > 0).reduce((t, r) => t + r.bal, 0);
+  const future = getLessons().filter(l => l.date > today);
+  const futureValue = future.reduce((t, l) => t + (l.amount || 0), 0);
+  const restOfMonth = isCurrentMonth ? getLessons().filter(l => l.date > today && l.date <= monthEnd) : [];
+
+  const kpi = (label, val, sub, cls = '') => `<div class="pm-kpi ${cls}"><div class="pm-kpi-label">${label}</div><div class="pm-kpi-val">${val}</div>${sub ? `<div class="pm-kpi-sub">${sub}</div>` : ''}</div>`;
+  const lessonsWord = n => n === 1 ? 'שיעור אחד' : `${n} שיעורים`;
+  const kpis = [
+    kpi(payMode === 'all' ? 'כל השיעורים' : payMode === 'month' ? 'שיעורים בחודש' : 'שיעורים שהתקיימו', formatCurrency(lessonsValue), lessonsWord(lessons.length)),
+    kpi(payMode === 'month' ? 'התקבל בחודש' : 'התקבל', formatCurrency(received), '', 'pm-ok'),
+    kpi(payMode === 'month' && !isCurrentMonth && !isFutureMonth ? 'פתוח בסוף החודש' : 'פתוח לגבייה', formatCurrency(owedSum), owed.length ? (owed.length === 1 ? 'תלמיד אחד' : `${owed.length} תלמידים`) : 'הכול שולם ✓', owedSum ? 'pm-warn' : ''),
+    payMode === 'all'
+      ? kpi('מתוכם עתידיים', formatCurrency(futureValue), `${lessonsWord(future.length)} שעוד לא התקיימו`)
+      : payMode === 'month' && isCurrentMonth
+        ? kpi('עוד החודש', formatCurrency(restOfMonth.reduce((t, l) => t + (l.amount || 0), 0)), `${lessonsWord(restOfMonth.length)} מתוכננים`)
+        : kpi('זכות (שולם מראש)', formatCurrency(creditSum), creditSum ? 'כולל כרטיסיות' : ''),
+  ].join('');
+
+  const seg = (id, label) => `<button class="${payMode === id ? 'on' : ''}" onclick="setPayMode('${id}')">${label}</button>`;
+  document.getElementById('pay-controls').innerHTML = `
+    <div class="pm-seg">${seg('now', 'נכון להיום')}${seg('month', 'לפי חודש')}${seg('all', 'כולל עתידיים')}</div>
+    ${payMode === 'month' ? `<div class="pm-month">
+      <button class="btn btn-ghost btn-sm" onclick="payMonthNav(-1)" aria-label="חודש קודם">→</button>
+      <span>${HE_MONTHS[m]} ${y}</span>
+      <button class="btn btn-ghost btn-sm" onclick="payMonthNav(1)" aria-label="חודש הבא">←</button>
+      ${isCurrentMonth ? '' : `<button class="pm-link" onclick="payMonthCursor=new Date();renderPayments()">לחודש הנוכחי</button>`}
+    </div>` : ''}
+    <div class="pm-explain">${explain}</div>
+    <div class="pm-kpis">${kpis}</div>`;
+
+  const balanceEl = document.getElementById('balance-cards');
+  balanceEl.innerHTML = rows.length === 0
+    ? '<p class="text-muted">אין תלמידים עדיין</p>'
+    : rows.map(({ s, bal, n, value }) => `
+      <div class="pm-row">
+        <span class="pm-dot" style="background:${s.color || '#2563eb'}"></span>
+        <div class="pm-main">
+          <div class="pm-name">${escapeHtml(s.name)}${s.isActive === false ? ' <span class="pm-muted">(לא פעיל)</span>' : ''}</div>
+          <div class="pm-sub">${n ? `${lessonsWord(n)} · ${formatCurrency(value)}` : 'אין שיעורים בתקופה'}</div>
+        </div>
+        <div class="pm-bal ${bal < 0 ? 'neg' : bal > 0 ? 'pos' : ''}">
+          <span>${bal < 0 ? 'לתשלום' : bal > 0 ? 'זכות' : 'מאוזן'}</span><b>${bal ? formatCurrency(Math.abs(bal)) : '✓'}</b>
+        </div>
+        <div class="pm-actions">
+          ${bal < 0 ? `<button class="btn btn-ghost btn-xs" onclick="openDebtReport('${s.id}')">דוח</button>` : ''}
+          <button class="btn btn-ghost btn-xs" onclick="openAddPaymentModal('${s.id}')">+ תשלום</button>
+        </div>
+      </div>`).join('');
+
+  // Payments received (filtered to the month in the monthly view)
+  const list = [...(payMode === 'month' ? getPayments().filter(p => p.date >= monthStart && p.date <= monthEnd) : getPayments())]
+    .sort((a, b) => b.date.localeCompare(a.date));
+  document.getElementById('payments-list-title').textContent = payMode === 'month'
+    ? `תשלומים שהתקבלו ב${HE_MONTHS[m]} · ${formatCurrency(list.reduce((t, p) => t + (p.amount || 0), 0))}`
+    : `כל התשלומים · ${formatCurrency(list.reduce((t, p) => t + (p.amount || 0), 0))}`;
   const tbody = document.getElementById('payments-tbody');
-  if (payments.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-cell">אין תשלומים עדיין</td></tr>';
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-cell">${payMode === 'month' ? 'אין תשלומים בחודש הזה' : 'אין תשלומים עדיין'}</td></tr>`;
     return;
   }
-  tbody.innerHTML = payments.map(p => {
+  tbody.innerHTML = list.map(p => {
     const s = getStudentById(p.studentId);
     return `<tr style="border-inline-start-color:${s?.color||'#2563eb'}">
       <td data-label="תאריך">${formatDate(p.date)}</td>
-      <td data-label="תלמיד"><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
+      <td data-label="תלמיד"><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${escapeHtml(s?.name||'?')}</td>
       <td data-label="סכום" class="text-success" style="font-weight:600">${formatCurrency(p.amount)}</td>
       <td data-label="הערות" class="text-muted">${escapeHtml(p.notes)}</td>
       <td class="cell-actions"><button class="btn btn-ghost btn-xs text-danger" onclick="deletePayment('${p.id}')">מחק</button></td>
