@@ -1892,11 +1892,11 @@
   </div>
 
   <header class="app-header">
-    <span class="app-title">📚 שיעורים פרטיים</span>
+    <span class="app-title">📚 <span data-tf="{app_title}">שיעורים פרטיים</span></span>
     <div class="header-actions">
       <div class="search-wrapper">
         <svg class="icon icon-sm search-icon"><use href="#icon-search"/></svg>
-        <input class="search-input" id="search-input" placeholder="חיפוש תלמיד או שיעור..." oninput="onSearch(this.value)" onblur="setTimeout(()=>document.getElementById('search-results').classList.remove('show'),200)">
+        <input class="search-input" id="search-input" placeholder="חיפוש תלמיד או שיעור..." data-tf-placeholder="חיפוש {client} או {appointment}..." oninput="onSearch(this.value)" onblur="setTimeout(()=>document.getElementById('search-results').classList.remove('show'),200)">
         <div class="search-results" id="search-results"></div>
       </div>
       <!-- One labeled account menu instead of a row of unexplained icons -->
@@ -1918,8 +1918,8 @@
   <!-- NAV -->
   <nav class="nav-tabs">
     <button class="nav-tab" data-page="dashboard">דשבורד<span class="nav-badge" data-booking-badge style="display:none"></span></button>
-    <button class="nav-tab" data-page="students">תלמידים</button>
-    <button class="nav-tab" data-page="lessons">שיעורים</button>
+    <button class="nav-tab" data-page="students" data-tf="{clients}">תלמידים</button>
+    <button class="nav-tab" data-page="lessons" data-tf="{appointments}">שיעורים</button>
     <button class="nav-tab" data-page="payments">תשלומים</button>
   </nav>
 
@@ -1944,9 +1944,9 @@
               <div class="cal-title" id="cal-title"></div>
               <div style="display:flex;gap:8px;align-items:center">
                 <select class="cal-filter-select" id="cal-student-filter" onchange="calStudentFilter=this.value;renderCalendar()">
-                  <option value="">כל התלמידים</option>
+                  <option value="" data-tf="כל ה{clients}">כל התלמידים</option>
                 </select>
-                <button class="btn btn-primary btn-sm" onclick="openAddLessonModal(null)">+ הוסף שיעור</button>
+                <button class="btn btn-primary btn-sm" onclick="openAddLessonModal(null)" data-tf="+ הוסף {appointment}">+ הוסף שיעור</button>
                 <button class="btn btn-ghost btn-sm desktop-only" onclick="openAddExamModal(null)">+ הוסף מבחן</button>
                 <div class="cal-views">
                   <button class="cal-view-btn" id="cvb-month" onclick="setCalView('month')">חודש</button>
@@ -1973,9 +1973,9 @@
             </div>
             <div class="dx-kpis">
               <div class="dx-kpi"><div class="dx-kpi-label">הכנסות</div><div class="dx-kpi-val" id="stat-income">₪0</div><div class="stat-delta" id="stat-income-delta"></div></div>
-              <div class="dx-kpi"><div class="dx-kpi-label">שיעורים</div><div class="dx-kpi-val" id="stat-lessons">0</div></div>
+              <div class="dx-kpi"><div class="dx-kpi-label" data-tf="{appointments}">שיעורים</div><div class="dx-kpi-val" id="stat-lessons">0</div></div>
               <div class="dx-kpi dx-kpi-link" onclick="showPage('payments')"><div class="dx-kpi-label">פתוח לגבייה</div><div class="dx-kpi-val dx-kpi-warn" id="stat-debt">₪0</div></div>
-              <div class="dx-kpi dx-kpi-link" onclick="showPage('students')"><div class="dx-kpi-label">תלמידים פעילים</div><div class="dx-kpi-val" id="stat-active">0</div></div>
+              <div class="dx-kpi dx-kpi-link" onclick="showPage('students')"><div class="dx-kpi-label" data-tf="{clients} פעילים">תלמידים פעילים</div><div class="dx-kpi-val" id="stat-active">0</div></div>
             </div>
             <div class="dx-subtitle">הכנסות — 6 חודשים אחרונים</div>
             <div id="income-chart"></div>
@@ -1988,18 +1988,18 @@
     <!-- PAGE: STUDENTS -->
     <div id="page-students" class="page">
       <div class="page-header">
-        <h2 class="page-title">תלמידים</h2>
+        <h2 class="page-title" data-tf="{clients}">תלמידים</h2>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button class="btn btn-ghost btn-sm" id="toggle-inactive-btn" onclick="toggleInactiveStudents()">הצג לא פעילים</button>
-          <button class="btn btn-primary" onclick="openAddStudentModal()">+ הוסף תלמיד</button>
+          <button class="btn btn-primary" onclick="openAddStudentModal()" data-tf="+ הוסף {client}">+ הוסף תלמיד</button>
         </div>
       </div>
       <div id="inactive-notice" style="display:none;margin-bottom:12px;font-size:13px;color:var(--text-muted)"></div>
       <div class="students-grid" id="students-grid">
         <div class="empty-state-card">
           <div class="empty-state-icon">👥</div>
-          <p>אין תלמידים עדיין</p>
-          <p>לחץ "הוסף תלמיד" או ייבא מאקסל</p>
+          <p data-tf="אין {clients} עדיין">אין תלמידים עדיין</p>
+          <p data-tf="לחץ &quot;הוסף {client}&quot; או ייבא מאקסל">לחץ "הוסף תלמיד" או ייבא מאקסל</p>
         </div>
       </div>
     </div>
@@ -2007,18 +2007,18 @@
     <!-- PAGE: LESSONS -->
     <div id="page-lessons" class="page">
       <div class="page-header">
-        <h2 class="page-title">שיעורים</h2>
+        <h2 class="page-title" data-tf="{appointments}">שיעורים</h2>
         <div style="display:flex; gap:8px; flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="openAvailabilityModal()"><svg class="icon icon-sm"><use href="#icon-clock"/></svg> זמינות לתלמידים</button>
+          <button class="btn btn-ghost btn-sm" onclick="openAvailabilityModal()"><svg class="icon icon-sm"><use href="#icon-clock"/></svg> <span data-tf="זמינות ל{clients}">זמינות לתלמידים</span></button>
           <button class="btn btn-ghost btn-sm" onclick="showCalSubscribeInfo()"><svg class="icon icon-sm"><use href="#icon-link"/></svg> מנוי לוח שנה</button>
           <button class="btn btn-ghost btn-sm" onclick="exportToICS()"><svg class="icon icon-sm"><use href="#icon-calendar"/></svg> ייצוא ללוח שנה</button>
           <button class="btn btn-ghost" onclick="openAddExamModal(null)"><svg class="icon icon-sm"><use href="#icon-graduation"/></svg> הוסף מבחן</button>
-          <button class="btn btn-primary" onclick="openAddLessonModal(null)">+ הוסף שיעור</button>
+          <button class="btn btn-primary" onclick="openAddLessonModal(null)" data-tf="+ הוסף {appointment}">+ הוסף שיעור</button>
         </div>
       </div>
       <div class="filters-bar">
         <select id="filter-student" onchange="applyLessonFilter()">
-          <option value="">כל התלמידים</option>
+          <option value="" data-tf="כל ה{clients}">כל התלמידים</option>
         </select>
         <input type="month" id="filter-month" onchange="applyLessonFilter()" placeholder="חודש">
         <select id="filter-paid" onchange="applyLessonFilter()">
@@ -2031,7 +2031,7 @@
       </div>
       <!-- Bulk Toolbar -->
       <div id="bulk-toolbar">
-        <span id="bulk-count">0 שיעורים נבחרו</span>
+        <span id="bulk-count" data-tf="0 {appointments} נבחרו">0 שיעורים נבחרו</span>
         <button class="btn-bulk" onclick="bulkMarkPaid()"><svg class="icon icon-sm"><use href="#icon-check"/></svg> סמן שולם</button>
         <button class="btn-bulk danger" onclick="bulkDelete()"><svg class="icon icon-sm"><use href="#icon-trash"/></svg> מחק</button>
         <button class="btn-bulk" onclick="clearBulkSelection()"><svg class="icon icon-sm"><use href="#icon-x"/></svg> בטל בחירה</button>
@@ -2043,7 +2043,7 @@
               <tr>
                 <th><input type="checkbox" id="select-all-cb" onclick="toggleSelectAll(this)" title="בחר הכל"></th>
                 <th>תאריך</th>
-                <th>תלמיד</th>
+                <th data-tf="{client}">תלמיד</th>
                 <th>משך</th>
                 <th>סכום</th>
                 <th>סטטוס</th>
@@ -2052,7 +2052,7 @@
               </tr>
             </thead>
             <tbody id="lessons-tbody">
-              <tr><td colspan="8" class="empty-cell">אין שיעורים עדיין</td></tr>
+              <tr><td colspan="8" class="empty-cell" data-tf="אין {appointments} עדיין">אין שיעורים עדיין</td></tr>
             </tbody>
           </table>
         </div>
@@ -2071,7 +2071,7 @@
       </div>
       <div id="pay-controls"></div>
       <section class="card dx-card pm-card">
-        <div class="dx-card-head"><h3 class="dx-title"><span class="dx-ic dx-ic-blue">👥</span>יתרה לפי תלמיד</h3></div>
+        <div class="dx-card-head"><h3 class="dx-title"><span class="dx-ic dx-ic-blue">👥</span><span data-tf="יתרה לפי {client}">יתרה לפי תלמיד</span></h3></div>
         <div id="balance-cards"></div>
       </section>
       <div class="card">
@@ -2081,7 +2081,7 @@
             <thead>
               <tr>
                 <th>תאריך</th>
-                <th>תלמיד</th>
+                <th data-tf="{client}">תלמיד</th>
                 <th>סכום</th>
                 <th>הערות</th>
                 <th>פעולות</th>
@@ -2186,10 +2186,10 @@
       <span class="bn-icon"><svg class="icon"><use href="#icon-wallet"/></svg></span>תשלומים
     </button>
     <button class="bottom-nav-item" data-page="lessons" onclick="showPage('lessons')">
-      <span class="bn-icon"><svg class="icon"><use href="#icon-book"/></svg></span>שיעורים
+      <span class="bn-icon"><svg class="icon"><use href="#icon-book"/></svg></span><span data-tf="{appointments}">שיעורים</span>
     </button>
     <button class="bottom-nav-item" data-page="students" onclick="showPage('students')">
-      <span class="bn-icon"><svg class="icon"><use href="#icon-users"/></svg></span>תלמידים
+      <span class="bn-icon"><svg class="icon"><use href="#icon-users"/></svg></span><span data-tf="{clients}">תלמידים</span>
     </button>
     <button class="bottom-nav-item" data-page="dashboard" onclick="showPage('dashboard')">
       <span class="bn-icon"><svg class="icon"><use href="#icon-home"/></svg></span>דשבורד<span class="nav-badge" data-booking-badge style="display:none"></span>
@@ -2198,7 +2198,7 @@
 </nav>
 
 <!-- FAB -->
-<button class="fab" onclick="openAddLessonModal(null)" title="הוסף שיעור">+</button>
+<button class="fab" onclick="openAddLessonModal(null)" title="הוסף שיעור" data-tf-title="הוסף {appointment}">+</button>
 
 <!-- CAL POPUP -->
 <div id="cal-popup" class="cal-popup" style="display:none"></div>
@@ -2296,32 +2296,32 @@ function checkOnboarding() {
   const html = `
     <div style="text-align:center;margin-bottom:10px">
       <div style="font-size:44px;margin-bottom:8px">👋</div>
-      <p style="font-size:15px;color:var(--text-muted)">בואי נכיר בקצרה את האפליקציה</p>
+      <p style="font-size:15px;color:var(--text-muted)">${g('בואי', 'בוא')} נכיר בקצרה את האפליקציה</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:14px;margin:18px 0">
       <div style="display:flex;gap:12px;align-items:flex-start">
         <span style="font-size:22px">1️⃣</span>
-        <div><strong>הוסיפי תלמיד</strong><div style="font-size:13px;color:var(--text-muted)">שם, מחיר לשיעור וימי לימוד קבועים (לא חובה)</div></div>
+        <div><strong>${g('הוסיפי', 'הוסף')} ${t('client')}</strong><div style="font-size:13px;color:var(--text-muted)">שם, מחיר ל${t('appointment')} ו${t('schedule_days')} קבועים (לא חובה)</div></div>
       </div>
       <div style="display:flex;gap:12px;align-items:flex-start">
         <span style="font-size:22px">2️⃣</span>
-        <div><strong>קבעי שיעור</strong><div style="font-size:13px;color:var(--text-muted)">תאריך, שעה וכמות יחידות — הסכום מחושב אוטומטית</div></div>
+        <div><strong>${g('קבעי', 'קבע')} ${t('appointment')}</strong><div style="font-size:13px;color:var(--text-muted)">תאריך, שעה וכמות יחידות — הסכום מחושב אוטומטית</div></div>
       </div>
       <div style="display:flex;gap:12px;align-items:flex-start">
         <span style="font-size:22px">3️⃣</span>
-        <div><strong>עקבי אחרי תשלומים</strong><div style="font-size:13px;color:var(--text-muted)">כל שיעור מסומן כשולם / לא שולם, ותמיד תדעי מי חייבת לך</div></div>
+        <div><strong>${g('עקבי', 'עקוב')} אחרי תשלומים</strong><div style="font-size:13px;color:var(--text-muted)">כל ${t('appointment')} מסומן כשולם / לא שולם, ותמיד ${g('תדעי', 'תדע')} מי חייבת לך</div></div>
       </div>
     </div>`;
-  openModal('ברוכה הבאה! 🎉', html, async () => {
+  openModal(g('ברוכה הבאה! 🎉', 'ברוך הבא! 🎉'), html, async () => {
     localStorage.setItem('onboardingDismissed', '1');
     closeModal();
     openAddStudentModal();
   });
   const saveBtn = document.getElementById('modal-save-btn');
-  if (saveBtn) saveBtn.textContent = 'בואי נתחיל — הוספת תלמיד ראשון';
+  if (saveBtn) saveBtn.textContent = `${g('בואי', 'בוא')} נתחיל — הוספת ${t('client')} ראשון`;
   const skipBtn = document.getElementById('modal-footer').querySelector('.btn-ghost');
   if (skipBtn) {
-    skipBtn.textContent = 'דלגי';
+    skipBtn.textContent = g('דלגי', 'דלג');
     skipBtn.onclick = () => { localStorage.setItem('onboardingDismissed', '1'); closeModal(); };
   }
 }
@@ -2369,7 +2369,7 @@ function checkInstallBanner() {
     banner.style.display = 'flex';
   } else if (isIOSDevice()) {
     banner.innerHTML = `
-      <div class="install-text"><span>📲</span><span>להתקנה: לחצי על <svg class="icon icon-sm"><use href="#icon-share"/></svg> ואז "הוסף למסך הבית"</span></div>
+      <div class="install-text"><span>📲</span><span>להתקנה: ${g('לחצי', 'לחץ')} על <svg class="icon icon-sm"><use href="#icon-share"/></svg> ואז "הוסף למסך הבית"</span></div>
       <button class="install-close" onclick="dismissInstallBanner()" title="סגור"><svg class="icon icon-sm"><use href="#icon-x"/></svg></button>`;
     banner.style.display = 'flex';
   } else {
@@ -2396,7 +2396,7 @@ function openAboutModal() {
     <div style="text-align:center;margin-bottom:18px">
       <div style="font-size:42px;margin-bottom:6px">📚</div>
       <h3 style="margin:0 0 4px">שיעורים פרטיים</h3>
-      <p style="color:var(--text-muted);font-size:13.5px;margin:0">מערכת ניהול חכמה למורים פרטיים — תלמידים, שיעורים ותשלומים במקום אחד</p>
+      <p style="color:var(--text-muted);font-size:13.5px;margin:0">מערכת ניהול חכמה למורים פרטיים — ${t('clients')}, ${t('appointments')} ותשלומים במקום אחד</p>
     </div>
     <div class="form-group" style="background:var(--bg);border-radius:10px;padding:14px">
       <div style="font-weight:600;margin-bottom:6px">יצירת קשר</div>
@@ -2701,7 +2701,7 @@ async function toggleLessonReminders() {
       body: JSON.stringify(sub.toJSON()),
     });
     updateReminderBtnState(true);
-    showToast('תזכורות הופעלו! תקבל/י התראה בבוקר אם יש שיעור באותו יום 🔔');
+    showToast(`תזכורות הופעלו! תקבל/י התראה בבוקר אם יש ${t('appointment')} באותו יום 🔔`);
   } catch (e) {
     console.error(e);
     showToast('משהו השתבש בהפעלת התזכורות', 'danger');
@@ -2714,23 +2714,23 @@ function toastIconHTML(type) {
   return `<span class="toast-icon"><svg class="icon"><use href="#icon-${TOAST_ICONS[type] || 'check-circle'}"/></svg></span>`;
 }
 function showToast(msg, type = 'success') {
-  const t = document.getElementById('toast');
-  t.innerHTML = `${toastIconHTML(type)}<span>${msg}</span>`;
-  t.className = `toast toast-${type} show`;
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.className = 'toast'; }, 2500);
+  const toastEl = document.getElementById('toast');
+  toastEl.innerHTML = `${toastIconHTML(type)}<span>${msg}</span>`;
+  toastEl.className = `toast toast-${type} show`;
+  clearTimeout(toastEl._timer);
+  toastEl._timer = setTimeout(() => { toastEl.className = 'toast'; }, 2500);
 }
 
 // ===== UNDO DELETE =====
 window._lastDeleted = null;
 function showUndoToast(label, restoreFn) {
-  const t = document.getElementById('toast');
+  const toastEl = document.getElementById('toast');
   const btnStyle = 'background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 10px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;margin-right:6px;font-weight:600';
-  t.innerHTML = `${toastIconHTML('success')}<span>${label} <button onclick="undoDelete()" style="${btnStyle}">↩ בטל</button></span>`;
-  t.className = 'toast toast-success show';
+  toastEl.innerHTML = `${toastIconHTML('success')}<span>${label} <button onclick="undoDelete()" style="${btnStyle}">↩ בטל</button></span>`;
+  toastEl.className = 'toast toast-success show';
   window._undoRestoreFn = restoreFn;
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.className = 'toast'; window._undoRestoreFn = null; }, 5000);
+  clearTimeout(toastEl._timer);
+  toastEl._timer = setTimeout(() => { toastEl.className = 'toast'; window._undoRestoreFn = null; }, 5000);
 }
 async function undoDelete() {
   if (window._undoRestoreFn) {
@@ -2753,7 +2753,7 @@ function buildWhatsAppMsg(lesson, student) {
       .replace(/\{שעה\}/g, time)
       .replace(/\{כמות\}/g, count);
   }
-  const msg = `היי ${name} 😊\nנקבע לנו שיעור${count > 1 ? ` (${count} שיעורים)` : ''} בתאריך ${dateStr} בשעה ${time}.\nמחכה לך! 📚`;
+  const msg = `היי ${name} 😊\nנקבע לנו ${t('appointment')}${count > 1 ? ` (${count} ${t('appointments')})` : ''} בתאריך ${dateStr} בשעה ${time}.\nמחכה לך! 📚`;
   return msg;
 }
 
@@ -2766,7 +2766,7 @@ function phoneToIntl(phone) {
 function sendWhatsApp(lesson) {
   const s = getStudentById(lesson.studentId);
   const intl = phoneToIntl(s?.phone);
-  if (!intl) { showToast('אין מספר טלפון לתלמיד זה', 'warning'); return; }
+  if (!intl) { showToast(`אין מספר טלפון ל${t('client')} זה`, 'warning'); return; }
   const msg = buildWhatsAppMsg(lesson, s);
   window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, '_blank');
 }
@@ -2783,17 +2783,17 @@ function lessonTimeRange(lesson, student) {
 
 function buildLessonsListMsg(student, lessons) {
   const lines = lessons.map(l => `📅 ${formatDate(l.date)} ${lessonTimeRange(l, student)}`).join('\n');
-  return `היי ${student?.name || ''} 😊\nהנה רשימת השיעורים שלך:\n\n${lines}\n\nסה"כ: ${lessons.length} שיעורים`;
+  return `היי ${student?.name || ''} 😊\nהנה רשימת ה${t('appointments')} שלך:\n\n${lines}\n\nסה"כ: ${lessons.length} ${t('appointments')}`;
 }
 
 function sendLessonsListWhatsApp(studentId, from, to) {
   const s = getStudentById(studentId);
   const intl = phoneToIntl(s?.phone);
-  if (!intl) { showToast('אין מספר טלפון לתלמיד זה', 'warning'); return; }
+  if (!intl) { showToast(`אין מספר טלפון ל${t('client')} זה`, 'warning'); return; }
   const lessons = getLessons()
     .filter(l => l.studentId === studentId && l.date >= from && l.date <= to)
     .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
-  if (lessons.length === 0) { showToast('אין שיעורים בטווח התאריכים שנבחר', 'warning'); return; }
+  if (lessons.length === 0) { showToast(`אין ${t('appointments')} בטווח התאריכים שנבחר`, 'warning'); return; }
   const msg = buildLessonsListMsg(s, lessons);
   window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, '_blank');
 }
@@ -2812,10 +2812,10 @@ async function openShareLinkModal(studentId) {
   const url = `${location.origin}/portal/${token}`;
   const intl = phoneToIntl(s.phone);
   const waMsg = _bookingSettings?.enabled
-    ? `היי ${s.name} 😊\nהנה קישור למעקב אחר השיעורים והתשלומים שלך — אפשר גם לבחור בו מועד לשיעור הבא:\n${url}`
-    : `היי ${s.name} 😊\nהנה קישור למעקב אחר השיעורים והתשלומים שלך:\n${url}`;
+    ? `היי ${s.name} 😊\nהנה קישור למעקב אחר ה${t('appointments')} והתשלומים שלך — אפשר גם לבחור בו מועד ל${t('appointment')} הבא:\n${url}`
+    : `היי ${s.name} 😊\nהנה קישור למעקב אחר ה${t('appointments')} והתשלומים שלך:\n${url}`;
   const html = `
-    <p style="margin-bottom:12px;font-size:13.5px;color:var(--text-muted)">קישור קבוע, בלי צורך בהתחברות — מראה להורה/תלמיד את השיעורים הקרובים, היתרה, הכרטיסייה, ומה שסימנת כ"מה עשינו היום" ו"שיעורי בית" בכל שיעור.${_bookingSettings?.enabled ? ' התלמיד יכול גם לבקש שיעור במועד פנוי — הבקשה מחכה לאישורך.' : ' <a href="#" onclick="closeModal();openAvailabilityModal();return false">אפשר גם לתת לתלמיד לבקש שיעור לפי הזמינות שלך</a>.'}</p>
+    <p style="margin-bottom:12px;font-size:13.5px;color:var(--text-muted)">קישור קבוע, בלי צורך בהתחברות — מראה להורה/${t('client')} את ה${t('appointments')} הקרובים, היתרה, הכרטיסייה, ומה שסימנת כ"מה עשינו היום" ו"שיעורי בית" בכל ${t('appointment')}.${_bookingSettings?.enabled ? ` ה${t('client')} יכול גם לבקש ${t('appointment')} במועד פנוי — הבקשה מחכה לאישורך.` : ` <a href="#" onclick="closeModal();openAvailabilityModal();return false">אפשר גם לתת ל${t('client')} לבקש ${t('appointment')} לפי הזמינות שלך</a>.`}</p>
     <div style="display:flex;gap:8px;align-items:center;background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:12px">
       <input type="text" readonly value="${url}" id="share-link-input" style="flex:1;border:none;background:transparent;font-size:13px;direction:ltr;text-align:left;color:var(--text)" onclick="this.select()">
     </div>
@@ -2839,7 +2839,7 @@ function openSendLessonsListModal(studentId) {
   const defaultFrom = studentLessons.find(l => l.date >= today)?.date || studentLessons[0]?.date || today;
   const defaultTo = studentLessons.length ? studentLessons[studentLessons.length - 1].date : today;
   const html = `
-    <p style="margin-bottom:14px;font-size:14px;color:var(--text-muted)">בחרי טווח תאריכים — כל השיעורים בטווח יישלחו כהודעת ווצאפ אחת</p>
+    <p style="margin-bottom:14px;font-size:14px;color:var(--text-muted)">${g('בחרי', 'בחר')} טווח תאריכים — כל ה${t('appointments')} בטווח יישלחו כהודעת ווצאפ אחת</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group">
         <label>מתאריך</label>
@@ -2850,7 +2850,7 @@ function openSendLessonsListModal(studentId) {
         <input type="date" id="f-list-to" value="${defaultTo}">
       </div>
     </div>`;
-  openModal(`שליחת רשימת שיעורים — ${escapeHtml(s.name)}`, html, async () => {
+  openModal(`שליחת רשימת ${t('appointments')} — ${escapeHtml(s.name)}`, html, async () => {
     const from = document.getElementById('f-list-from').value;
     const to = document.getElementById('f-list-to').value;
     if (!from || !to) { showToast('נא לבחור טווח תאריכים', 'error'); return; }
@@ -2876,16 +2876,16 @@ function sendWhatsAppThenCalendar(lesson) {
 function showToastWithCalendar(lesson) {
   const s = getStudentById(lesson.studentId);
   const hasPhone = !!s?.phone;
-  const t = document.getElementById('toast');
+  const toastEl = document.getElementById('toast');
   const btnStyle = 'background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 10px;border-radius:6px;cursor:pointer;font-size:12.5px;font-family:inherit;margin-top:6px;margin-inline-end:4px;font-weight:600';
-  t.innerHTML = `${toastIconHTML('success')}<span>שיעור נוסף!<br>
+  toastEl.innerHTML = `${toastIconHTML('success')}<span>${t('appointment')} נוסף!<br>
     <button onclick="exportSingleLesson(window._lastLesson)" style="${btnStyle}">📅 לוח שנה</button>
     ${hasPhone ? `<button onclick="sendWhatsApp(window._lastLesson)" style="${btnStyle}">💬 ווצאפ</button>` : ''}
     ${hasPhone ? `<button onclick="sendWhatsAppThenCalendar(window._lastLesson)" style="${btnStyle}">📅+💬 הכל</button>` : ''}</span>`;
-  t.className = 'toast toast-success show';
+  toastEl.className = 'toast toast-success show';
   window._lastLesson = lesson;
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.className = 'toast'; }, 7000);
+  clearTimeout(toastEl._timer);
+  toastEl._timer = setTimeout(() => { toastEl.className = 'toast'; }, 7000);
 }
 
 // ===== PUNCH CARDS (כרטיסיות) =====
@@ -2943,17 +2943,17 @@ function packageLowNotice(studentId) {
   const s = getStudentById(studentId);
   const pkgs = getStudentPackages(studentId).filter(p => !packageStatus(p).expired);
   if (!pkgs.length) return;
-  const remaining = pkgs.reduce((t, p) => t + packageStatus(p).remaining, 0);
+  const remaining = pkgs.reduce((acc, p) => acc + packageStatus(p).remaining, 0);
   if (remaining === 0) showToast(`🎟 הכרטיסייה של ${s?.name || ''} נוצלה במלואה — זמן לחדש`, 'warning');
-  else if (remaining === 1) showToast(`🎟 נותר שיעור אחד בכרטיסייה של ${s?.name || ''}`, 'warning');
+  else if (remaining === 1) showToast(`🎟 נותר ${t('appointment')} אחד בכרטיסייה של ${s?.name || ''}`, 'warning');
 }
 function studentPackageLine(studentId) {
   const pkgs = getStudentPackages(studentId);
   if (!pkgs.length) return '';
   const live = pkgs.filter(p => { const st = packageStatus(p); return !st.expired && st.remaining > 0; });
   if (!live.length) return `<span class="pkg-line low">🎟 הכרטיסייה נוצלה — אפשר לחדש</span>`;
-  const remaining = live.reduce((t, p) => t + packageStatus(p).remaining, 0);
-  const total = live.reduce((t, p) => t + (p.totalUnits || 0), 0);
+  const remaining = live.reduce((acc, p) => acc + packageStatus(p).remaining, 0);
+  const total = live.reduce((acc, p) => acc + (p.totalUnits || 0), 0);
   return `<span class="pkg-line ${remaining <= 1 ? 'low' : ''}">🎟 כרטיסייה: נותרו ${remaining} מתוך ${total}</span>`;
 }
 
@@ -2986,7 +2986,7 @@ function renderLessonPackageBox() {
       <input type="checkbox" id="f-use-pkg" ${checked ? 'checked' : ''} onchange="togglePayStatusForPackage(this.checked);updateLessonAmount()">
       🎟 לנכות מהכרטיסייה
     </label>
-    <div class="pkg-sub" style="margin-top:4px">נותרו ${st.remaining} מתוך ${st.total} · שווי שיעור ${formatCurrency(packageUnitPrice(pkg))}${pkg.expiresAt ? ` · בתוקף עד ${formatDate(pkg.expiresAt)}` : ''}</div>`;
+    <div class="pkg-sub" style="margin-top:4px">נותרו ${st.remaining} מתוך ${st.total} · שווי ${t('appointment')} ${formatCurrency(packageUnitPrice(pkg))}${pkg.expiresAt ? ` · בתוקף עד ${formatDate(pkg.expiresAt)}` : ''}</div>`;
   togglePayStatusForPackage(checked);
 }
 function togglePayStatusForPackage(usePkg) {
@@ -3010,19 +3010,19 @@ function openPackagesModal(studentId) {
       : st.remaining === 0 ? '<span class="badge badge-muted">נוצלה</span>'
       : `<span class="badge badge-card">נותרו ${st.remaining}</span>`;
     return `<div class="pkg-item">
-      <div class="pkg-item-head"><span>🎟 ${st.total} שיעורים · ${formatCurrency(p.price)}</span>${state}</div>
+      <div class="pkg-item-head"><span>🎟 ${st.total} ${t('appointments')} · ${formatCurrency(p.price)}</span>${state}</div>
       <div class="pkg-bar"><div style="width:${pct}%"></div></div>
       <div class="pkg-sub">נוצלו ${st.used} מתוך ${st.total} · נרכשה ${formatDate(p.date)}${p.expiresAt ? ` · בתוקף עד ${formatDate(p.expiresAt)}` : ''}${p.notes ? ` · ${escapeHtml(p.notes)}` : ''}</div>
       <button class="btn btn-ghost btn-xs text-danger" style="margin-top:6px" onclick="deletePackage('${p.id}')">מחק כרטיסייה</button>
     </div>`;
-  }).join('') : '<p class="text-muted" style="margin-bottom:12px">עדיין אין כרטיסיות לתלמיד/ה</p>';
+  }).join('') : `<p class="text-muted" style="margin-bottom:12px">עדיין אין כרטיסיות ל${t('client_of')}</p>`;
   const defUnits = 10;
   const html = `
     ${list}
     <div class="pkg-box" style="margin-top:6px">
       <div style="font-weight:700;color:#6d28d9;margin-bottom:10px">+ כרטיסייה חדשה</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group"><label>מספר שיעורים</label>
+        <div class="form-group"><label>מספר ${t('appointments')}</label>
           <input type="number" id="f-pkg-units" value="${defUnits}" min="1" step="1" oninput="document.getElementById('f-pkg-price').value = (${s.hourlyRate || 0}) * (parseInt(this.value)||0)"></div>
         <div class="form-group"><label>מחיר הכרטיסייה (₪)</label>
           <input type="number" id="f-pkg-price" value="${(s.hourlyRate || 0) * defUnits}" min="0" step="10"></div>
@@ -3033,13 +3033,13 @@ function openPackagesModal(studentId) {
       </div>
       <div class="form-group"><label>הערה</label><input type="text" id="f-pkg-notes" placeholder="למשל: כרטיסיית חורף"></div>
       <label class="checkbox-label"><input type="checkbox" id="f-pkg-paid" checked> התקבל תשלום על הכרטיסייה (יירשם בתשלומים)</label>
-      <div class="pkg-sub" style="margin-top:8px">שיעורים חדשים של ${escapeHtml(s.name)} ינוכו אוטומטית מהכרטיסייה עד שתיגמר.</div>
+      <div class="pkg-sub" style="margin-top:8px">${t('appointments')} חדשים של ${escapeHtml(s.name)} ינוכו אוטומטית מהכרטיסייה עד שתיגמר.</div>
     </div>`;
   openModal(`כרטיסיות — ${escapeHtml(s.name)}`, html, async () => {
     const totalUnits = parseInt(document.getElementById('f-pkg-units').value);
     const price = parseFloat(document.getElementById('f-pkg-price').value) || 0;
     const date = document.getElementById('f-pkg-date').value || isoDate(new Date());
-    if (!totalUnits || totalUnits < 1) { showToast('נא להזין מספר שיעורים', 'error'); return; }
+    if (!totalUnits || totalUnits < 1) { showToast(`נא להזין מספר ${t('appointments')}`, 'error'); return; }
     const pkg = { id: generateId(), studentId, date, totalUnits, price,
       expiresAt: document.getElementById('f-pkg-expires').value || '',
       notes: document.getElementById('f-pkg-notes').value.trim(), createdAt: new Date().toISOString() };
@@ -3047,13 +3047,13 @@ function openPackagesModal(studentId) {
     _packages.push(pkg);
     if (document.getElementById('f-pkg-paid').checked && price > 0) {
       const payment = { id: generateId(), studentId, date, amount: price, packageId: pkg.id,
-        notes: `כרטיסייה ${totalUnits} שיעורים` };
+        notes: `כרטיסייה ${totalUnits} ${t('appointments')}` };
       await apiCall('POST', '/api/payments', payment);
       _payments.push(payment);
     }
     closeModal();
     refreshAfterDataChange();
-    showToast(`כרטיסייה של ${totalUnits} שיעורים נוספה 🎟`);
+    showToast(`כרטיסייה של ${totalUnits} ${t('appointments')} נוספה 🎟`);
   });
   const saveBtn = document.getElementById('modal-save-btn');
   if (saveBtn) saveBtn.textContent = 'הוסף כרטיסייה';
@@ -3065,8 +3065,8 @@ async function deletePackage(id) {
   const linked = _lessons.filter(l => l.packageId === id);
   const linkedPay = _payments.filter(p => p.packageId === id);
   let msg = 'למחוק את הכרטיסייה?';
-  if (linked.length) msg += `\n${linked.length} שיעורים שנוצלו ממנה יחזרו להיות שיעורים רגילים שממתינים לתשלום.`;
-  if (linkedPay.length) msg += `\nהתשלום שנרשם עבורה (${formatCurrency(linkedPay.reduce((t, p) => t + p.amount, 0))}) יימחק גם הוא.`;
+  if (linked.length) msg += `\n${linked.length} ${t('appointments')} שנוצלו ממנה יחזרו להיות ${t('appointments')} רגילים שממתינים לתשלום.`;
+  if (linkedPay.length) msg += `\nהתשלום שנרשם עבורה (${formatCurrency(linkedPay.reduce((acc, p) => acc + p.amount, 0))}) יימחק גם הוא.`;
   confirmAction(msg, async () => {
     const st = getStudentById(pkg.studentId);
     for (const l of linked) {
@@ -3110,7 +3110,7 @@ function updateBookingBadge() {
     el.style.display = n ? '' : 'none';
   });
 }
-function timeToMin(t) { const [h, m] = (t || '0:0').split(':').map(Number); return h * 60 + m; }
+function timeToMin(tParam) { const [h, m] = (tParam || '0:0').split(':').map(Number); return h * 60 + m; }
 // Lessons added by hand after the request came in may now overlap it.
 function bookingConflict(b) {
   const start = timeToMin(b.time), end = start + (b.durationMinutes || 50);
@@ -3131,14 +3131,14 @@ async function approveBooking(id) {
   const lesson = {
     id: generateId(), studentId: b.studentId, date: b.date, time: b.time,
     durationHours: units, amount: (s?.hourlyRate || 0) * units, isPaid: false, paidAmount: 0,
-    notes: b.note ? `בקשת תלמיד: ${b.note}` : '', topic: '', homework: '', bookingId: b.id,
+    notes: b.note ? `בקשת ${t('client')}: ${b.note}` : '', topic: '', homework: '', bookingId: b.id,
   };
   applyPackageToLesson(lesson, getActivePackage(b.studentId, units));
   let res;
   try {
     res = await apiCall('POST', `/api/bookings/${id}/approve`, { lesson });
   } catch (e) {
-    showToast('הבקשה כבר טופלה או בוטלה על ידי התלמיד', 'warning');
+    showToast(`הבקשה כבר טופלה או בוטלה על ידי ה${t('client')}`, 'warning');
     await reloadBookings();
     return;
   }
@@ -3155,7 +3155,7 @@ function openRejectBookingModal(id) {
   if (!b) return;
   const s = getStudentById(b.studentId);
   const html = `<p style="margin-bottom:12px">לדחות את הבקשה של <strong>${escapeHtml(s?.name || '')}</strong> ל-${formatDate(b.date)} בשעה ${escapeHtml(b.time)}?</p>
-    <div class="form-group"><label>סיבה / הצעה למועד אחר (לא חובה — תוצג לתלמיד בקישור)</label>
+    <div class="form-group"><label>סיבה / הצעה למועד אחר (לא חובה — תוצג ל${t('client')} בקישור)</label>
     <textarea id="f-reject-reason" rows="2" placeholder="למשל: אפשר ביום שלישי ב-17:00?"></textarea></div>`;
   openModal('דחיית בקשה', html, async () => {
     const reason = document.getElementById('f-reject-reason').value.trim();
@@ -3181,18 +3181,18 @@ function showBookingDecisionToast(item, s, approved) {
   const intl = phoneToIntl(s?.phone);
   const [y, m, d] = item.date.split('-');
   const msg = approved
-    ? `היי ${s?.name || ''} 😊\nהשיעור ב-${d}/${m} בשעה ${item.time} אושר ✅\nנתראה!`
+    ? `היי ${s?.name || ''} 😊\nה${t('appointment')} ב-${d}/${m} בשעה ${item.time} אושר ✅\nנתראה!`
     : `היי ${s?.name || ''},\nלצערי המועד ${d}/${m} בשעה ${item.time} לא מתאים.${item.rejectReason ? `\n${item.rejectReason}` : ''}\nאפשר לבחור מועד אחר בקישור 🙏`;
-  const t = document.getElementById('toast');
+  const toastEl = document.getElementById('toast');
   const btnStyle = 'background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 10px;border-radius:6px;cursor:pointer;font-size:12.5px;font-family:inherit;margin-top:6px;margin-inline-end:4px;font-weight:600';
   window._lastLesson = approved ? item : null;
   window._decisionWa = intl ? `https://wa.me/${intl}?text=${encodeURIComponent(msg)}` : null;
-  t.innerHTML = `${toastIconHTML('success')}<span>${approved ? 'השיעור נקבע!' : 'הבקשה נדחתה'}<br>
-    ${intl ? `<button onclick="window.open(window._decisionWa,'_blank')" style="${btnStyle}">💬 עדכון לתלמיד</button>` : ''}
+  toastEl.innerHTML = `${toastIconHTML('success')}<span>${approved ? `ה${t('appointment')} נקבע!` : 'הבקשה נדחתה'}<br>
+    ${intl ? `<button onclick="window.open(window._decisionWa,'_blank')" style="${btnStyle}">💬 עדכון ל${t('client')}</button>` : ''}
     ${approved ? `<button onclick="exportSingleLesson(window._lastLesson)" style="${btnStyle}">📅 לוח שנה</button>` : ''}</span>`;
-  t.className = 'toast toast-success show';
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.className = 'toast'; }, 7000);
+  toastEl.className = 'toast toast-success show';
+  clearTimeout(toastEl._timer);
+  toastEl._timer = setTimeout(() => { toastEl.className = 'toast'; }, 7000);
 }
 
 async function reloadBookings() {
@@ -3220,7 +3220,7 @@ function openAvailabilityModal() {
     horizonDays: src.horizonDays ?? 21,
     stepMinutes: src.stepMinutes ?? 30,
   };
-  openModal('זמינות לתלמידים', '<div id="av-root"></div>', saveAvailability);
+  openModal(`זמינות ל${t('clients')}`, '<div id="av-root"></div>', saveAvailability);
   const saveBtn = document.getElementById('modal-save-btn');
   if (saveBtn) saveBtn.textContent = 'שמירת זמינות';
   availRender();
@@ -3232,12 +3232,12 @@ async function saveAvailability() {
   if (bad) { showToast('בכל חלון זמן שעת הסיום צריכה להיות אחרי שעת ההתחלה', 'error'); return; }
   if (d.extraSlots.some(e => !e.date)) { showToast('נא לבחור תאריך לכל מועד נוסף', 'error'); return; }
   if (d.enabled && !d.windows.length && !d.extraSlots.length) {
-    showToast('הוסיפי לפחות חלון זמן אחד כדי שלתלמידים יהיה מה לבחור', 'error'); return;
+    showToast(`${g('הוסיפי', 'הוסף')} לפחות חלון זמן אחד כדי של${t('clients')} יהיה מה לבחור`, 'error'); return;
   }
   const settings = { ...d, blockedDates: [...new Set(d.blockedDates.filter(Boolean))].sort() };
   _bookingSettings = await apiCall('PUT', '/api/booking-settings', settings);
   closeModal();
-  showToast(settings.enabled ? 'הזמינות נשמרה — התלמידים יכולים לבקש שיעור בקישור ✓' : 'הזמינות נשמרה (קביעה עצמית כבויה)');
+  showToast(settings.enabled ? `הזמינות נשמרה — ה${t('clients')} יכולים לבקש ${t('appointment')} בקישור ✓` : 'הזמינות נשמרה (קביעה עצמית כבויה)');
 }
 
 function avMinutes(w) { return Math.max(0, timeToMin(w.end) - timeToMin(w.start)); }
@@ -3263,14 +3263,14 @@ function availRender() {
   const d = _availDraft;
   const root = document.getElementById('av-root');
   if (!root) return;
-  const weekMin = d.windows.reduce((t, w) => t + avMinutes(w), 0);
+  const weekMin = d.windows.reduce((acc, w) => acc + avMinutes(w), 0);
   const activeDays = new Set(d.windows.map(w => +w.day)).size;
   const today = isoDate(new Date());
 
   const days = [0, 1, 2, 3, 4, 5, 6].map(day => {
     const idx = d.windows.map((w, i) => [w, i]).filter(([w]) => +w.day === day)
       .sort((a, b) => a[0].start.localeCompare(b[0].start));
-    const total = idx.reduce((t, [w]) => t + avMinutes(w), 0);
+    const total = idx.reduce((acc, [w]) => acc + avMinutes(w), 0);
     const wins = idx.map(([w, i]) => `<div class="av-win">
         <input type="time" value="${w.start}" onchange="avSetWin(${i},'start',this.value)">
         <span class="av-dash">עד</span>
@@ -3304,8 +3304,8 @@ function availRender() {
   root.innerHTML = `
     <label class="av-switch-card ${d.enabled ? 'on' : ''}">
       <div>
-        <div class="av-switch-title">קביעת שיעורים דרך הקישור</div>
-        <div class="av-switch-sub">${d.enabled ? 'פעיל — תלמידים רואים זמנים פנויים ושולחים בקשה לאישורך' : 'כבוי — הקישור מציג רק שיעורים ותשלומים'}</div>
+        <div class="av-switch-title">קביעת ${t('appointments')} דרך הקישור</div>
+        <div class="av-switch-sub">${d.enabled ? `פעיל — ${t('clients')} רואים זמנים פנויים ושולחים בקשה לאישורך` : `כבוי — הקישור מציג רק ${t('appointments')} ותשלומים`}</div>
       </div>
       <span class="av-switch"><input type="checkbox" id="f-av-enabled" ${d.enabled ? 'checked' : ''} onchange="avSetField('enabled',this.checked)"><span></span></span>
     </label>
@@ -3313,7 +3313,7 @@ function availRender() {
     <div class="av-card">
       <div class="av-card-head">
         <div><div class="av-card-title">🔁 השבוע הקבוע שלך</div>
-          <div class="av-hint">${weekMin ? `${avFmtHours(weekMin)} זמינות ב-${activeDays} ימים בשבוע` : 'מתי בדרך כלל יש לך זמן לשיעורים?'}</div></div>
+          <div class="av-hint">${weekMin ? `${avFmtHours(weekMin)} זמינות ב-${activeDays} ימים בשבוע` : `מתי בדרך כלל יש לך זמן ל${t('appointments')}?`}</div></div>
       </div>
       <div class="av-presets">
         <button type="button" onclick="avPreset('afternoons')">א׳–ה׳ · <bdi dir="ltr">16:00–20:00</bdi></button>
@@ -3347,7 +3347,7 @@ function availRender() {
       <div class="av-rule"><span>כמה זמן מראש</span>${avSeg('minNoticeHours', AV_NOTICE)}</div>
       <div class="av-rule"><span>כמה קדימה רואים</span>${avSeg('horizonDays', AV_HORIZON)}</div>
       <div class="av-rule"><span>שעות התחלה כל</span>${avSeg('stepMinutes', AV_STEP)}</div>
-      <div class="av-hint" style="margin-top:8px">כל תלמיד רואה זמנים באורך השיעור שלו; זמנים עם שיעור או בקשה ממתינה מוסתרים.</div>
+      <div class="av-hint" style="margin-top:8px">כל ${t('client')} רואה זמנים באורך ה${t('appointment')} שלו; זמנים עם ${t('appointment')} או בקשה ממתינה מוסתרים.</div>
     </div>`;
 }
 
@@ -3438,7 +3438,7 @@ function openExamsModal(studentId) {
         <div class="form-group"><label>מקצוע / נושא</label><input type="text" id="f-exam-subject" placeholder="למשל: מתמטיקה"></div>
       </div>
       <div class="form-group"><label>הערות (לא חובה)</label><input type="text" id="f-exam-notes" placeholder="למשל: פרקים 3–5"></div>
-      <div class="pkg-sub">🔔 ביום המבחן ב-8:00 בבוקר תקבלי התראה עם הודעת "בהצלחה" מוכנה לשליחה בווצאפ</div>
+      <div class="pkg-sub">🔔 ביום המבחן ב-8:00 בבוקר ${g('תקבלי', 'תקבל')} התראה עם הודעת "בהצלחה" מוכנה לשליחה בווצאפ</div>
     </div>`;
   openModal(`מבחנים — ${escapeHtml(s.name)}`, html, async () => {
     const date = document.getElementById('f-exam-date').value;
@@ -3451,7 +3451,7 @@ function openExamsModal(studentId) {
     _exams.push(exam);
     refreshAfterDataChange();
     openExamsModal(studentId);
-    showToast(date === today ? 'המבחן נשמר — הוא היום, אפשר לשלוח "בהצלחה" כבר עכשיו' : 'המבחן נשמר — תקבלי תזכורת ב-8:00 ביום המבחן 🔔');
+    showToast(date === today ? 'המבחן נשמר — הוא היום, אפשר לשלוח "בהצלחה" כבר עכשיו' : `המבחן נשמר — ${g('תקבלי', 'תקבל')} תזכורת ב-8:00 ביום המבחן 🔔`);
   });
   const saveBtn = document.getElementById('modal-save-btn');
   if (saveBtn) saveBtn.textContent = 'שמירת מבחן';
@@ -3470,7 +3470,7 @@ async function deleteExam(id) {
 
 function goodLuckMessage(exam, s) {
   const first = (s?.name || '').split(' ')[0];
-  return `היי ${first} 🍀\nבהצלחה היום במבחן${exam.subject ? ` ב${exam.subject}` : ''}!\nעבדנו על זה יחד ואני בטוחה שיהיה מעולה 💪\nמחזיקה לך אצבעות ✨`;
+  return `היי ${first} 🍀\nבהצלחה היום במבחן${exam.subject ? ` ב${exam.subject}` : ''}!\nעבדנו על זה יחד ואני ${g('בטוחה', 'בטוח')} שיהיה מעולה 💪\n${g('מחזיקה', 'מחזיק')} לך אצבעות ✨`;
 }
 function openGoodLuck(examId) {
   const e = _exams.find(x => x.id === examId);
@@ -3482,7 +3482,7 @@ function openGoodLuck(examId) {
     <p style="text-align:center;margin-bottom:12px;color:var(--text-muted)">${escapeHtml(s?.name || '')} · מבחן${e.subject ? ` ב${escapeHtml(e.subject)}` : ''} · ${examDayLabel(e.date)}</p>
     <div class="form-group"><label>ההודעה (אפשר לערוך)</label>
       <textarea id="f-goodluck-msg" rows="5">${escapeHtml(goodLuckMessage(e, s))}</textarea></div>
-    ${intl ? '' : '<div class="pkg-sub" style="color:var(--danger)">לתלמיד/ה ולהורה אין מספר טלפון — אפשר להוסיף בעריכת התלמיד</div>'}`;
+    ${intl ? '' : `<div class="pkg-sub" style="color:var(--danger)">ל${t('client_of')} ולהורה אין מספר טלפון — אפשר להוסיף בעריכת ה${t('client')}</div>`}`;
   openModal('הודעת בהצלחה', html, intl ? async () => {
     const msg = document.getElementById('f-goodluck-msg').value;
     window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -3519,7 +3519,7 @@ function openStudentActions(studentId) {
   const today = isoDate(new Date());
   const upcomingExams = getStudentExams(studentId).filter(e => e.date >= today);
   const live = getStudentPackages(studentId).filter(p => { const st = packageStatus(p); return !st.expired && st.remaining > 0; });
-  const remaining = live.reduce((t, p) => t + packageStatus(p).remaining, 0);
+  const remaining = live.reduce((acc, p) => acc + packageStatus(p).remaining, 0);
   const item = (icon, title, sub, call, tone = '') => `
     <button type="button" class="sa-item ${tone}" onclick="closeModal();${call}">
       <span class="sa-ic">${icon.startsWith('#') ? `<svg class="icon"><use href="${icon}"/></svg>` : icon}</span>
@@ -3529,21 +3529,21 @@ function openStudentActions(studentId) {
   const group = (label, items) => items.filter(Boolean).length ? `<div class="sa-group"><div class="sa-label">${label}</div>${items.join('')}</div>` : '';
   const html = `
     ${balance < 0 ? group('תשלום', [
-      item('#icon-file-text', 'דוח תשלום להורה', `פירוט השיעורים הפתוחים · ${formatCurrency(Math.abs(balance))} לתשלום`, `openDebtReport('${s.id}')`, 'warn'),
-      item('#icon-check', 'סימון הכל כשולם', 'כל השיעורים הפתוחים יסומנו כשולמו', `markAllLessonsPaid('${s.id}')`, 'ok'),
+      item('#icon-file-text', 'דוח תשלום להורה', `פירוט ה${t('appointments')} הפתוחים · ${formatCurrency(Math.abs(balance))} לתשלום`, `openDebtReport('${s.id}')`, 'warn'),
+      item('#icon-check', 'סימון הכל כשולם', `כל ה${t('appointments')} הפתוחים יסומנו כשולמו`, `markAllLessonsPaid('${s.id}')`, 'ok'),
     ]) : ''}
-    ${group('שיעורים', [
-      item('#icon-clock', 'היסטוריית שיעורים', 'כל השיעורים והתשלומים של התלמיד', `viewStudentHistory('${s.id}')`),
-      s.phone ? item('#icon-message-circle', 'שליחת רשימת שיעורים', 'רשימת השיעורים בטווח תאריכים — בווצאפ', `openSendLessonsListModal('${s.id}')`) : '',
+    ${group(`${t('appointments')}`, [
+      item('#icon-clock', `היסטוריית ${t('appointments')}`, `כל ה${t('appointments')} והתשלומים של ה${t('client')}`, `viewStudentHistory('${s.id}')`),
+      s.phone ? item('#icon-message-circle', `שליחת רשימת ${t('appointments')}`, `רשימת ה${t('appointments')} בטווח תאריכים — בווצאפ`, `openSendLessonsListModal('${s.id}')`) : '',
     ])}
     ${group('מעקב', [
       item('#icon-graduation', 'מבחנים', upcomingExams.length ? `${upcomingExams.length} קרובים · תזכורת ב-8:00 ביום המבחן` : 'הוספת מבחן + תזכורת והודעת בהצלחה', `openExamsModal('${s.id}')`),
-      item('#icon-ticket', 'כרטיסייה', live.length ? `נותרו ${remaining} שיעורים בכרטיסייה` : 'מכירת כרטיסייה מראש של כמה שיעורים', `openPackagesModal('${s.id}')`),
+      item('#icon-ticket', 'כרטיסייה', live.length ? `נותרו ${remaining} ${t('appointments')} בכרטיסייה` : `מכירת כרטיסייה מראש של כמה ${t('appointments')}`, `openPackagesModal('${s.id}')`),
     ])}
     ${group('שיתוף', [
-      item('#icon-link', 'קישור אישי לתלמיד/הורה', 'שיעורים, כרטיסייה וקביעת שיעור לבד', `openShareLinkModal('${s.id}')`),
+      item('#icon-link', `קישור אישי ל${t('client')}/הורה`, `${t('appointments')}, כרטיסייה וקביעת ${t('appointment')} לבד`, `openShareLinkModal('${s.id}')`),
     ])}
-    ${group('תלמיד', [
+    ${group(`${t('client')}`, [
       item('#icon-pencil', 'עריכת פרטים', 'שם, מחיר, טלפון, הורה, צבע', `openEditStudentModal('${s.id}')`),
     ])}`;
   openModal(s.name, html, null);
@@ -3555,9 +3555,9 @@ function openAddExamModal(defaultStudentId, defaultDate) {
   const students = getStudents().filter(s => s.isActive !== false);
   const today = isoDate(new Date());
   const html = `
-    <div class="form-group"><label>תלמיד</label>
+    <div class="form-group"><label>${t('client')}</label>
       <select id="f-exam-student">
-        <option value="">בחר תלמיד...</option>
+        <option value="">בחר ${t('client')}...</option>
         ${students.map(s => `<option value="${s.id}" ${s.id === defaultStudentId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
       </select></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -3565,11 +3565,11 @@ function openAddExamModal(defaultStudentId, defaultDate) {
       <div class="form-group"><label>מקצוע / נושא</label><input type="text" id="f-exam-subject" placeholder="למשל: מתמטיקה"></div>
     </div>
     <div class="form-group"><label>הערות (לא חובה)</label><input type="text" id="f-exam-notes" placeholder="למשל: פרקים 3–5"></div>
-    <div class="pkg-sub">🔔 ביום המבחן ב-8:00 בבוקר תקבלי התראה עם הודעת "בהצלחה" מוכנה לשליחה בווצאפ</div>`;
+    <div class="pkg-sub">🔔 ביום המבחן ב-8:00 בבוקר ${g('תקבלי', 'תקבל')} התראה עם הודעת "בהצלחה" מוכנה לשליחה בווצאפ</div>`;
   openModal('הוסף מבחן', html, async () => {
     const studentId = document.getElementById('f-exam-student').value;
     const date = document.getElementById('f-exam-date').value;
-    if (!studentId) { showToast('נא לבחור תלמיד', 'error'); return; }
+    if (!studentId) { showToast(`נא לבחור ${t('client')}`, 'error'); return; }
     if (!date) { showToast('נא לבחור תאריך למבחן', 'error'); return; }
     const exam = { id: generateId(), studentId, date,
       subject: document.getElementById('f-exam-subject').value.trim(),
@@ -3579,7 +3579,7 @@ function openAddExamModal(defaultStudentId, defaultDate) {
     _exams.push(exam);
     closeModal();
     refreshAfterDataChange();
-    showToast(date === today ? 'המבחן נשמר — הוא היום, אפשר לשלוח "בהצלחה" מהדשבורד' : 'המבחן נשמר — תקבלי תזכורת ב-8:00 ביום המבחן 🔔');
+    showToast(date === today ? 'המבחן נשמר — הוא היום, אפשר לשלוח "בהצלחה" מהדשבורד' : `המבחן נשמר — ${g('תקבלי', 'תקבל')} תזכורת ב-8:00 ביום המבחן 🔔`);
   });
   const saveBtn = document.getElementById('modal-save-btn');
   if (saveBtn) saveBtn.textContent = 'שמירת מבחן';
@@ -3600,6 +3600,7 @@ function applyAccount(data) {
   if (!data) return;
   setVertical(data.vertical, data.gender);
   window._profession = data.profession;
+  applyTerms();
 }
 function hideAuthOverlay(userName, isAdmin) {
   document.getElementById('auth-overlay').classList.remove('visible');
@@ -3649,7 +3650,7 @@ function renderAccountMenu() {
     <div class="am-group">
       <button class="am-item" onclick="toggleLessonReminders()" ${window._pushSupported ? '' : 'data-off="1"'}>
         <span class="am-ic">🔔</span><span class="am-text"><span class="am-title">התראות לטלפון</span>
-        <span class="am-desc">${window._pushSupported ? 'שיעורים, בקשות ומבחנים' : 'זמין כשהאפליקציה במסך הבית'}</span></span>${toggle(window._pushActive)}
+        <span class="am-desc">${window._pushSupported ? `${t('appointments')}, בקשות ומבחנים` : 'זמין כשהאפליקציה במסך הבית'}</span></span>${toggle(window._pushActive)}
       </button>
       <button class="am-item" onclick="toggleDarkMode()">
         <span class="am-ic">${dark ? '☀️' : '🌙'}</span><span class="am-text"><span class="am-title">מצב כהה</span></span>${toggle(dark)}
@@ -3685,8 +3686,8 @@ function closeAccountMenu() {
   document.removeEventListener('click', _acctOutside, true);
 }
 function openShortcutsModal() {
-  const row = (k, t) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${t}</span><span><kbd class="kbd">${k}</kbd></span></div>`;
-  openModal('קיצורי מקלדת', row('N / נ', 'הוספת שיעור') + row('D / ג', 'דשבורד') + row('S / ד', 'תלמידים') + row('L / כ', 'שיעורים') + row('Esc', 'סגירת חלון'), null);
+  const row = (k, tParam) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${tParam}</span><span><kbd class="kbd">${k}</kbd></span></div>`;
+  openModal('קיצורי מקלדת', row('N / נ', `הוספת ${t('appointment')}`) + row('D / ג', 'דשבורד') + row('S / ד', `${t('clients')}`) + row('L / כ', `${t('appointments')}`) + row('Esc', 'סגירת חלון'), null);
 }
 
 // ===== DASHBOARD =====
@@ -3702,7 +3703,7 @@ function renderDashGreeting() {
   const nReq = pendingBookings().length;
   const nExams = getExams().filter(e => e.date === today && getStudentById(e.studentId)).length;
   const bits = [
-    nLessons ? `${nLessons === 1 ? 'שיעור אחד' : nLessons + ' שיעורים'} היום` : 'אין שיעורים היום',
+    nLessons ? `${nLessons === 1 ? `${t('appointment')} אחד` : nLessons + ` ${t('appointments')}`} היום` : `אין ${t('appointments')} היום`,
     nExams ? (nExams === 1 ? 'מבחן אחד' : nExams + ' מבחנים') : '',
     nReq ? `${nReq === 1 ? 'בקשה אחת מחכה' : nReq + ' בקשות מחכות'} לאישור` : '',
   ].filter(Boolean);
@@ -3712,7 +3713,7 @@ function renderDashGreeting() {
       <div class="dx-date">${dateStr} · <span>${bits.join(' · ')}</span></div>
     </div>
     <div class="dx-actions">
-      <button class="dx-act dx-act-primary" onclick="openAddLessonModal(null)"><span>＋</span> שיעור</button>
+      <button class="dx-act dx-act-primary" onclick="openAddLessonModal(null)"><span>＋</span> ${t('appointment')}</button>
       <button class="dx-act" onclick="openAddExamModal(null)"><span>📝</span> מבחן</button>
     </div>`;
 }
@@ -3739,7 +3740,7 @@ function renderToday() {
       const past = endMin <= nowMin;
       const live = timeToMin(start) <= nowMin && nowMin < endMin;
       const isNext = !past && !live && !nextMarked && (nextMarked = true);
-      const sub = [l.durationHours > 1 ? `${l.durationHours} שיעורים` : 'שיעור', l.packageId ? `🎟 ${lessonPackagePosition(l)}` : '', l.topic ? `📘 ${escapeHtml(l.topic)}` : '']
+      const sub = [l.durationHours > 1 ? `${l.durationHours} ${t('appointments')}` : `${t('appointment')}`, l.packageId ? `🎟 ${lessonPackagePosition(l)}` : '', l.topic ? `📘 ${escapeHtml(l.topic)}` : '']
         .filter(Boolean).join(' · ');
       return `<div class="tl-row ${past ? 'is-past' : ''} ${live ? 'is-live' : ''}">
         <div class="tl-time"><b>${start}</b><small>${end}</small></div>
@@ -3751,7 +3752,7 @@ function renderToday() {
         <div class="tl-actions">
           ${lessonBadge(l)}
           ${l.packageId || getLessonPayStatus(l) === 'paid' ? '' : `<button class="tl-btn" title="סימון כשולם" onclick="toggleLessonPaid('${l.id}').then(renderDashboard)">₪ שולם</button>`}
-          ${s.phone ? `<button class="tl-btn tl-icon" title="ווצאפ לתלמיד" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))">💬</button>` : ''}
+          ${s.phone ? `<button class="tl-btn tl-icon" title="ווצאפ ל${t('client')}" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))">💬</button>` : ''}
         </div>
       </div>`;
     }).join('')}</div>`;
@@ -3760,9 +3761,9 @@ function renderToday() {
     const ns = next && getStudentById(next.studentId);
     body = `<div class="dx-empty">
       <div class="dx-empty-ic">☕</div>
-      <div class="dx-empty-title">אין שיעורים היום</div>
-      ${next ? `<div class="dx-empty-sub">השיעור הבא: <b>${escapeHtml(ns?.name || '')}</b> · ${examDayLabel(next.date)} ב-${next.time || ''}</div>` : '<div class="dx-empty-sub">יום חופשי — או זמן מצוין לקבוע שיעורים</div>'}
-      <button class="btn btn-ghost btn-sm" onclick="openAddLessonModal(null,'${today}')">+ שיעור להיום</button>
+      <div class="dx-empty-title">אין ${t('appointments')} היום</div>
+      ${next ? `<div class="dx-empty-sub">ה${t('appointment')} הבא: <b>${escapeHtml(ns?.name || '')}</b> · ${examDayLabel(next.date)} ב-${next.time || ''}</div>` : `<div class="dx-empty-sub">יום חופשי — או זמן מצוין לקבוע ${t('appointments')}</div>`}
+      <button class="btn btn-ghost btn-sm" onclick="openAddLessonModal(null,'${today}')">+ ${t('appointment')} להיום</button>
     </div>`;
   }
   const tomorrow = isoDate(new Date(Date.now() + 86400000));
@@ -3773,7 +3774,7 @@ function renderToday() {
       ${lessons.length ? `<span class="dx-count">${lessons.length}</span>` : ''}
     </div>
     ${body}
-    ${nTomorrow ? `<button class="dx-foot" onclick="calGoDay('${tomorrow}');document.getElementById('dx-cal').scrollIntoView({behavior:'smooth'})">מחר: ${nTomorrow === 1 ? 'שיעור אחד' : nTomorrow + ' שיעורים'} <span>←</span></button>` : ''}`;
+    ${nTomorrow ? `<button class="dx-foot" onclick="calGoDay('${tomorrow}');document.getElementById('dx-cal').scrollIntoView({behavior:'smooth'})">מחר: ${nTomorrow === 1 ? `${t('appointment')} אחד` : nTomorrow + ` ${t('appointments')}`} <span>←</span></button>` : ''}`;
 }
 
 // The "needs you" inbox: booking requests, exams, open payments, cards running low.
@@ -3791,7 +3792,7 @@ function renderInbox() {
   if (reqs.length) {
     total += reqs.length;
     sections.push(`<div class="ib-sec">
-      <div class="ib-label">בקשות לשיעור <button class="ib-link" onclick="openAvailabilityModal()">זמינות</button></div>
+      <div class="ib-label">בקשות ל${t('appointment')} <button class="ib-link" onclick="openAvailabilityModal()">זמינות</button></div>
       ${reqs.map(b => {
         const s = getStudentById(b.studentId) || {};
         const d = new Date(b.date + 'T00:00:00');
@@ -3801,9 +3802,9 @@ function renderInbox() {
           <span class="ib-dot" style="background:${s.color || '#2563eb'}"></span>
           <div class="ib-main">
             <div class="ib-title">${escapeHtml(s.name || '?')}</div>
-            <div class="ib-sub">${getDayName(d.getDay())} ${formatDate(b.date).slice(0, 5)} · ${escapeHtml(b.time)}${units > 1 ? ` · ${units} שיעורים` : ''}${getActivePackage(b.studentId, units) ? ' · 🎟' : ''}</div>
+            <div class="ib-sub">${getDayName(d.getDay())} ${formatDate(b.date).slice(0, 5)} · ${escapeHtml(b.time)}${units > 1 ? ` · ${units} ${t('appointments')}` : ''}${getActivePackage(b.studentId, units) ? ' · 🎟' : ''}</div>
             ${b.note ? `<div class="ib-note">“${escapeHtml(b.note)}”</div>` : ''}
-            ${clash ? `<div class="ib-warn">⚠ חופף לשיעור של ${escapeHtml(getStudentById(clash.studentId)?.name || '')} ב-${escapeHtml(clash.time)}</div>` : ''}
+            ${clash ? `<div class="ib-warn">⚠ חופף ל${t('appointment')} של ${escapeHtml(getStudentById(clash.studentId)?.name || '')} ב-${escapeHtml(clash.time)}</div>` : ''}
           </div>
           <div class="ib-btns">
             <button class="ib-btn ib-ok" onclick="approveBooking('${b.id}')" title="אישור">✓</button>
@@ -3832,7 +3833,7 @@ function renderInbox() {
           </div>
           ${isToday ? (e.wishedAt
             ? `<button class="ib-pill ib-pill-done" onclick="openGoodLuck('${e.id}')">✓ נשלח</button>`
-            : `<button class="ib-pill ib-pill-go" onclick="openGoodLuck('${e.id}')">שלחי בהצלחה</button>`) : ''}
+            : `<button class="ib-pill ib-pill-go" onclick="openGoodLuck('${e.id}')">${g('שלחי', 'שלח')} בהצלחה</button>`) : ''}
         </div>`;
       }).join('')}
     </div>`);
@@ -3842,7 +3843,7 @@ function renderInbox() {
     .map(s => ({ s, owed: -getStudentBalance(s.id) })).filter(x => x.owed > 0).sort((a, b) => b.owed - a.owed);
   if (debtors.length) {
     total += debtors.length;
-    const sum = debtors.reduce((t, x) => t + x.owed, 0);
+    const sum = debtors.reduce((acc, x) => acc + x.owed, 0);
     sections.push(`<div class="ib-sec">
       <div class="ib-label">פתוח לגבייה · ${formatCurrency(sum)} <button class="ib-link" onclick="showPage('payments')">לכל התשלומים</button></div>
       ${debtors.slice(0, 3).map(({ s, owed }) => `<div class="ib-row">
@@ -3851,7 +3852,7 @@ function renderInbox() {
         <span class="ib-amount">${formatCurrency(owed)}</span>
         <button class="ib-pill" onclick="openDebtReport('${s.id}')">דוח</button>
       </div>`).join('')}
-      ${debtors.length > 3 ? `<button class="ib-more" onclick="showPage('payments')">ועוד ${debtors.length - 3} תלמידים ←</button>` : ''}
+      ${debtors.length > 3 ? `<button class="ib-more" onclick="showPage('payments')">ועוד ${debtors.length - 3} ${t('clients')} ←</button>` : ''}
     </div>`);
   }
 
@@ -3859,7 +3860,7 @@ function renderInbox() {
     const pk = getStudentPackages(s.id);
     if (!pk.length) return null;
     const live = pk.filter(p => { const st = packageStatus(p); return !st.expired && st.remaining > 0; });
-    const rem = live.reduce((t, p) => t + packageStatus(p).remaining, 0);
+    const rem = live.reduce((acc, p) => acc + packageStatus(p).remaining, 0);
     return rem <= 1 ? { s, rem } : null;
   }).filter(Boolean);
   if (lowCards.length) {
@@ -3868,7 +3869,7 @@ function renderInbox() {
       <div class="ib-label">כרטיסיות לחידוש</div>
       ${lowCards.map(({ s, rem }) => `<div class="ib-row">
         <span class="ib-emoji">🎟</span>
-        <div class="ib-main"><div class="ib-title">${escapeHtml(s.name)}</div><div class="ib-sub">${rem ? 'נותר שיעור אחד' : 'הכרטיסייה נוצלה'}</div></div>
+        <div class="ib-main"><div class="ib-title">${escapeHtml(s.name)}</div><div class="ib-sub">${rem ? `נותר ${t('appointment')} אחד` : 'הכרטיסייה נוצלה'}</div></div>
         <button class="ib-pill" onclick="openPackagesModal('${s.id}')">חידוש</button>
       </div>`).join('')}
     </div>`);
@@ -3891,15 +3892,15 @@ function renderMonthStats() {
   if (sel && sel.value) { const [sy, sm] = sel.value.split('-'); y = +sy; m = +sm - 1; }
   const inMonth = (l, yy, mm) => { const d = new Date(l.date); return d.getFullYear() === yy && d.getMonth() === mm; };
   const monthLessons = lessons.filter(l => inMonth(l, y, m));
-  const income = monthLessons.reduce((t, l) => t + (l.amount || 0), 0);
+  const income = monthLessons.reduce((acc, l) => acc + (l.amount || 0), 0);
   const active = getStudents().filter(s => s.isActive !== false);
-  const debt = active.reduce((t, s) => { const b = getStudentBalance(s.id); return b < 0 ? t - b : t; }, 0);
+  const debt = active.reduce((acc, s) => { const b = getStudentBalance(s.id); return b < 0 ? acc - b : acc; }, 0);
   document.getElementById('stat-income').textContent = formatCurrency(income);
   document.getElementById('stat-lessons').textContent = monthLessons.length;
   document.getElementById('stat-debt').textContent = formatCurrency(debt);
   document.getElementById('stat-active').textContent = active.length;
   const [py, pm] = m === 0 ? [y - 1, 11] : [y, m - 1];
-  const prev = lessons.filter(l => inMonth(l, py, pm)).reduce((t, l) => t + (l.amount || 0), 0);
+  const prev = lessons.filter(l => inMonth(l, py, pm)).reduce((acc, l) => acc + (l.amount || 0), 0);
   const deltaEl = document.getElementById('stat-income-delta');
   if (prev > 0) {
     const pct = Math.round((income - prev) / prev * 100);
@@ -3918,7 +3919,7 @@ function renderIncomeChart(lessons) {
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const inc = lessons.filter(l => { const ld = new Date(l.date); return ld.getFullYear() === d.getFullYear() && ld.getMonth() === d.getMonth(); })
-      .reduce((t, l) => t + (l.amount || 0), 0);
+      .reduce((acc, l) => acc + (l.amount || 0), 0);
     months.push({ label: HE_MONTHS[d.getMonth()].slice(0, 3), inc, current: i === 0 });
   }
   const max = Math.max(...months.map(x => x.inc), 1);
@@ -4002,15 +4003,15 @@ function renderAdminUsersList(users, isFiltered) {
           ${(() => { const v = (_profPick.list || []).find(x => x.id === u.profession); return v ? `<span class="adm-pill">${v.icon} ${escapeHtml(v.label[u.gender === 'm' ? 'm' : 'f'])}</span>` : ''; })()}</div>
         <div class="adm-email">${escapeHtml(u.email)}</div>
         <div class="adm-stats">
-          <span><b>${u.activeStudentCount}</b> תלמידים${u.studentCount !== u.activeStudentCount ? ` <small>(${u.studentCount} סה״כ)</small>` : ''}</span>
-          <span><b>${u.lessonsThisMonth || 0}</b> שיעורים החודש</span>
+          <span><b>${u.activeStudentCount}</b> ${t('clients')}${u.studentCount !== u.activeStudentCount ? ` <small>(${u.studentCount} סה״כ)</small>` : ''}</span>
+          <span><b>${u.lessonsThisMonth || 0}</b> ${t('appointments')} החודש</span>
           <span><b>${u.lessonCount}</b> סה״כ</span>
         </div>
-        <div class="adm-meta">הצטרפ/ה ${relativeTime(u.created_at)} · שיעור אחרון: ${last}</div>
+        <div class="adm-meta">הצטרפ/ה ${relativeTime(u.created_at)} · ${t('appointment')} אחרון: ${last}</div>
         <div id="admin-user-students-${u.id}" class="adm-students" style="display:none"></div>
       </div>
       <div class="adm-actions">
-        <button class="btn btn-ghost btn-xs" onclick="toggleAdminUserStudents('${u.id}', this)">תלמידים ▾</button>
+        <button class="btn btn-ghost btn-xs" onclick="toggleAdminUserStudents('${u.id}', this)">${t('clients')} ▾</button>
         ${!u.isAdmin ? `<button class="btn btn-ghost btn-xs text-danger" onclick="adminSuspendUser('${u.id}', '${escapeHtml(u.name || u.email).replace(/'/g, '&#39;')}')">השבתה</button>` : ''}
       </div>
     </div>`;
@@ -4018,14 +4019,14 @@ function renderAdminUsersList(users, isFiltered) {
 }
 async function toggleAdminUserStudents(userId, btn) {
   const box = document.getElementById(`admin-user-students-${userId}`);
-  if (box.style.display !== 'none') { box.style.display = 'none'; btn.textContent = 'תלמידים ▾'; return; }
+  if (box.style.display !== 'none') { box.style.display = 'none'; btn.textContent = `${t('clients')} ▾`; return; }
   box.style.display = 'flex';
-  btn.textContent = 'תלמידים ▴';
+  btn.textContent = `${t('clients')} ▴`;
   box.innerHTML = '<span class="text-muted">טוען...</span>';
   try {
     const r = await fetch(`/api/admin/users/${userId}/students`);
     const students = await r.json();
-    if (!r.ok || !students.length) { box.innerHTML = '<span class="text-muted">אין תלמידים</span>'; return; }
+    if (!r.ok || !students.length) { box.innerHTML = `<span class="text-muted">אין ${t('clients')}</span>`; return; }
     box.innerHTML = students.map(s => `<span class="adm-chip ${s.isActive ? '' : 'off'}">${escapeHtml(s.name) || '(ללא שם)'}</span>`).join('');
   } catch (e) { box.innerHTML = '<span class="text-muted">שגיאה בטעינה</span>'; }
 }
@@ -4112,14 +4113,14 @@ function unlockPageScroll() {
 function showPage(name) {
   if (name === 'admin' && !window._isAdmin) return; // defense in depth — the gear icon is already hidden for everyone else
   document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; p.classList.remove('active-anim'); });
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.bottom-nav-item').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(tParam => tParam.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-item').forEach(tParam => tParam.classList.remove('active'));
   const pg = document.getElementById(`page-${name}`);
   pg.style.display = 'block';
   setTimeout(() => pg.classList.add('active-anim'), 10);
   const topTab = document.querySelector(`.nav-tab[data-page="${name}"]`);
   if (topTab) topTab.classList.add('active');
-  document.querySelectorAll(`.bottom-nav-item[data-page="${name}"]`).forEach(t => t.classList.add('active'));
+  document.querySelectorAll(`.bottom-nav-item[data-page="${name}"]`).forEach(tParam => tParam.classList.add('active'));
   if (name === 'dashboard') renderDashboard();
   if (name === 'students')  renderStudents();
   if (name === 'lessons')   renderLessons();
@@ -4162,8 +4163,8 @@ function renderStudents() {
     btn.style.display = '';
     notice.style.display = showInactiveStudents ? '' : '';
     notice.textContent = showInactiveStudents
-      ? `מציג ${inactiveCount} תלמיד${inactiveCount > 1 ? 'ים' : ''} לא פעיל${inactiveCount > 1 ? 'ים' : ''}`
-      : `${inactiveCount} תלמיד${inactiveCount > 1 ? 'ים' : ''} לא פעיל${inactiveCount > 1 ? 'ים' : ''} מוסתר${inactiveCount > 1 ? 'ים' : ''}`;
+      ? `מציג ${inactiveCount} ${inactiveCount > 1 ? t('clients') : t('client')} לא פעיל${inactiveCount > 1 ? 'ים' : ''}`
+      : `${inactiveCount} ${inactiveCount > 1 ? t('clients') : t('client')} לא פעיל${inactiveCount > 1 ? 'ים' : ''} מוסתר${inactiveCount > 1 ? 'ים' : ''}`;
     notice.style.display = '';
   } else {
     btn.style.display = 'none';
@@ -4176,9 +4177,9 @@ function renderStudents() {
   if (students.length === 0) {
     el.innerHTML = `<div class="empty-state-card">
       <div class="empty-state-icon">🎓</div>
-      <p>עדיין אין תלמידים</p>
-      <p style="margin-bottom:16px">לחץ "הוסף תלמיד" להתחיל</p>
-      <button class="btn btn-primary" onclick="openAddStudentModal()">+ הוסף תלמיד</button>
+      <p>עדיין אין ${t('clients')}</p>
+      <p style="margin-bottom:16px">לחץ "הוסף ${t('client')}" להתחיל</p>
+      <button class="btn btn-primary" onclick="openAddStudentModal()">+ הוסף ${t('client')}</button>
     </div>`;
     return;
   }
@@ -4202,21 +4203,21 @@ function renderStudents() {
         <span class="badge ${balClass}" style="flex-shrink:0;${balance < 0 ? 'cursor:pointer' : ''}" ${balance < 0 ? `onclick="openStudentActions('${s.id}')"` : ''}>${balText}</span>
       </div>
       <div class="student-info">
-        <span>💰 ${formatCurrency(s.hourlyRate)}/שיעור</span>
-        <span>⏱ ${s.lessonDurationMinutes || 50} דק' לשיעור</span>
+        <span>💰 ${formatCurrency(s.hourlyRate)}/${t('appointment')}</span>
+        <span>⏱ ${s.lessonDurationMinutes || 50} דק' ל${t('appointment')}</span>
         <span>📅 ${days || 'ימים לא הוגדרו'}</span>
         ${s.phone ? `<span>📞 <a href="tel:${escapeHtml(s.phone)}" style="color:var(--primary);text-decoration:none">${escapeHtml(s.phone)}</a></span>` : ''}
         ${studentPackageLine(s.id) ? `<span class="card-link" onclick="openPackagesModal('${s.id}')">${studentPackageLine(s.id)}</span>` : ''}
         ${studentExamLine(s.id) ? `<span class="card-link" onclick="openExamsModal('${s.id}')">${studentExamLine(s.id)}</span>` : ''}
         <span style="display:flex;gap:10px;flex-wrap:wrap">
-          <span>📊 ${lessonCount} שיעורים</span>
+          <span>📊 ${lessonCount} ${t('appointments')}</span>
           <span class="text-success">✅ ${paidCount} שולמו</span>
           ${pendingCount > 0 ? `<span class="text-warning">⏳ ${pendingCount} ממתינים</span>` : ''}
         </span>
       </div>
       ${s.notes ? `<p class="student-notes">${escapeHtml(s.notes)}</p>` : ''}
       <div class="student-actions">
-        ${!inactive ? `<button class="btn btn-primary btn-sm" onclick="openAddLessonModal('${s.id}')">+ שיעור</button>` : ''}
+        ${!inactive ? `<button class="btn btn-primary btn-sm" onclick="openAddLessonModal('${s.id}')">+ ${t('appointment')}</button>` : ''}
         <button class="btn btn-ghost btn-sm" onclick="openEditStudentModal('${s.id}')"><svg class="icon icon-sm"><use href="#icon-pencil"/></svg> עריכה</button>
         <button class="btn btn-ghost btn-sm sa-more" onclick="openStudentActions('${s.id}')">עוד פעולות <span class="sa-dots">⋯</span></button>
       </div>
@@ -4229,19 +4230,19 @@ function buildStudentForm(s) {
   const currentColor = s?.color || colors[0];
   return `
     <div class="form-group">
-      <label>שם תלמיד</label>
+      <label>שם ${t('client')}</label>
       <input type="text" id="f-name" value="${escapeHtml(s?.name)}" placeholder="שם מלא">
     </div>
     <div class="form-group">
-      <label>מחיר לשיעור (₪)</label>
+      <label>מחיר ל${t('appointment')} (₪)</label>
       <input type="number" id="f-rate" value="${s?.hourlyRate || verticalDefault('price', 150)}" min="0" step="10">
     </div>
     <div class="form-group">
-      <label>אורך שיעור בודד (בדקות)</label>
+      <label>אורך ${t('appointment')} בודד (בדקות)</label>
       <input type="number" id="f-lesson-minutes" value="${s?.lessonDurationMinutes || verticalDefault('durationMinutes', 50)}" min="5" step="5">
     </div>
     <div class="form-group">
-      <label>ימי שיעור</label>
+      <label>${t('schedule_days')}</label>
       <div class="days-checkboxes">
         ${DAY_NAMES.map((d,i) => `<label class="day-checkbox">
           <input type="checkbox" value="${i}" ${(s?.scheduledDays||[]).includes(i) ? 'checked' : ''}> ${d}
@@ -4255,7 +4256,7 @@ function buildStudentForm(s) {
       </div>
     </div>
     <div class="form-group">
-      <label>טלפון תלמיד</label>
+      <label>טלפון ${t('client')}</label>
       <input type="tel" id="f-phone" value="${escapeHtml(s?.phone)}" placeholder="05X-XXXXXXX" style="direction:ltr;text-align:right">
     </div>
     <div class="form-group">
@@ -4282,7 +4283,7 @@ function buildStudentForm(s) {
     </div>
     <div class="form-group">
       <label class="checkbox-label">
-        <input type="checkbox" id="f-active" ${s?.isActive === false ? '' : 'checked'}> תלמיד פעיל
+        <input type="checkbox" id="f-active" ${s?.isActive === false ? '' : 'checked'}> ${t('client')} פעיל
       </label>
     </div>`;
 }
@@ -4293,9 +4294,9 @@ function selectColor(el) {
 }
 
 function openAddStudentModal() {
-  openModal('הוסף תלמיד', buildStudentForm(null), async () => {
+  openModal(`הוסף ${t('client')}`, buildStudentForm(null), async () => {
     const name = document.getElementById('f-name').value.trim();
-    if (!name) { showToast('נא להזין שם תלמיד', 'error'); return; }
+    if (!name) { showToast(`נא להזין שם ${t('client')}`, 'error'); return; }
     const days  = [...document.querySelectorAll('.days-checkboxes input:checked')].map(i => parseInt(i.value));
     const color = document.querySelector('.color-dot.selected')?.dataset.color || STUDENT_COLORS[0];
     const student = {
@@ -4315,17 +4316,17 @@ function openAddStudentModal() {
     _students.push(student);
     closeModal();
     renderStudents();
-    showToast(`תלמיד "${name}" נוסף בהצלחה`);
+    showToast(`${t('client')} "${name}" נוסף בהצלחה`);
   });
 }
 
 function openEditStudentModal(id) {
   const s = getStudentById(id);
   if (!s) return;
-  const deleteBtn = `<hr style="margin:14px 0"><button class="btn btn-ghost btn-sm text-danger" style="border-color:var(--danger)" onclick="deleteStudent('${id}')"><svg class="icon icon-sm"><use href="#icon-trash"/></svg> מחק תלמיד</button>`;
-  openModal('ערוך תלמיד', buildStudentForm(s) + deleteBtn, async () => {
+  const deleteBtn = `<hr style="margin:14px 0"><button class="btn btn-ghost btn-sm text-danger" style="border-color:var(--danger)" onclick="deleteStudent('${id}')"><svg class="icon icon-sm"><use href="#icon-trash"/></svg> מחק ${t('client')}</button>`;
+  openModal(`ערוך ${t('client')}`, buildStudentForm(s) + deleteBtn, async () => {
     const name = document.getElementById('f-name').value.trim();
-    if (!name) { showToast('נא להזין שם תלמיד', 'error'); return; }
+    if (!name) { showToast(`נא להזין שם ${t('client')}`, 'error'); return; }
     const days  = [...document.querySelectorAll('.days-checkboxes input:checked')].map(i => parseInt(i.value));
     const color = document.querySelector('.color-dot.selected')?.dataset.color || s.color;
     const updated = { ...s, name, hourlyRate: parseFloat(document.getElementById('f-rate').value) || s.hourlyRate,
@@ -4340,13 +4341,13 @@ function openEditStudentModal(id) {
     _students = _students.map(st => st.id === id ? updated : st);
     closeModal();
     renderStudents();
-    showToast('פרטי תלמיד עודכנו');
+    showToast(`פרטי ${t('client')} עודכנו`);
   });
 }
 
 async function deleteStudent(id) {
   const s = getStudentById(id);
-  confirmAction(`למחוק את ${s?.name}?\nכל השיעורים והתשלומים שלו יימחקו גם כן.`, async () => {
+  confirmAction(`למחוק את ${s?.name}?\nכל ה${t('appointments')} והתשלומים שלו יימחקו גם כן.`, async () => {
     const deleted = { student: s, lessons: _lessons.filter(l => l.studentId === id), payments: _payments.filter(p => p.studentId === id),
       packages: _packages.filter(p => p.studentId === id) };
     await apiCall('DELETE', `/api/students/${id}`);
@@ -4359,7 +4360,7 @@ async function deleteStudent(id) {
     updateBookingBadge();
     closeModal();
     renderStudents();
-    showUndoToast(`תלמיד "${s?.name}" נמחק`, async () => {
+    showUndoToast(`${t('client')} "${s?.name}" נמחק`, async () => {
       await apiCall('POST', '/api/students', deleted.student);
       _students.push(deleted.student);
       for (const l of deleted.lessons) { await apiCall('POST', '/api/lessons', l); _lessons.push(l); }
@@ -4383,14 +4384,14 @@ function viewStudentHistory(id) {
         ${balance < 0 ? `לתשלום ${formatCurrency(Math.abs(balance))}` : balance > 0 ? `זכות ${formatCurrency(balance)}` : 'מאוזן ✓'}
       </span>
     </div>
-    <div style="font-weight:600;margin-bottom:8px">שיעורים (${lessons.length})</div>
+    <div style="font-weight:600;margin-bottom:8px">${t('appointments')} (${lessons.length})</div>
     <div class="history-list">
       ${lessons.length ? lessons.map(l => `<div class="history-item">
         <span>${formatDate(l.date)}</span>
-        <span class="text-muted">${l.durationHours} שיעור${l.durationHours>1?'ים':''}</span>
+        <span class="text-muted">${l.durationHours} ${l.durationHours>1 ? t('appointments') : t('appointment')}</span>
         <span>${formatCurrency(l.amount)}</span>
         ${lessonBadge(l)}
-      </div>`).join('') : '<p class="text-muted" style="font-size:13px">אין שיעורים</p>'}
+      </div>`).join('') : `<p class="text-muted" style="font-size:13px">אין ${t('appointments')}</p>`}
     </div>
     <div style="font-weight:600;margin:14px 0 8px">תשלומים (${payments.length})</div>
     <div class="history-list">
@@ -4421,7 +4422,7 @@ function openDebtReport(id) {
     const remaining = (l.amount||0) - (l.paidAmount||0);
     return '<tr>' +
     '<td style="padding:9px 12px;border-bottom:1px solid #f1f5f9">' + formatDate(l.date) + '</td>' +
-    '<td style="padding:9px 12px;border-bottom:1px solid #f1f5f9">' + (l.durationHours||1) + ' שיעור' + ((l.durationHours||1)>1?'ים':'') + (l.time ? ' · ' + l.time : '') + '</td>' +
+    '<td style="padding:9px 12px;border-bottom:1px solid #f1f5f9">' + (l.durationHours||1) + ` ${t('appointment')}` + ((l.durationHours||1)>1?'ים':'') + (l.time ? ' · ' + l.time : '') + '</td>' +
     '<td style="padding:9px 12px;border-bottom:1px solid #f1f5f9;color:#64748b">' + (isPartial ? `שולם חלקית (${formatCurrency(l.paidAmount)}) · ` : '') + (l.notes||'') + '</td>' +
     '<td style="padding:9px 12px;border-bottom:1px solid #f1f5f9;font-weight:600">' + (isPartial ? `<span style="color:#ea580c">${formatCurrency(remaining)}</span>` : formatCurrency(l.amount||0)) + '</td>' +
     '</tr>';
@@ -4431,11 +4432,11 @@ function openDebtReport(id) {
     '<div style="font-family:-apple-system,Arial,sans-serif;direction:rtl;color:#1e293b;padding:4px 0">' +
     '<div style="text-align:center;margin-bottom:20px">' +
     '<div style="font-size:12px;color:#64748b;margin-bottom:4px">' + today + '</div>' +
-    '<h2 style="font-size:20px;font-weight:700;margin:0 0 4px">סיכום שיעורים</h2>' +
+    `<h2 style="font-size:20px;font-weight:700;margin:0 0 4px">סיכום ${t('appointments')}</h2>` +
     '<div style="font-size:16px;font-weight:600;color:#2563eb">' + s.name + '</div>' +
     '</div>' +
     (pendingLessons.length === 0
-      ? '<div style="text-align:center;padding:32px;color:#10b981;font-size:16px">✅ אין שיעורים ממתינים לתשלום</div>'
+      ? `<div style="text-align:center;padding:32px;color:#10b981;font-size:16px">✅ אין ${t('appointments')} ממתינים לתשלום</div>`
       : '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:14px">' +
         '<thead><tr style="background:#f1f5f9">' +
         '<th style="padding:9px 12px;text-align:right;font-weight:600;border-bottom:2px solid #e2e8f0">תאריך</th>' +
@@ -4455,7 +4456,7 @@ function openDebtReport(id) {
   const recipientName  = s.parentPhone ? (s.parentName || 'שלום') : s.name;
 
   const whatsappText = 'שלום ' + recipientName + ' 😊\n' +
-    'שיעורים הממתינים לתשלום עבור ' + s.name + ':\n\n' +
+    `${t('appointments')} הממתינים לתשלום עבור ` + s.name + ':\n\n' +
     pendingLessons.map(l => '• ' + formatDate(l.date) + ' — ' + formatCurrency(l.amount||0)).join('\n') +
     '\n\n*סה"כ לתשלום: ' + formatCurrency(totalOwed) + '*';
 
@@ -4520,9 +4521,9 @@ function renderLessonsTable() {
   if (lessons.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8"><div style="text-align:center;padding:40px 20px;color:var(--text-muted)">
       <div style="font-size:40px;margin-bottom:10px">📚</div>
-      <div style="font-size:16px;font-weight:600;margin-bottom:6px">אין שיעורים להצגה</div>
-      <div style="font-size:13px;margin-bottom:14px">הוסף שיעור חדש או שנה את הסינון</div>
-      <button class="btn btn-primary btn-sm" onclick="openAddLessonModal(null)">+ הוסף שיעור</button>
+      <div style="font-size:16px;font-weight:600;margin-bottom:6px">אין ${t('appointments')} להצגה</div>
+      <div style="font-size:13px;margin-bottom:14px">הוסף ${t('appointment')} חדש או שנה את הסינון</div>
+      <button class="btn btn-primary btn-sm" onclick="openAddLessonModal(null)">+ הוסף ${t('appointment')}</button>
     </div></td></tr>`;
     document.getElementById('lessons-total').textContent = '';
     document.getElementById('bulk-toolbar').classList.remove('show');
@@ -4534,13 +4535,13 @@ function renderLessonsTable() {
       <td class="cell-select" style="text-align:center"><input type="checkbox" class="lesson-cb" data-id="${l.id}" onchange="updateBulkToolbar()"></td>
       <td data-label="תאריך">${formatDate(l.date)}</td>
       <td data-label="תלמיד"><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
-      <td data-label="משך">${l.durationHours} שיעור${l.durationHours>1?'ים':''}</td>
+      <td data-label="משך">${l.durationHours} ${l.durationHours>1 ? t('appointments') : t('appointment')}</td>
       <td data-label="סכום">${formatCurrency(l.amount)}</td>
       <td data-label="סטטוס">${lessonBadge(l)}</td>
       <td data-label="הערות" class="text-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.notes)}</td>
       <td class="cell-actions"><div class="actions-cell">
         ${l.packageId ? '' : `<button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}')" title="${getLessonPayStatus(l) === 'paid' ? 'בטל סימון' : 'סמן שולם'}">${toggleBtnLabel(l)}</button>`}
-        ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ לתלמיד">💬 ווצאפ</button>` : ''}
+        ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ ל${t('client')}">💬 ווצאפ</button>` : ''}
         <button class="btn btn-ghost btn-xs" onclick="openEditLessonModal('${l.id}')">ערוך</button>
         <button class="btn btn-ghost btn-xs text-danger" onclick="deleteLesson('${l.id}')">מחק</button>
       </div></td>
@@ -4552,7 +4553,7 @@ function renderLessonsTable() {
   const partial = lessons.filter(l => getLessonPayStatus(l) === 'partial').reduce((s,l) => s + (l.paidAmount||0), 0);
   const partialCount = lessons.filter(l => getLessonPayStatus(l) === 'partial').length;
   document.getElementById('lessons-total').textContent =
-    `${lessons.length} שיעורים | סה"כ: ${formatCurrency(total)} | שולם: ${formatCurrency(paid)}${partialCount ? ` | חלקי: ${formatCurrency(partial)}` : ''} | ממתין: ${formatCurrency(total - paid - partial)}`;
+    `${lessons.length} ${t('appointments')} | סה"כ: ${formatCurrency(total)} | שולם: ${formatCurrency(paid)}${partialCount ? ` | חלקי: ${formatCurrency(partial)}` : ''} | ממתין: ${formatCurrency(total - paid - partial)}`;
 }
 
 function buildLessonForm(l, defaultStudentId, defaultDate) {
@@ -4562,9 +4563,9 @@ function buildLessonForm(l, defaultStudentId, defaultDate) {
   const payL = l?.packageId ? null : l; // card lessons' isPaid is bookkeeping, not a real payment
   return `
     <div class="form-group">
-      <label>תלמיד</label>
+      <label>${t('client')}</label>
       <select id="f-student" onchange="renderLessonPackageBox();updateLessonAmount()">
-        <option value="">בחר תלמיד...</option>
+        <option value="">בחר ${t('client')}...</option>
         ${students.map(s => `<option value="${s.id}" ${s.id===sid ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
       </select>
     </div>
@@ -4580,9 +4581,9 @@ function buildLessonForm(l, defaultStudentId, defaultDate) {
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group">
-        <label>מספר שיעורים</label>
+        <label>מספר ${t('appointments')}</label>
         <select id="f-duration" onchange="renderLessonPackageBox();updateLessonAmount()">
-          ${[1,2,3,4].map(n => `<option value="${n}" ${(l?.durationHours||1)==n ? 'selected' : ''}>${n} שיעור${n>1?'ים':''}</option>`).join('')}
+          ${[1,2,3,4].map(n => `<option value="${n}" ${(l?.durationHours||1)==n ? 'selected' : ''}>${n} ${n>1 ? t('appointments') : t('appointment')}</option>`).join('')}
         </select>
       </div>
       <div class="form-group">
@@ -4591,11 +4592,11 @@ function buildLessonForm(l, defaultStudentId, defaultDate) {
       </div>
     </div>
     <div class="form-group" style="background:var(--primary-light);border-radius:10px;padding:12px">
-      <div style="font-size:12.5px;font-weight:600;color:var(--primary);margin-bottom:8px">👀 גלוי להורה/תלמיד בקישור המעקב</div>
+      <div style="font-size:12.5px;font-weight:600;color:var(--primary);margin-bottom:8px">👀 גלוי להורה/${t('client')} בקישור המעקב</div>
       <label>מה עשינו היום</label>
       <input type="text" id="f-topic" value="${escapeHtml(l?.topic)}" placeholder="למשל: שברים, פרק ב'">
       <label style="margin-top:8px;display:block">שיעורי בית</label>
-      <textarea id="f-homework" rows="2" placeholder="מה לתרגל עד השיעור הבא">${escapeHtml(l?.homework)}</textarea>
+      <textarea id="f-homework" rows="2" placeholder="מה לתרגל עד ה${t('appointment')} הבא">${escapeHtml(l?.homework)}</textarea>
     </div>
     <div class="form-group">
       <label>הערות (פנימי, לא מוצג להורה)</label>
@@ -4640,10 +4641,10 @@ function updateLessonAmount() {
 }
 
 function openAddLessonModal(defaultStudentId, defaultDate) {
-  openModal('הוסף שיעור', buildLessonForm(null, defaultStudentId, defaultDate), async () => {
+  openModal(`הוסף ${t('appointment')}`, buildLessonForm(null, defaultStudentId, defaultDate), async () => {
     const sid  = document.getElementById('f-student').value;
     const date = document.getElementById('f-date').value;
-    if (!sid)  { showToast('נא לבחור תלמיד', 'error'); return; }
+    if (!sid)  { showToast(`נא לבחור ${t('client')}`, 'error'); return; }
     if (!date) { showToast('נא לבחור תאריך', 'error'); return; }
     const duration = parseFloat(document.getElementById('f-duration').value) || 1;
     const s = getStudentById(sid);
@@ -4687,12 +4688,12 @@ function openAddLessonModal(defaultStudentId, defaultDate) {
     closeModal();
     renderLessonsTable();
     if (usePkg && pkgCount < allLessons.length) {
-      setTimeout(() => showToast(`🎟 רק ${pkgCount} מתוך ${allLessons.length} השיעורים נוכו מהכרטיסייה — השאר כשיעורים רגילים`, 'warning'), 7500);
+      setTimeout(() => showToast(`🎟 רק ${pkgCount} מתוך ${allLessons.length} ה${t('appointments')} נוכו מהכרטיסייה — השאר כ${t('appointments')} רגילים`, 'warning'), 7500);
     } else if (usePkg) {
       setTimeout(() => packageLowNotice(sid), 7500);
     }
     if (isRecurring) {
-      showToast(`${allLessons.length} שיעורים נוספו! 🔄`);
+      showToast(`${allLessons.length} ${t('appointments')} נוספו! 🔄`);
     } else {
       showToastWithCalendar(lesson);
     }
@@ -4703,7 +4704,7 @@ function openAddLessonModal(defaultStudentId, defaultDate) {
 function openEditLessonModal(id) {
   const l = getLessons().find(x => x.id === id);
   if (!l) return;
-  openModal('ערוך שיעור', buildLessonForm(l, null), async () => {
+  openModal(`ערוך ${t('appointment')}`, buildLessonForm(l, null), async () => {
     const sid  = document.getElementById('f-student').value;
     const date = document.getElementById('f-date').value;
     if (!sid || !date) { showToast('נא למלא שדות חובה', 'error'); return; }
@@ -4727,15 +4728,15 @@ function openEditLessonModal(id) {
     _lessons = _lessons.map(x => x.id === id ? updated : x);
     closeModal();
     renderLessonsTable();
-    showToast('שיעור עודכן');
+    showToast(`${t('appointment')} עודכן`);
   });
   setTimeout(renderLessonPackageBox, 50);
 }
 
 async function markAllLessonsPaid(studentId) {
   const pending = _lessons.filter(l => l.studentId === studentId && !l.isPaid);
-  if (pending.length === 0) { showToast('אין שיעורים ממתינים'); return; }
-  confirmAction(`לסמן ${pending.length} שיעורים כשולמו?`, async () => {
+  if (pending.length === 0) { showToast(`אין ${t('appointments')} ממתינים`); return; }
+  confirmAction(`לסמן ${pending.length} ${t('appointments')} כשולמו?`, async () => {
     for (const l of pending) {
       const updated = { ...l, isPaid: true, paidAmount: l.amount };
       await apiCall('PUT', `/api/lessons/${l.id}`, updated);
@@ -4743,7 +4744,7 @@ async function markAllLessonsPaid(studentId) {
     }
     renderStudents();
     if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
-    showToast(`${pending.length} שיעורים סומנו כשולמו ✓`);
+    showToast(`${pending.length} ${t('appointments')} סומנו כשולמו ✓`);
   }, '✓', 'סמן שולם');
 }
 
@@ -4751,7 +4752,7 @@ async function toggleLessonPaid(id) {
   const lesson = _lessons.find(l => l.id === id);
   if (!lesson) return;
   if (lesson.packageId) {
-    showToast('שיעור מכרטיסייה — לשינוי פתחי את עריכת השיעור', 'warning');
+    showToast(`${t('appointment')} מכרטיסייה — לשינוי ${g('פתחי', 'פתח')} את עריכת ה${t('appointment')}`, 'warning');
     return Promise.resolve();
   }
   const status = getLessonPayStatus(lesson);
@@ -4805,12 +4806,12 @@ async function setLessonPartialPaid(id) {
 
 async function deleteLesson(id) {
   const lesson = _lessons.find(l => l.id === id);
-  confirmAction('למחוק שיעור זה?', async () => {
+  confirmAction(`למחוק ${t('appointment')} זה?`, async () => {
     await apiCall('DELETE', `/api/lessons/${id}`);
     _lessons = _lessons.filter(l => l.id !== id);
     if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
     if (document.getElementById('page-dashboard')?.style.display !== 'none') renderCalendar();
-    showUndoToast('שיעור נמחק', async () => {
+    showUndoToast(`${t('appointment')} נמחק`, async () => {
       await apiCall('POST', '/api/lessons', lesson);
       _lessons.push(lesson);
       if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
@@ -4827,7 +4828,7 @@ function updateBulkToolbar() {
     toolbar.classList.remove('show');
   } else {
     toolbar.classList.add('show');
-    document.getElementById('bulk-count').textContent = `${cbs.length} שיעורים נבחרו`;
+    document.getElementById('bulk-count').textContent = `${cbs.length} ${t('appointments')} נבחרו`;
   }
   const allCbs = document.querySelectorAll('.lesson-cb');
   const selAll = document.getElementById('select-all-cb');
@@ -4850,7 +4851,7 @@ function clearBulkSelection() {
 async function bulkMarkPaid() {
   const ids = [...document.querySelectorAll('.lesson-cb:checked')].map(cb => cb.dataset.id);
   if (!ids.length) return;
-  confirmAction(`לסמן ${ids.length} שיעורים כשולמו?`, async () => {
+  confirmAction(`לסמן ${ids.length} ${t('appointments')} כשולמו?`, async () => {
     for (const id of ids) {
       const lesson = _lessons.find(l => l.id === id);
       if (!lesson || lesson.isPaid) continue;
@@ -4860,7 +4861,7 @@ async function bulkMarkPaid() {
     }
     clearBulkSelection();
     renderLessonsTable();
-    showToast(`${ids.length} שיעורים סומנו כשולמו ✓`);
+    showToast(`${ids.length} ${t('appointments')} סומנו כשולמו ✓`);
   }, '✓', 'סמן שולם');
 }
 
@@ -4868,14 +4869,14 @@ async function bulkDelete() {
   const ids = [...document.querySelectorAll('.lesson-cb:checked')].map(cb => cb.dataset.id);
   if (!ids.length) return;
   const deleted = ids.map(id => _lessons.find(l => l.id === id)).filter(Boolean);
-  confirmAction(`למחוק ${ids.length} שיעורים?`, async () => {
+  confirmAction(`למחוק ${ids.length} ${t('appointments')}?`, async () => {
     for (const id of ids) {
       await apiCall('DELETE', `/api/lessons/${id}`);
       _lessons = _lessons.filter(l => l.id !== id);
     }
     clearBulkSelection();
     renderLessonsTable();
-    showUndoToast(`${ids.length} שיעורים נמחקו`, async () => {
+    showUndoToast(`${ids.length} ${t('appointments')} נמחקו`, async () => {
       for (const lesson of deleted) {
         await apiCall('POST', '/api/lessons', lesson);
         _lessons.push(lesson);
@@ -4902,9 +4903,9 @@ function studentBalanceAsOf(studentId, asOf) {
   const inScope = d => !asOf || (d || '') <= asOf;
   const ls = getLessons().filter(l => l.studentId === studentId && inScope(l.date));
   const pays = getPayments().filter(p => p.studentId === studentId && inScope(p.date));
-  return pays.reduce((t, p) => t + (p.amount || 0), 0)
-    + ls.reduce((t, l) => t + (l.paidAmount || 0), 0)
-    - ls.reduce((t, l) => t + (l.amount || 0), 0);
+  return pays.reduce((acc, p) => acc + (p.amount || 0), 0)
+    + ls.reduce((acc, l) => acc + (l.paidAmount || 0), 0)
+    - ls.reduce((acc, l) => acc + (l.amount || 0), 0);
 }
 function setPayMode(m) {
   payMode = m;
@@ -4927,46 +4928,46 @@ function renderPayments() {
   let from = null, to = null, asOf = null, explain = '';
   if (payMode === 'now') {
     to = today; asOf = today;
-    explain = `שיעורים שכבר התקיימו עד היום (${formatDate(today).slice(0, 5)}) מול התשלומים שהתקבלו`;
+    explain = `${t('appointments')} שכבר התקיימו עד היום (${formatDate(today).slice(0, 5)}) מול התשלומים שהתקבלו`;
   } else if (payMode === 'month') {
     from = monthStart; to = isFutureMonth ? monthEnd : (isCurrentMonth ? today : monthEnd);
     asOf = isFutureMonth ? monthEnd : to;
-    explain = isFutureMonth ? 'חודש עתידי — מוצגים השיעורים שכבר נקבעו בו'
-      : isCurrentMonth ? `מה שהתקיים החודש עד היום · היתרה של כל תלמיד נכונה להיום`
-      : `מה שהתקיים בחודש · היתרה של כל תלמיד נכונה לסוף החודש`;
+    explain = isFutureMonth ? `חודש עתידי — מוצגים ה${t('appointments')} שכבר נקבעו בו`
+      : isCurrentMonth ? `מה שהתקיים החודש עד היום · היתרה של כל ${t('client')} נכונה להיום`
+      : `מה שהתקיים בחודש · היתרה של כל ${t('client')} נכונה לסוף החודש`;
   } else {
-    explain = 'כל השיעורים — כולל שיעורים שנקבעו קדימה וטרם התקיימו';
+    explain = `כל ה${t('appointments')} — כולל ${t('appointments')} שנקבעו קדימה וטרם התקיימו`;
   }
   const inRange = d => (!from || d >= from) && (!to || d <= to);
 
   const lessons = getLessons().filter(l => inRange(l.date));
   const payments = getPayments().filter(p => inRange(p.date));
-  const lessonsValue = lessons.reduce((t, l) => t + (l.amount || 0), 0);
-  const received = payments.reduce((t, p) => t + (p.amount || 0), 0) + lessons.reduce((t, l) => t + (l.paidAmount || 0), 0);
+  const lessonsValue = lessons.reduce((acc, l) => acc + (l.amount || 0), 0);
+  const received = payments.reduce((acc, p) => acc + (p.amount || 0), 0) + lessons.reduce((acc, l) => acc + (l.paidAmount || 0), 0);
 
   const rows = getStudents().map(s => {
     const bal = studentBalanceAsOf(s.id, asOf);
     const sl = lessons.filter(l => l.studentId === s.id);
-    return { s, bal, n: sl.length, value: sl.reduce((t, l) => t + (l.amount || 0), 0) };
+    return { s, bal, n: sl.length, value: sl.reduce((acc, l) => acc + (l.amount || 0), 0) };
   }).filter(r => r.bal !== 0 || r.n > 0 || (r.s.isActive !== false && payMode !== 'month'))
     .sort((a, b) => a.bal - b.bal || b.n - a.n);
   const owed = rows.filter(r => r.bal < 0);
-  const owedSum = owed.reduce((t, r) => t - r.bal, 0);
-  const creditSum = rows.filter(r => r.bal > 0).reduce((t, r) => t + r.bal, 0);
+  const owedSum = owed.reduce((acc, r) => acc - r.bal, 0);
+  const creditSum = rows.filter(r => r.bal > 0).reduce((acc, r) => acc + r.bal, 0);
   const future = getLessons().filter(l => l.date > today);
-  const futureValue = future.reduce((t, l) => t + (l.amount || 0), 0);
+  const futureValue = future.reduce((acc, l) => acc + (l.amount || 0), 0);
   const restOfMonth = isCurrentMonth ? getLessons().filter(l => l.date > today && l.date <= monthEnd) : [];
 
   const kpi = (label, val, sub, cls = '') => `<div class="pm-kpi ${cls}"><div class="pm-kpi-label">${label}</div><div class="pm-kpi-val">${val}</div>${sub ? `<div class="pm-kpi-sub">${sub}</div>` : ''}</div>`;
-  const lessonsWord = n => n === 1 ? 'שיעור אחד' : `${n} שיעורים`;
+  const lessonsWord = n => n === 1 ? `${t('appointment')} אחד` : `${n} ${t('appointments')}`;
   const kpis = [
-    kpi(payMode === 'all' ? 'כל השיעורים' : payMode === 'month' ? 'שיעורים בחודש' : 'שיעורים שהתקיימו', formatCurrency(lessonsValue), lessonsWord(lessons.length)),
+    kpi(payMode === 'all' ? `כל ה${t('appointments')}` : payMode === 'month' ? `${t('appointments')} בחודש` : `${t('appointments')} שהתקיימו`, formatCurrency(lessonsValue), lessonsWord(lessons.length)),
     kpi(payMode === 'month' ? 'התקבל בחודש' : 'התקבל', formatCurrency(received), '', 'pm-ok'),
-    kpi(payMode === 'month' && !isCurrentMonth && !isFutureMonth ? 'פתוח בסוף החודש' : 'פתוח לגבייה', formatCurrency(owedSum), owed.length ? (owed.length === 1 ? 'תלמיד אחד' : `${owed.length} תלמידים`) : 'הכול שולם ✓', owedSum ? 'pm-warn' : ''),
+    kpi(payMode === 'month' && !isCurrentMonth && !isFutureMonth ? 'פתוח בסוף החודש' : 'פתוח לגבייה', formatCurrency(owedSum), owed.length ? (owed.length === 1 ? `${t('client')} אחד` : `${owed.length} ${t('clients')}`) : 'הכול שולם ✓', owedSum ? 'pm-warn' : ''),
     payMode === 'all'
       ? kpi('מתוכם עתידיים', formatCurrency(futureValue), `${lessonsWord(future.length)} שעוד לא התקיימו`)
       : payMode === 'month' && isCurrentMonth
-        ? kpi('עוד החודש', formatCurrency(restOfMonth.reduce((t, l) => t + (l.amount || 0), 0)), `${lessonsWord(restOfMonth.length)} מתוכננים`)
+        ? kpi('עוד החודש', formatCurrency(restOfMonth.reduce((acc, l) => acc + (l.amount || 0), 0)), `${lessonsWord(restOfMonth.length)} מתוכננים`)
         : kpi('זכות (שולם מראש)', formatCurrency(creditSum), creditSum ? 'כולל כרטיסיות' : ''),
   ].join('');
 
@@ -4984,13 +4985,13 @@ function renderPayments() {
 
   const balanceEl = document.getElementById('balance-cards');
   balanceEl.innerHTML = rows.length === 0
-    ? '<p class="text-muted">אין תלמידים עדיין</p>'
+    ? `<p class="text-muted">אין ${t('clients')} עדיין</p>`
     : rows.map(({ s, bal, n, value }) => `
       <div class="pm-row">
         <span class="pm-dot" style="background:${s.color || '#2563eb'}"></span>
         <div class="pm-main">
           <div class="pm-name">${escapeHtml(s.name)}${s.isActive === false ? ' <span class="pm-muted">(לא פעיל)</span>' : ''}</div>
-          <div class="pm-sub">${n ? `${lessonsWord(n)} · ${formatCurrency(value)}` : 'אין שיעורים בתקופה'}</div>
+          <div class="pm-sub">${n ? `${lessonsWord(n)} · ${formatCurrency(value)}` : `אין ${t('appointments')} בתקופה`}</div>
         </div>
         <div class="pm-bal ${bal < 0 ? 'neg' : bal > 0 ? 'pos' : ''}">
           <span>${bal < 0 ? 'לתשלום' : bal > 0 ? 'זכות' : 'מאוזן'}</span><b>${bal ? formatCurrency(Math.abs(bal)) : '✓'}</b>
@@ -5005,8 +5006,8 @@ function renderPayments() {
   const list = [...(payMode === 'month' ? getPayments().filter(p => p.date >= monthStart && p.date <= monthEnd) : getPayments())]
     .sort((a, b) => b.date.localeCompare(a.date));
   document.getElementById('payments-list-title').textContent = payMode === 'month'
-    ? `תשלומים שהתקבלו ב${HE_MONTHS[m]} · ${formatCurrency(list.reduce((t, p) => t + (p.amount || 0), 0))}`
-    : `כל התשלומים · ${formatCurrency(list.reduce((t, p) => t + (p.amount || 0), 0))}`;
+    ? `תשלומים שהתקבלו ב${HE_MONTHS[m]} · ${formatCurrency(list.reduce((acc, p) => acc + (p.amount || 0), 0))}`
+    : `כל התשלומים · ${formatCurrency(list.reduce((acc, p) => acc + (p.amount || 0), 0))}`;
   const tbody = document.getElementById('payments-tbody');
   if (list.length === 0) {
     tbody.innerHTML = `<tr><td colspan="5" class="empty-cell">${payMode === 'month' ? 'אין תשלומים בחודש הזה' : 'אין תשלומים עדיין'}</td></tr>`;
@@ -5029,9 +5030,9 @@ function openAddPaymentModal(defaultStudentId) {
   const today    = new Date().toISOString().split('T')[0];
   const html = `
     <div class="form-group">
-      <label>תלמיד</label>
+      <label>${t('client')}</label>
       <select id="f-student" onchange="showStudentBalance()">
-        <option value="">בחר תלמיד...</option>
+        <option value="">בחר ${t('client')}...</option>
         ${students.map(s => `<option value="${s.id}" ${s.id===defaultStudentId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
       </select>
       <div id="balance-hint" class="form-hint"></div>
@@ -5055,7 +5056,7 @@ function openAddPaymentModal(defaultStudentId) {
     const sid    = document.getElementById('f-student').value;
     const date   = document.getElementById('f-date').value;
     const amount = parseFloat(document.getElementById('f-amount').value);
-    if (!sid)              { showToast('נא לבחור תלמיד', 'error'); return; }
+    if (!sid)              { showToast(`נא לבחור ${t('client')}`, 'error'); return; }
     if (!amount || amount <= 0) { showToast('נא להזין סכום חוקי', 'error'); return; }
     const payment = { id: generateId(), studentId: sid, date, amount, notes: document.getElementById('f-notes').value.trim() };
     await apiCall('POST', '/api/payments', payment);
@@ -5094,7 +5095,7 @@ async function deletePayment(id) {
 // ===== ICS EXPORT =====
 function exportSingleLesson(lesson) {
   const s = getStudentById(lesson.studentId);
-  const name = s?.name || 'תלמיד';
+  const name = s?.name || `${t('client')}`;
   const now = new Date();
   const stamp = now.toISOString().replace(/[-:.]/g,'').slice(0,15) + 'Z';
   const time = lesson.time || '16:00';
@@ -5112,7 +5113,7 @@ function exportSingleLesson(lesson) {
     `DTSTAMP:${stamp}`,
     `DTSTART;TZID=Asia/Jerusalem:${dtBase}T${sh}${sm}00`,
     `DTEND;TZID=Asia/Jerusalem:${dtBase}T${eh}${em}00`,
-    `SUMMARY:שיעור - ${name}`,
+    `SUMMARY:${t('appointment')} - ${name}`,
     `DESCRIPTION:${lesson.notes || ''}`,
     'END:VEVENT'
   ].join('\r\n');
@@ -5120,7 +5121,7 @@ function exportSingleLesson(lesson) {
   const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `שיעור-${name}-${lesson.date}.ics`;
+  a.download = `${t('appointment')}-${name}-${lesson.date}.ics`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -5133,14 +5134,14 @@ function exportToICS() {
     const [y, m] = lessonFilters.month.split('-');
     lessons = lessons.filter(l => { const d = new Date(l.date); return d.getFullYear() == y && d.getMonth()+1 == m; });
   }
-  if (lessons.length === 0) { showToast('אין שיעורים לייצוא', 'warning'); return; }
+  if (lessons.length === 0) { showToast(`אין ${t('appointments')} לייצוא`, 'warning'); return; }
 
   const now   = new Date();
   const stamp = now.toISOString().replace(/[-:.]/g,'').slice(0,15) + 'Z';
 
   const vevent = lessons.map(l => {
     const s    = getStudentById(l.studentId);
-    const name = s?.name || 'תלמיד';
+    const name = s?.name || `${t('client')}`;
     const time = l.time || '16:00';
     const [hh, mm] = time.split(':').map(Number);
     const totalStartMin = hh * 60 + mm;
@@ -5156,7 +5157,7 @@ function exportToICS() {
       `DTSTAMP:${stamp}`,
       `DTSTART;TZID=Asia/Jerusalem:${dtBase}T${sh}${sm}00`,
       `DTEND;TZID=Asia/Jerusalem:${dtBase}T${eh}${em}00`,
-      `SUMMARY:שיעור - ${name}`,
+      `SUMMARY:${t('appointment')} - ${name}`,
       `DESCRIPTION:${l.notes || ''}`,
       'END:VEVENT'
     ].join('\r\n');
@@ -5169,10 +5170,10 @@ function exportToICS() {
   const a    = document.createElement('a');
   const tag  = lessonFilters.month || `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   a.href = url;
-  a.download = `שיעורים-${tag}.ics`;
+  a.download = `${t('appointments')}-${tag}.ics`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast(`${lessons.length} שיעורים יוצאו ללוח שנה`);
+  showToast(`${lessons.length} ${t('appointments')} יוצאו ללוח שנה`);
 }
 
 // ===== CALENDAR =====
@@ -5284,7 +5285,7 @@ function renderCalendar() {
         examsForDate(ds).forEach(e => { html += calExamChip(e, 'cal-event'); });
         lessons.slice(0, maxShow).forEach(l => {
           const s = getStudentById(l.studentId);
-          const tip = escapeHtml(`${s?.name||'?'} | ${l.time||'--:--'} | ${l.durationHours} שיעור${l.durationHours>1?'ים':''}${l.notes?' | '+l.notes:''}`);
+          const tip = escapeHtml(`${s?.name||'?'} | ${l.time||'--:--'} | ${l.durationHours} ${l.durationHours>1 ? t('appointments') : t('appointment')}${l.notes?' | '+l.notes:''}`);
           html += `<div class="cal-event" style="background:${s?.color||'#2563eb'}" onclick="showCalPopup('${l.id}',event)" title="${tip}">
             ${l.time||''} <span class="cal-event-name">${escapeHtml(s?.name)||'?'}</span>
           </div>`;
@@ -5357,7 +5358,7 @@ function renderCalendar() {
       </div>`;
     });
     if (lessons.length === 0) {
-      html += `<p class="text-muted" style="padding:16px 0;text-align:center">אין שיעורים ביום זה</p>`;
+      html += `<p class="text-muted" style="padding:16px 0;text-align:center">אין ${t('appointments')} ביום זה</p>`;
     } else {
       lessons.forEach(l => {
         const s = getStudentById(l.studentId);
@@ -5365,7 +5366,7 @@ function renderCalendar() {
           <div class="cal-day-lesson-time">${l.time||'--:--'}</div>
           <div class="cal-day-lesson-info">
             <span class="badge" style="background:${s?.color||'#2563eb'}">${escapeHtml(s?.name)||'?'}</span>
-            <span>${l.durationHours} שיעור${l.durationHours>1?'ים':''}</span>
+            <span>${l.durationHours} ${l.durationHours>1 ? t('appointments') : t('appointment')}</span>
             <span>${formatCurrency(l.amount)}</span>
             ${lessonBadge(l)}
             ${l.notes ? `<span class="text-muted">${escapeHtml(l.notes)}</span>` : ''}
@@ -5373,13 +5374,13 @@ function renderCalendar() {
           <div class="cal-day-lesson-actions">
             <button class="btn btn-ghost btn-xs" onclick="openEditLessonModal('${l.id}')">ערוך</button>
             ${l.packageId ? '' : `<button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}').then(()=>renderCalendar())">${toggleBtnLabel(l)}</button>`}
-            ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ לתלמיד">💬</button>` : ''}
+            ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ ל${t('client')}">💬</button>` : ''}
           </div>
         </div>`;
       });
     }
     html += `<div class="cal-add-day-row">
-      <button class="cal-add-day-btn" onclick="openAddLessonModal(null,'${ds}')">+ הוסף שיעור ל-${d.getDate()} ${HE_MONTHS[d.getMonth()]}</button>
+      <button class="cal-add-day-btn" onclick="openAddLessonModal(null,'${ds}')">+ הוסף ${t('appointment')} ל-${d.getDate()} ${HE_MONTHS[d.getMonth()]}</button>
       ${ds >= today ? `<button class="cal-add-day-btn cal-add-exam-btn" onclick="openAddExamModal(null,'${ds}')">📝 הוסף מבחן</button>` : ''}
     </div>`;
     html += '</div>';
@@ -5399,12 +5400,12 @@ function showCalPopup(lessonId, e) {
     <div class="cal-popup-name">
       <span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${escapeHtml(s?.name)||'?'}
     </div>
-    <div class="cal-popup-detail">🕐 ${l.time||'--:--'} &nbsp;·&nbsp; ${l.durationHours} שיעור${l.durationHours>1?'ים':''}</div>
+    <div class="cal-popup-detail">🕐 ${l.time||'--:--'} &nbsp;·&nbsp; ${l.durationHours} ${l.durationHours>1 ? t('appointments') : t('appointment')}</div>
     <div class="cal-popup-detail">${formatCurrency(l.amount)} &nbsp;·&nbsp; ${lessonBadge(l)}</div>
     ${l.notes ? `<div class="cal-popup-detail" style="font-style:italic">${escapeHtml(l.notes)}</div>` : ''}
     <div class="cal-popup-btns">
       ${l.packageId ? '' : `<button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}').then(()=>{hideCalPopup();renderCalendar()})">${getLessonPayStatus(l)==='paid'?'↩ בטל':'✓ שולם'}</button>`}
-      ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ לתלמיד">💬 ווצאפ</button>` : ''}
+      ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ ל${t('client')}">💬 ווצאפ</button>` : ''}
       <button class="btn btn-primary btn-xs" onclick="hideCalPopup();openEditLessonModal('${l.id}')">ערוך</button>
       <button class="btn btn-ghost btn-xs text-danger" onclick="hideCalPopup();deleteLesson('${l.id}').then(()=>renderCalendar())">מחק</button>
     </div>`;
@@ -5489,7 +5490,7 @@ function onSearch(q) {
       ...students.map(s => `<div class="search-result-item" onclick="showPage('students');${clearSearch}">
         <span class="student-dot" style="background:${s.color}"></span>
         <strong>${highlight(s.name, trimQ)}</strong>
-        <span class="text-muted" style="margin-right:auto">${formatCurrency(s.hourlyRate)}/שיעור</span>
+        <span class="text-muted" style="margin-right:auto">${formatCurrency(s.hourlyRate)}/${t('appointment')}</span>
       </div>`),
       ...lessons.map(l => {
         const s = getStudentById(l.studentId);
@@ -5516,7 +5517,7 @@ async function showCalSubscribeInfo() {
   hideLoading();
   const url = `${location.protocol}//${location.host}/calendar.ics?token=${token}`;
   const html = `
-    <p style="font-size:14px;margin-bottom:14px">המנוי מתעדכן אוטומטית בכל שיעור שמוסיפים.</p>
+    <p style="font-size:14px;margin-bottom:14px">המנוי מתעדכן אוטומטית בכל ${t('appointment')} שמוסיפים.</p>
     <div style="background:var(--bg);padding:10px 12px;border-radius:8px;font-size:13px;direction:ltr;text-align:left;word-break:break-all;margin-bottom:16px;user-select:all">${url}</div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <div>
@@ -5663,15 +5664,15 @@ function openYearlyReport() {
       const val = monthTotals[mi][s.id] || 0;
       return `<td>${val > 0 ? formatCurrency(val) : '—'}</td>`;
     }).join('');
-    const rowTotal = students.reduce((t, s) => t + (monthTotals[mi][s.id] || 0), 0);
+    const rowTotal = students.reduce((acc, s) => acc + (monthTotals[mi][s.id] || 0), 0);
     return `<tr><td style="font-weight:600">${mName}</td>${cells}<td style="font-weight:700">${rowTotal > 0 ? formatCurrency(rowTotal) : '—'}</td></tr>`;
   }).join('');
 
   const footerCells = students.map(s => {
-    const total = lessons.filter(l => l.studentId === s.id && new Date(l.date).getFullYear() === year).reduce((t,l) => t+(l.amount||0), 0);
+    const total = lessons.filter(l => l.studentId === s.id && new Date(l.date).getFullYear() === year).reduce((acc,l) => acc+(l.amount||0), 0);
     return `<td>${formatCurrency(total)}</td>`;
   }).join('');
-  const grandTotal = lessons.filter(l => new Date(l.date).getFullYear() === year).reduce((t,l) => t+(l.amount||0), 0);
+  const grandTotal = lessons.filter(l => new Date(l.date).getFullYear() === year).reduce((acc,l) => acc+(l.amount||0), 0);
 
   const html = `
     <div style="overflow-x:auto">
@@ -5710,8 +5711,8 @@ function exportYearlyExcel(year) {
     return [mName, ...cells, total];
   });
   const totalsRow = ['סה"כ שנה', ...students.map(s =>
-    lessons.filter(l => l.studentId === s.id && new Date(l.date).getFullYear() === year).reduce((t,l) => t+(l.amount||0), 0)
-  ), lessons.filter(l => new Date(l.date).getFullYear() === year).reduce((t,l) => t+(l.amount||0), 0)];
+    lessons.filter(l => l.studentId === s.id && new Date(l.date).getFullYear() === year).reduce((acc,l) => acc+(l.amount||0), 0)
+  ), lessons.filter(l => new Date(l.date).getFullYear() === year).reduce((acc,l) => acc+(l.amount||0), 0)];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...rows, totalsRow]), `דוח ${year}`);
   XLSX.writeFile(wb, `דוח-שנתי-${year}.xlsx`);

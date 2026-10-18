@@ -36,6 +36,16 @@ test('gender picks the matching form; unknown gender falls back to feminine', ()
   assert.equal(V.gender(), 'f');
 });
 
+test('tf fills {term} slots for static HTML templates', () => {
+  V.setVertical(load('tutor'), 'f');
+  assert.equal(V.tf('+ הוסף {appointment}'), '+ הוסף שיעור');
+  assert.equal(V.tf('כל ה{clients}'), 'כל התלמידים');
+  V.setVertical(load('barber'), 'm');
+  assert.equal(V.tf('+ הוסף {appointment}'), '+ הוסף תור');
+  assert.equal(V.tf('חיפוש {client} או {appointment}...'), 'חיפוש לקוח או תור...');
+  assert.equal(V.tf('no slots'), 'no slots');
+});
+
 test('placeholders, missing keys and no vertical', () => {
   V.setVertical(load('tutor'), 'f');
   assert.equal(V.t('reminder_one', { name: 'דן', time: '16:00' }), 'שיעור עם דן בשעה 16:00');
