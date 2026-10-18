@@ -27,14 +27,17 @@
     "schedule_days": "ימים קבועים",
     "portal_title": "הטיפולים שלי",
     "portal_history": "💅 הטיפולים הקודמים",
-    "calendar_name": "טיפולים"
+    "calendar_name": "טיפולים",
+    "service": "סוג טיפול",
+    "services": "סוגי טיפולים"
   },
   "features": {
     "exams": false,
     "lessonNotes": false,
     "parentContact": false,
     "packages": true,
-    "selfBooking": true
+    "selfBooking": true,
+    "services": true
   },
   "defaults": {
     "price": 250,
@@ -50,6 +53,32 @@
       "key": "sensitivities",
       "label": "רגישויות ואלרגיות",
       "type": "text"
+    }
+  ],
+  "services": [
+    {
+      "id": "gel_hands",
+      "name": "לק ג'ל ידיים",
+      "price": 100,
+      "durationMinutes": 60
+    },
+    {
+      "id": "gel_feet",
+      "name": "לק ג'ל רגליים",
+      "price": 80,
+      "durationMinutes": 45
+    },
+    {
+      "id": "facial",
+      "name": "טיפול פנים",
+      "price": 250,
+      "durationMinutes": 60
+    },
+    {
+      "id": "brows",
+      "name": "עיצוב גבות",
+      "price": 50,
+      "durationMinutes": 20
     }
   ]
 }

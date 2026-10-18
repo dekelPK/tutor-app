@@ -27,14 +27,17 @@
     "schedule_days": "ימים קבועים",
     "portal_title": "התורים שלי",
     "portal_history": "🕓 התורים הקודמים",
-    "calendar_name": "תורים"
+    "calendar_name": "תורים",
+    "service": "שירות",
+    "services": "שירותים"
   },
   "features": {
     "exams": false,
     "lessonNotes": false,
     "parentContact": false,
     "packages": true,
-    "selfBooking": true
+    "selfBooking": true,
+    "services": true
   },
   "defaults": {
     "price": 70,
@@ -45,6 +48,32 @@
       "key": "style",
       "label": "סגנון תספורת קבוע",
       "type": "text"
+    }
+  ],
+  "services": [
+    {
+      "id": "full",
+      "name": "תספורת מלאה",
+      "price": 70,
+      "durationMinutes": 30
+    },
+    {
+      "id": "beard",
+      "name": "תספורת זקן",
+      "price": 40,
+      "durationMinutes": 15
+    },
+    {
+      "id": "full_beard",
+      "name": "תספורת + זקן",
+      "price": 100,
+      "durationMinutes": 45
+    },
+    {
+      "id": "kids",
+      "name": "תספורת ילדים",
+      "price": 50,
+      "durationMinutes": 20
     }
   ]
 }

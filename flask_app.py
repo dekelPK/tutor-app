@@ -209,6 +209,8 @@ def init_db():
             db.execute(f"ALTER TABLE users ADD COLUMN gender TEXT DEFAULT '{verticals.DEFAULT_GENDER}'")
         if 'custom_fields' not in user_cols:  # NULL → the vertical's default client fields
             db.execute('ALTER TABLE users ADD COLUMN custom_fields TEXT')
+        if 'services' not in user_cols:  # NULL → the vertical's default services
+            db.execute('ALTER TABLE users ADD COLUMN services TEXT')
 
     # One-time migration from data.json if it exists
     json_path = os.path.join(BASE_DIR, 'data.json')
@@ -269,11 +271,12 @@ def account_info(user_id):
     """The business's profession + owner gender, and the resolved vertical config
     the browser needs for terminology and feature flags (see vertical.js)."""
     with get_db() as db:
-        row = db.execute('SELECT profession, gender, custom_fields FROM users WHERE id=?', [user_id]).fetchone()
+        row = db.execute('SELECT profession, gender, custom_fields, services FROM users WHERE id=?', [user_id]).fetchone()
     prof = verticals.normalize(row['profession'] if row else None)
     gender = verticals.normalize_gender(row['gender'] if row else None)
     return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand(),
-            'customFields': verticals.fields_for(prof, row['custom_fields'] if row else None)}
+            'customFields': verticals.fields_for(prof, row['custom_fields'] if row else None),
+            'services': verticals.services_for(prof, row['services'] if row else None)}
 
 def owner_terms(db, user_id):
     """verticals.Terms for a business owner — server-side text in their wording."""
@@ -308,6 +311,9 @@ def update_account():
         if 'customFields' in body:
             db.execute('UPDATE users SET custom_fields=? WHERE id=?',
                        [json.dumps(verticals.normalize_fields(body['customFields']), ensure_ascii=False), uid()])
+        if 'services' in body:
+            db.execute('UPDATE users SET services=? WHERE id=?',
+                       [json.dumps(verticals.normalize_services(body['services']), ensure_ascii=False), uid()])
     return jsonify(account_info(uid()))
 
 @app.route('/vertical.js')
@@ -780,7 +786,7 @@ def admin_demo_account():
             user_id = row['id']
             for tbl in ('students', 'lessons', 'payments', 'packages', 'exams', 'bookings', 'push_subscriptions'):
                 db.execute(f'DELETE FROM {tbl} WHERE user_id=?', [user_id])
-            db.execute('UPDATE users SET password_hash=?, approved=1, profession=?, gender=?, custom_fields=NULL WHERE id=?',
+            db.execute('UPDATE users SET password_hash=?, approved=1, profession=?, gender=?, custom_fields=NULL, services=NULL WHERE id=?',
                        [hash_pw(password), prof, verticals.DEFAULT_GENDER, user_id])
         else:
             user_id = uuid.uuid4().hex[:12]
@@ -1290,14 +1296,13 @@ def calendar_ics():
         date = l['date'].replace('-', '')
         hh, mm = map(int, (l.get('time','16:00')).split(':'))
         start_min = hh*60 + mm
-        lesson_minutes = s.get('lessonDurationMinutes') or 50
-        end_min   = start_min + int((l.get('durationHours',1) or 1)*lesson_minutes)
+        end_min   = start_min + int((l.get('durationHours',1) or 1)*portal_core.unit_minutes(l, s))
         sh,sm = str(start_min//60).zfill(2), str(start_min%60).zfill(2)
         eh,em = str((end_min//60)%24).zfill(2), str(end_min%60).zfill(2)
         lines += ['BEGIN:VEVENT', f'UID:{l["id"]}@tutor-app', f'DTSTAMP:{stamp}',
                   f'DTSTART;TZID=Asia/Jerusalem:{date}T{sh}{sm}00',
                   f'DTEND;TZID=Asia/Jerusalem:{date}T{eh}{em}00',
-                  f"SUMMARY:{bt.t('calendar_event', name=name)}",
+                  f"SUMMARY:{l['serviceName'] + ' - ' + name if l.get('serviceName') else bt.t('calendar_event', name=name)}",
                   f'DESCRIPTION:{l.get("notes","") or ""}', 'END:VEVENT']
     lines.append('END:VCALENDAR')
     return '\r\n'.join(lines), 200, {

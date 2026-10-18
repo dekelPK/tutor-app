@@ -69,15 +69,20 @@ def _fmt_min(m):
     return f'{m // 60:02d}:{m % 60:02d}'
 
 
+def unit_minutes(lesson, student):
+    """Length of one unit of this appointment: its service's length when booked
+    as a service (unitMinutes), else the client's usual length."""
+    return lesson.get('unitMinutes') or (student or {}).get('lessonDurationMinutes') or 50
+
+
 def lesson_interval(lesson, students_by_id):
     """(start_min, end_min) of a lesson on its own date."""
     start = _to_min(lesson.get('time') or '16:00')
     if start is None:
         return None
     s = students_by_id.get(lesson.get('studentId'), {})
-    per = s.get('lessonDurationMinutes') or 50
     units = lesson.get('durationHours') or 1
-    return start, start + int(units * per)
+    return start, start + int(units * unit_minutes(lesson, s))
 
 
 def compute_free_slots(settings, student, students, lessons, bookings, now=None):
@@ -227,8 +232,7 @@ def _time_range(lesson, student):
     start = _to_min(lesson.get('time') or '16:00')
     if start is None:
         return _esc(lesson.get('time'))
-    per = student.get('lessonDurationMinutes') or 50
-    end = start + int((lesson.get('durationHours') or 1) * per)
+    end = start + int((lesson.get('durationHours') or 1) * unit_minutes(lesson, student))
     # dir=ltr isolate: otherwise RTL bidi flips it to "18:00–17:00"
     return f'<span class="tr" dir="ltr">{_fmt_min(start)}–{_fmt_min(end % (24 * 60))}</span>'
 
@@ -286,6 +290,8 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
     if upcoming:
         nl = upcoming[0]
         topic = f'<div class="next-topic">📘 {esc(nl.get("topic"))}</div>' if notes_on and nl.get('topic') else ''
+        if nl.get('serviceName'):
+            topic = f'<div class="next-topic">✨ {esc(nl["serviceName"])}</div>' + topic
         next_html = f'''<div class="next">
           <div class="next-label">ה{T('appointment')} הבא שלך</div>
           <div class="next-row">
@@ -422,6 +428,8 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
             cls = 'paid' if paid else ('partial' if partial else 'unpaid')
             badge = f'<span class="pill pill-{cls}">{label}</span>'
         topic = f'<div class="li-sub">📘 {esc(l.get("topic"))}</div>' if notes_on and l.get('topic') else ''
+        if l.get('serviceName'):
+            topic = f'<div class="li-sub">✨ {esc(l["serviceName"])}</div>' + topic
         homework = f'<div class="li-sub">📝 {esc(l.get("homework"))}</div>' if notes_on and l.get('homework') else ''
         return f'''<div class="li li-past">{_date_tile(l["date"], 'tile-soft')}
           <div class="li-main"><div class="li-title">{_time_range(l, student)}</div>{topic}{homework}</div>{badge}</div>'''

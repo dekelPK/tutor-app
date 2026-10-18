@@ -334,6 +334,13 @@
     .prof-txt { display: flex; flex-direction: column; min-width: 0; }
     .prof-txt b { font-size: 14.5px; }
     .prof-txt small { font-size: 12px; color: var(--text-muted); }
+    .svc-head, .svc-row { display: grid; grid-template-columns: minmax(0, 1fr) 84px 84px 32px; gap: 6px; align-items: center; }
+    .svc-head { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+    .svc-row { margin-bottom: 6px; }
+    .svc-row input { width: 100%; min-width: 0; }
+    .svc-num { position: relative; display: block; }
+    .svc-num input { padding-inline-end: 30px; }
+    .svc-num span { position: absolute; inset-inline-end: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text-muted); pointer-events: none; }
     .cf-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
     .cf-row { display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 8px; padding: 6px 10px; }
     .cf-label { flex: 1; font-weight: 600; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2868,11 +2875,78 @@ function sendWhatsApp(lesson) {
   window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
+// ── Services: kinds of appointment with their own price and length (per business) ──
+function services() { return has('services') ? (window._services || []) : []; }
+function getService(id) { return services().find(sv => sv.id === id); }
+// Length of one unit of an appointment: its service's, else the client's usual length.
+function lessonUnitMinutes(l, s) { return l?.unitMinutes || s?.lessonDurationMinutes || 50; }
+// "תספורת זקן" / "לק ג'ל ×2" for a service appointment, else "2 שיעורים" as before.
+function lessonKindLabel(l) {
+  if (l.serviceName) return escapeHtml(l.serviceName) + (l.durationHours > 1 ? ` ×${l.durationHours}` : '');
+  return `${l.durationHours} ${l.durationHours > 1 ? t('appointments') : t('appointment')}`;
+}
+function openServicesModal() {
+  const rows = services().map(sv => ({ ...sv }));
+  const row = (sv, i) => `<div class="svc-row">
+      <input type="text" class="svc-name" data-i="${i}" value="${escapeHtml(sv.name)}" maxlength="40" placeholder="שם" aria-label="שם">
+      <label class="svc-num"><input type="number" class="svc-price" data-i="${i}" value="${sv.price ?? ''}" min="0" aria-label="מחיר"><span>₪</span></label>
+      <label class="svc-num"><input type="number" class="svc-min" data-i="${i}" value="${sv.durationMinutes ?? ''}" min="5" step="5" aria-label="דקות"><span>דק'</span></label>
+      <button type="button" class="btn btn-ghost btn-xs btn-icon" onclick="removeServiceRow(${i})" title="הסרה" aria-label="הסרה">✕</button>
+    </div>`;
+  window._svcRows = rows;
+  window._svcRow = row;
+  openModal(`${t('services')}`, `
+    <p class="pkg-sub" style="margin:0 0 10px">לכל ${t('service')} מחיר ומשך משלו. בקביעת ${t('appointment')} בוחרים ${t('service')} — והסכום והשעות מתמלאים לבד.</p>
+    <div class="svc-head"><span>שם</span><span>מחיר</span><span>משך</span><span></span></div>
+    <div id="svc-list"></div>
+    <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="addServiceRow()">+ ${t('service')} חדש</button>`,
+    async () => {
+      readServiceRows();
+      const list = window._svcRows.filter(sv => sv.name.trim());
+      if (list.some(sv => !(sv.price >= 0) || !(sv.durationMinutes >= 5))) { showToast('לכל אחד צריך מחיר ומשך (לפחות 5 דק\')', 'error'); return; }
+      const res = await apiCall('PUT', '/api/account', { services: list });
+      applyAccount(res);
+      closeModal();
+      showToast('נשמר ✓');
+    });
+  renderServiceRows();
+}
+function renderServiceRows() {
+  const el = document.getElementById('svc-list');
+  if (el) el.innerHTML = window._svcRows.map(window._svcRow).join('') || `<div class="pkg-sub">אין עדיין ${t('services')}</div>`;
+}
+function readServiceRows() {
+  document.querySelectorAll('#svc-list .svc-row').forEach(r => {
+    const i = +r.querySelector('.svc-name').dataset.i;
+    window._svcRows[i] = { ...window._svcRows[i], name: r.querySelector('.svc-name').value.trim(),
+      price: parseFloat(r.querySelector('.svc-price').value), durationMinutes: parseInt(r.querySelector('.svc-min').value) };
+  });
+}
+function addServiceRow() {
+  readServiceRows();
+  window._svcRows.push({ id: '', name: '', price: verticalDefault('price', 100), durationMinutes: verticalDefault('durationMinutes', 30) });
+  renderServiceRows();
+  const names = document.querySelectorAll('#svc-list .svc-name');
+  names[names.length - 1]?.focus();
+}
+function removeServiceRow(i) {
+  readServiceRows();
+  window._svcRows.splice(i, 1);
+  renderServiceRows();
+}
+function lessonServiceOptions(selectedId) {
+  return services().map(sv => `<option value="${escapeHtml(sv.id)}" ${sv.id === selectedId ? 'selected' : ''}>${escapeHtml(sv.name)} · ${formatCurrency(sv.price)} · ${sv.durationMinutes} דק'</option>`).join('');
+}
+// Copies the chosen service onto the appointment record (or clears it).
+function applyServiceToLesson(l, sv) {
+  if (sv) Object.assign(l, { serviceId: sv.id, serviceName: sv.name, unitMinutes: sv.durationMinutes });
+  else { delete l.serviceId; delete l.serviceName; delete l.unitMinutes; }
+}
 function lessonTimeRange(lesson, student) {
   const time = lesson.time || '16:00';
   const [hh, mm] = time.split(':').map(Number);
   const startMin = hh * 60 + mm;
-  const endMin = startMin + (lesson.durationHours || 1) * (student?.lessonDurationMinutes || 50);
+  const endMin = startMin + (lesson.durationHours || 1) * lessonUnitMinutes(lesson, student);
   const eh = String(Math.floor(endMin / 60) % 24).padStart(2, '0');
   const em = String(endMin % 60).padStart(2, '0');
   return `${time}-${eh}:${em}`;
@@ -3215,7 +3289,7 @@ function bookingConflict(b) {
     if (l.date !== b.date) return false;
     const st = getStudentById(l.studentId);
     const ls = timeToMin(l.time || '16:00');
-    const le = ls + (l.durationHours || 1) * (st?.lessonDurationMinutes || 50);
+    const le = ls + (l.durationHours || 1) * lessonUnitMinutes(l, st);
     return start < le && end > ls;
   });
 }
@@ -3700,6 +3774,7 @@ function applyAccount(data) {
   setVertical(data.vertical, data.gender);
   window._profession = data.profession;
   window._customFields = data.customFields || [];
+  window._services = data.services || [];
   applyTerms();
   applyFeatures();
 }
@@ -3751,13 +3826,14 @@ function renderAccountMenu() {
     <div class="am-group">
       <button class="am-item" onclick="toggleLessonReminders()" ${window._pushSupported ? '' : 'data-off="1"'}>
         <span class="am-ic">🔔</span><span class="am-text"><span class="am-title">התראות לטלפון</span>
-        <span class="am-desc">${window._pushSupported ? `${t('appointments')}, בקשות ומבחנים` : 'זמין כשהאפליקציה במסך הבית'}</span></span>${toggle(window._pushActive)}
+        <span class="am-desc">${window._pushSupported ? `${t('appointments')}, בקשות${has('exams') ? ' ומבחנים' : ''}` : 'זמין כשהאפליקציה במסך הבית'}</span></span>${toggle(window._pushActive)}
       </button>
       <button class="am-item" onclick="toggleDarkMode()">
         <span class="am-ic">${dark ? '☀️' : '🌙'}</span><span class="am-text"><span class="am-title">מצב כהה</span></span>${toggle(dark)}
       </button>
     </div>
     <div class="am-group">
+      ${has('services') ? `<button class="am-item" onclick="closeAccountMenu();openServicesModal()"><span class="am-ic">✨</span><span class="am-text"><span class="am-title">${t('services')}</span><span class="am-desc">מחירים ומשך לכל ${t('service')}</span></span></button>` : ''}
       <button class="am-item" onclick="closeAccountMenu();openBusinessModal()"><span class="am-ic">${escapeHtml(vertical()?.icon || '💼')}</span><span class="am-text"><span class="am-title">העסק שלי</span>
         <span class="am-desc">${escapeHtml((vertical()?.label || {})[gender()] || '')} · ${gender() === 'm' ? 'פנייה בלשון זכר' : 'פנייה בלשון נקבה'}</span></span></button>
       ${window._isAdmin ? `<button class="am-item" onclick="closeAccountMenu();showPage('admin')"><span class="am-ic">⚙️</span><span class="am-text"><span class="am-title">ניהול מערכת</span><span class="am-desc">משתמשים, בקשות הרשמה, הודעות</span></span></button>` : ''}
@@ -3841,7 +3917,7 @@ function renderToday() {
       const past = endMin <= nowMin;
       const live = timeToMin(start) <= nowMin && nowMin < endMin;
       const isNext = !past && !live && !nextMarked && (nextMarked = true);
-      const sub = [l.durationHours > 1 ? `${l.durationHours} ${t('appointments')}` : `${t('appointment')}`, l.packageId ? `🎟 ${lessonPackagePosition(l)}` : '', l.topic ? `📘 ${escapeHtml(l.topic)}` : '']
+      const sub = [l.serviceName ? lessonKindLabel(l) : l.durationHours > 1 ? `${l.durationHours} ${t('appointments')}` : `${t('appointment')}`, l.packageId ? `🎟 ${lessonPackagePosition(l)}` : '', l.topic ? `📘 ${escapeHtml(l.topic)}` : '']
         .filter(Boolean).join(' · ');
       return `<div class="tl-row ${past ? 'is-past' : ''} ${live ? 'is-live' : ''}">
         <div class="tl-time"><b>${start}</b><small>${end}</small></div>
@@ -4654,7 +4730,7 @@ function renderLessonsTable() {
       <td class="cell-select" style="text-align:center"><input type="checkbox" class="lesson-cb" data-id="${l.id}" onchange="updateBulkToolbar()"></td>
       <td data-label="תאריך">${formatDate(l.date)}</td>
       <td data-label="תלמיד"><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
-      <td data-label="משך">${l.durationHours} ${l.durationHours>1 ? t('appointments') : t('appointment')}</td>
+      <td data-label="משך">${lessonKindLabel(l)}</td>
       <td data-label="סכום">${formatCurrency(l.amount)}</td>
       <td data-label="סטטוס">${lessonBadge(l)}</td>
       <td data-label="הערות" class="text-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.notes)}</td>
@@ -4688,6 +4764,13 @@ function buildLessonForm(l, defaultStudentId, defaultDate) {
         ${students.map(s => `<option value="${s.id}" ${s.id===sid ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
       </select>
     </div>
+    ${services().length ? `<div class="form-group">
+      <label>${t('service')}</label>
+      <select id="f-service" onchange="updateLessonAmount()">
+        <option value="">ללא — לפי המחיר של ה${t('client')}</option>
+        ${lessonServiceOptions(l?.serviceId)}
+      </select>
+    </div>` : ''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group">
         <label>תאריך</label>
@@ -4748,6 +4831,11 @@ function updatePayStatusUI() {
   document.getElementById('f-partial-group').style.display = v === 'partial' ? '' : 'none';
 }
 
+// Price of one unit: the chosen service's, else the client's rate.
+function lessonBasePrice(s) {
+  const sv = getService(document.getElementById('f-service')?.value);
+  return sv ? sv.price : (s?.hourlyRate || 0);
+}
 function updateLessonAmount() {
   const sid      = document.getElementById('f-student')?.value;
   const duration = parseFloat(document.getElementById('f-duration')?.value || 1);
@@ -4755,7 +4843,7 @@ function updateLessonAmount() {
     const pkg = selectedLessonPackage();
     const s = getStudentById(sid);
     if (pkg) document.getElementById('f-amount').value = Math.round(packageUnitPrice(pkg) * duration * 100) / 100;
-    else if (s) document.getElementById('f-amount').value = s.hourlyRate * duration;
+    else if (s) document.getElementById('f-amount').value = lessonBasePrice(s) * duration;
   }
 }
 
@@ -4767,7 +4855,7 @@ function openAddLessonModal(defaultStudentId, defaultDate) {
     if (!date) { showToast('נא לבחור תאריך', 'error'); return; }
     const duration = parseFloat(document.getElementById('f-duration').value) || 1;
     const s = getStudentById(sid);
-    const amount = parseFloat(document.getElementById('f-amount').value) || (s ? s.hourlyRate * duration : 0);
+    const amount = parseFloat(document.getElementById('f-amount').value) || (s ? lessonBasePrice(s) * duration : 0);
     const payStatus = document.querySelector('input[name="f-pay-status"]:checked')?.value || 'unpaid';
     const paidAmount = payStatus === 'paid' ? amount : payStatus === 'partial' ? (parseFloat(document.getElementById('f-paid-amount').value) || 0) : 0;
     const lesson = {
@@ -4780,6 +4868,7 @@ function openAddLessonModal(defaultStudentId, defaultDate) {
       topic: document.getElementById('f-topic').value.trim(),
       homework: document.getElementById('f-homework').value.trim()
     };
+    applyServiceToLesson(lesson, getService(document.getElementById('f-service')?.value));
     const isRecurring = document.getElementById('f-recurring')?.checked;
     const recurCount  = parseInt(document.getElementById('f-recurring-count')?.value || 1);
     const allLessons  = [lesson];
@@ -4799,7 +4888,7 @@ function openAddLessonModal(defaultStudentId, defaultDate) {
       if (usePkg) {
         const pkg = getActivePackage(sid, duration);
         if (pkg) { applyPackageToLesson(l, pkg); pkgCount++; }
-        else { l.amount = s ? s.hourlyRate * duration : l.amount; l.isPaid = false; l.paidAmount = 0; }
+        else { l.amount = s ? lessonBasePrice(s) * duration : l.amount; l.isPaid = false; l.paidAmount = 0; }
       }
       await apiCall('POST', '/api/lessons', l);
       _lessons.push(l);
@@ -4829,7 +4918,7 @@ function openEditLessonModal(id) {
     if (!sid || !date) { showToast('נא למלא שדות חובה', 'error'); return; }
     const duration = parseFloat(document.getElementById('f-duration').value) || 1;
     const s = getStudentById(sid);
-    const amount = parseFloat(document.getElementById('f-amount').value) || (s ? s.hourlyRate * duration : 0);
+    const amount = parseFloat(document.getElementById('f-amount').value) || (s ? lessonBasePrice(s) * duration : 0);
     const payStatus = document.querySelector('input[name="f-pay-status"]:checked')?.value || 'unpaid';
     const paidAmount = payStatus === 'paid' ? amount : payStatus === 'partial' ? (parseFloat(document.getElementById('f-paid-amount').value) || 0) : 0;
     const updated = { ...l, studentId: sid, date,
@@ -4840,9 +4929,12 @@ function openEditLessonModal(id) {
       notes: document.getElementById('f-notes').value.trim(),
       topic: document.getElementById('f-topic').value.trim(),
       homework: document.getElementById('f-homework').value.trim() };
+    // A service that's since been deleted stays on the record unless the owner picks another.
+    const svSel = document.getElementById('f-service');
+    if (svSel && (svSel.value || !l.serviceId || getService(l.serviceId))) applyServiceToLesson(updated, getService(svSel.value));
     const pkg = selectedLessonPackage();
     applyPackageToLesson(updated, pkg);
-    if (!pkg && l.packageId && amount === l.amount && s) updated.amount = s.hourlyRate * duration;
+    if (!pkg && l.packageId && amount === l.amount && s) updated.amount = lessonBasePrice(s) * duration;
     await apiCall('PUT', `/api/lessons/${id}`, updated);
     _lessons = _lessons.map(x => x.id === id ? updated : x);
     closeModal();
@@ -5220,7 +5312,7 @@ function exportSingleLesson(lesson) {
   const time = lesson.time || '16:00';
   const [hh, mm] = time.split(':').map(Number);
   const startMin = hh * 60 + mm;
-  const endMin = startMin + (lesson.durationHours || 1) * (s?.lessonDurationMinutes || 50);
+  const endMin = startMin + (lesson.durationHours || 1) * lessonUnitMinutes(lesson, s);
   const sh = String(Math.floor(startMin/60)).padStart(2,'0');
   const sm = String(startMin%60).padStart(2,'0');
   const eh = String(Math.floor(endMin/60)%24).padStart(2,'0');
@@ -5264,7 +5356,7 @@ function exportToICS() {
     const time = l.time || '16:00';
     const [hh, mm] = time.split(':').map(Number);
     const totalStartMin = hh * 60 + mm;
-    const totalEndMin   = totalStartMin + Math.round((l.durationHours || 1) * (s?.lessonDurationMinutes || 50));
+    const totalEndMin   = totalStartMin + Math.round((l.durationHours || 1) * lessonUnitMinutes(l, s));
     const sh = String(Math.floor(totalStartMin / 60)).padStart(2,'0');
     const sm = String(totalStartMin % 60).padStart(2,'0');
     const eh = String(Math.floor(totalEndMin / 60) % 24).padStart(2,'0');
@@ -5519,7 +5611,7 @@ function showCalPopup(lessonId, e) {
     <div class="cal-popup-name">
       <span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${escapeHtml(s?.name)||'?'}
     </div>
-    <div class="cal-popup-detail">🕐 ${l.time||'--:--'} &nbsp;·&nbsp; ${l.durationHours} ${l.durationHours>1 ? t('appointments') : t('appointment')}</div>
+    <div class="cal-popup-detail">🕐 ${l.time||'--:--'} &nbsp;·&nbsp; ${lessonKindLabel(l)}</div>
     <div class="cal-popup-detail">${formatCurrency(l.amount)} &nbsp;·&nbsp; ${lessonBadge(l)}</div>
     ${l.notes ? `<div class="cal-popup-detail" style="font-style:italic">${escapeHtml(l.notes)}</div>` : ''}
     <div class="cal-popup-btns">
