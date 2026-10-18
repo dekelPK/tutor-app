@@ -271,6 +271,11 @@ def account_info(user_id):
     gender = verticals.normalize_gender(row['gender'] if row else None)
     return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand()}
 
+def owner_terms(db, user_id):
+    """verticals.Terms for a business owner — server-side text in their wording."""
+    row = db.execute('SELECT profession, gender FROM users WHERE id=?', [user_id]).fetchone()
+    return verticals.Terms(row['profession'] if row else None, row['gender'] if row else None)
+
 @app.route('/api/auth/me')
 def auth_me():
     if 'user_id' not in session:
@@ -529,16 +534,17 @@ def push_due_today():
             students = {s['id']: s for s in rows_to_list(
                 db.execute('SELECT data FROM students WHERE user_id=?', [sub['user_id']]).fetchall())}
             lesson_list = rows_to_list(lessons)
+            bt = owner_terms(db, sub['user_id'])
             if len(lesson_list) == 1:
                 s = students.get(lesson_list[0]['studentId'], {})
-                body = f"שיעור עם {s.get('name','תלמיד')} בשעה {lesson_list[0].get('time','')}"
+                body = bt.t('reminder_one', name=s.get('name', bt.t('client')), time=lesson_list[0].get('time', ''))
             else:
-                body = f"{len(lesson_list)} שיעורים מתוכננים היום"
+                body = bt.t('reminder_many', count=len(lesson_list))
             out.append({
                 'endpoint': sub['endpoint'],
                 'p256dh': sub['p256dh'],
                 'auth': sub['auth'],
-                'title': 'תזכורת: יש לך שיעור היום 📚',
+                'title': bt.t('reminder_title'),
                 'body': body,
                 'url': '/',
             })
@@ -600,13 +606,16 @@ def push_exams_due():
             e = json.loads(r['data'])
             if e.get('notifiedAt'):
                 continue
+            bt = owner_terms(db, r['user_id'])
+            if not bt.has('exams'):
+                continue
             srow = db.execute('SELECT data FROM students WHERE id=? AND user_id=?', [e['studentId'], r['user_id']]).fetchone()
             name = json.loads(srow['data']).get('name', 'תלמיד/ה') if srow else 'תלמיד/ה'
             subj = f" ב{e['subject']}" if e.get('subject') else ''
             subs = db.execute('SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=?', [r['user_id']]).fetchall()
             for sub in subs:
                 out.append({**dict(sub), 'title': f'📝 היום ל{name} יש מבחן{subj}',
-                            'body': 'לחצי כדי לשלוח הודעת בהצלחה בווצאפ 🍀',
+                            'body': f"{bt.g('לחצי', 'לחץ')} כדי לשלוח הודעת בהצלחה בווצאפ 🍀",
                             'url': f'/?exam={e["id"]}', 'tag': f'exam-{e["id"]}'})
             e['notifiedAt'] = now.isoformat(timespec='seconds')
             db.execute('UPDATE exams SET data=? WHERE id=?', [json.dumps(e, ensure_ascii=False), r['id']])
@@ -629,16 +638,17 @@ def push_booking_notice():
         name = json.loads(srow['data']).get('name', 'תלמיד/ה') if srow else 'תלמיד/ה'
         subs = db.execute('SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=?',
                           [row['user_id']]).fetchall()
+        bt = owner_terms(db, row['user_id'])
     try:
         y, m, d = b['date'].split('-')
         when = f'{d}/{m} בשעה {b["time"]}'
     except Exception:
         when = b.get('date', '')
     units = int(b.get('units') or 1)
-    what = 'שיעור' if units == 1 else f'{units} שיעורים ברצף'
+    what = bt.t('appointment') if units == 1 else f"{units} {bt.t('appointments')} ברצף"
     return jsonify({'subscriptions': [dict(s) for s in subs],
-                    'title': '🗓️ בקשה חדשה לשיעור',
-                    'body': f'{name} מבקש/ת {what} ב-{when}. לחצי לאישור.'})
+                    'title': f"🗓️ בקשה חדשה ל{bt.t('appointment')}",
+                    'body': f"{name} מבקש/ת {what} ב-{when}. {bt.g('לחצי', 'לחץ')} לאישור."})
 
 # ── Daily DB backup ───────────────────────────────────────────────────────────
 # PythonAnywhere's free tier doesn't include Scheduled Tasks (that needs a
@@ -928,8 +938,10 @@ def student_portal(token):
         booking_enabled = settings['enabled'] and student.get('isActive') is not False
         slots = free_slots_for(db, owner_id, student, settings) if booking_enabled else []
         owner = db.execute('SELECT name FROM users WHERE id=?', [owner_id]).fetchone()
+        bt = owner_terms(db, owner_id)
     page = portal_core.render_portal(token, student, lessons, payments, packages, bookings, slots, booking_enabled,
-                                     teacher_name=(owner['name'] if owner else '') or '', exams=exams)
+                                     teacher_name=(owner['name'] if owner else '') or '', exams=exams,
+                                     vertical=bt.vertical, gender=bt.gender)
     return page, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 @app.route('/portal/<token>/book', methods=['POST'])
@@ -1228,13 +1240,14 @@ def calendar_ics():
             db.execute('SELECT data FROM students WHERE user_id=?', [cal_user_id]).fetchall())}
         lessons  = rows_to_list(
             db.execute('SELECT data FROM lessons WHERE user_id=? ORDER BY date', [cal_user_id]).fetchall())
+        bt = owner_terms(db, cal_user_id)
     stamp = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
-    lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//שיעורים פרטיים//HE',
-             'CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:שיעורים - הוראה',
+    lines = ['BEGIN:VCALENDAR','VERSION:2.0',f"PRODID:-//{verticals.brand()['name']}//HE",
+             'CALSCALE:GREGORIAN','METHOD:PUBLISH',f"X-WR-CALNAME:{bt.t('calendar_name')}",
              'X-WR-TIMEZONE:Asia/Jerusalem','REFRESH-INTERVAL;VALUE=DURATION:PT1H']
     for l in lessons:
         s    = students.get(l['studentId'], {})
-        name = s.get('name', 'תלמיד')
+        name = s.get('name', bt.t('client'))
         date = l['date'].replace('-', '')
         hh, mm = map(int, (l.get('time','16:00')).split(':'))
         start_min = hh*60 + mm
@@ -1245,7 +1258,7 @@ def calendar_ics():
         lines += ['BEGIN:VEVENT', f'UID:{l["id"]}@tutor-app', f'DTSTAMP:{stamp}',
                   f'DTSTART;TZID=Asia/Jerusalem:{date}T{sh}{sm}00',
                   f'DTEND;TZID=Asia/Jerusalem:{date}T{eh}{em}00',
-                  f'SUMMARY:שיעור - {name}',
+                  f"SUMMARY:{bt.t('calendar_event', name=name)}",
                   f'DESCRIPTION:{l.get("notes","") or ""}', 'END:VEVENT']
     lines.append('END:VCALENDAR')
     return '\r\n'.join(lines), 200, {

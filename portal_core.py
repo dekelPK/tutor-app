@@ -21,6 +21,7 @@ Data shapes (all stored as JSON blobs, same as students/lessons/payments):
 import html as html_mod
 import json
 from datetime import datetime, timedelta
+import verticals
 
 try:
     from zoneinfo import ZoneInfo
@@ -255,9 +256,16 @@ def _date_tile(iso, extra_cls=''):
 
 
 def render_portal(token, student, lessons, payments, packages=None, bookings=None,
-                  free_slots=None, booking_enabled=False, teacher_name='', exams=None):
-    packages = packages or []
-    exams = exams or []
+                  free_slots=None, booking_enabled=False, teacher_name='', exams=None,
+                  vertical=verticals.DEFAULT_VERTICAL, gender=verticals.DEFAULT_GENDER):
+    # Wording and features follow the business owner's profession (verticals/*.json).
+    def T(key, **params):
+        return verticals.t(vertical, key, gender, **params)
+    has = lambda feature: verticals.has(vertical, feature)
+    notes_on = has('lessonNotes')
+    packages = (packages or []) if has('packages') else []
+    exams = (exams or []) if has('exams') else []
+    booking_enabled = booking_enabled and has('selfBooking')
     bookings = bookings or []
     free_slots = free_slots or []
     esc = _esc
@@ -277,9 +285,9 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
     # ── Hero: greeting + the next lesson, front and centre ──
     if upcoming:
         nl = upcoming[0]
-        topic = f'<div class="next-topic">📘 {esc(nl.get("topic"))}</div>' if nl.get('topic') else ''
+        topic = f'<div class="next-topic">📘 {esc(nl.get("topic"))}</div>' if notes_on and nl.get('topic') else ''
         next_html = f'''<div class="next">
-          <div class="next-label">השיעור הבא שלך</div>
+          <div class="next-label">ה{T('appointment')} הבא שלך</div>
           <div class="next-row">
             <div><div class="next-date">{esc(_long_date(nl["date"]))}</div>
               <div class="next-time">🕓 {_time_range(nl, student)}</div>{topic}</div>
@@ -287,13 +295,13 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
           </div>
         </div>'''
     else:
-        cta = '<a class="next-cta" href="#book">לקביעת שיעור ↓</a>' if booking_enabled else ''
+        cta = f'<a class="next-cta" href="#book">לקביעת {T("appointment")} ↓</a>' if booking_enabled else ''
         next_html = f'''<div class="next next-empty">
-          <div class="next-label">השיעור הבא שלך</div>
-          <div class="next-date">עוד לא נקבע שיעור</div>{cta}
+          <div class="next-label">ה{T('appointment')} הבא שלך</div>
+          <div class="next-date">עוד לא נקבע {T('appointment')}</div>{cta}
         </div>'''
-    teacher_line = (f'<div class="hero-sub">השיעורים שלך אצל {esc(teacher_name)}</div>' if teacher_name
-                    else '<div class="hero-sub">השיעורים והכרטיסייה שלך</div>')
+    teacher_line = (f'<div class="hero-sub">ה{T("appointments")} שלך אצל {esc(teacher_name)}</div>' if teacher_name
+                    else f'<div class="hero-sub">ה{T("appointments")} והכרטיסייה שלך</div>')
 
     # ── Coming up: a compact swipeable strip (the next lesson is already in the
     # hero) plus the student's own pending requests. Declined requests aren't
@@ -315,13 +323,13 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
               <span class="lc-wd">{_weekday(dt)}</span><span class="lc-day">{dt.day}</span>
               <span class="lc-mon">{_HE_MONTHS_SHORT[dt.month - 1]}</span>
               <span class="lc-time" dir="ltr">{esc(b.get("time"))}</span>
-              <span class="lc-state">⏳ ממתין{f" · {int(b.get('units') or 1)} שיעורים" if int(b.get('units') or 1) > 1 else ''}</span>
+              <span class="lc-state">⏳ ממתין{f" · {int(b.get('units') or 1)} {T('appointments')}" if int(b.get('units') or 1) > 1 else ''}</span>
               <button class="lc-x" onclick="cancelReq('{esc(b["id"])}')">ביטול</button></div>'''))
     cards.sort(key=lambda r: (r[0], r[1]))
     lessons_section = ''
     if cards:
         lessons_section = f'''<section class="sec">
-      <div class="sec-head"><h2>📅 בהמשך</h2><span class="muted">{len(cards)} {"שיעור" if len(cards) == 1 else "שיעורים"}</span></div>
+      <div class="sec-head"><h2>📅 בהמשך</h2><span class="muted">{len(cards)} {T("appointment") if len(cards) == 1 else T("appointments")}</span></div>
       <div class="strip">{''.join(c[2] for c in cards)}</div>
     </section>'''
 
@@ -337,8 +345,8 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
             units_html = ''
             if max_units > 1:
                 btns = ''.join(f'<button type="button" class="{"on" if n == 1 else ""}" data-units="{n}" onclick="pickUnits({n})">'
-                               f'{"שיעור אחד" if n == 1 else f"{n} שיעורים"}</button>' for n in range(1, max_units + 1))
-                units_html = f'<div class="units-label">כמה שיעורים ברצף?</div><div class="units" id="units">{btns}</div>'
+                               f'{T("one_appointment") if n == 1 else str(n) + " " + T("appointments")}</button>' for n in range(1, max_units + 1))
+                units_html = f'<div class="units-label">כמה {T("appointments")} ברצף?</div><div class="units" id="units">{btns}</div>'
             days_html = ''
             for d in by_date:
                 dt = _parse(d)
@@ -351,8 +359,8 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
         else:
             picker = '<div class="empty">אין כרגע מועדים פנויים — כדאי להציץ שוב בהמשך 🙂</div>'
         booking_section = f'''<section class="sec" id="book">
-          <div class="sec-head"><h2>🗓️ לקבוע שיעור לבד</h2></div>
-          <p class="sec-desc">בוחרים יום ושעה שנוחים לך — המורה מאשר/ת והשיעור נכנס לרשימה למעלה.</p>
+          <div class="sec-head"><h2>🗓️ לקבוע {T('appointment')} לבד</h2></div>
+          <p class="sec-desc">בוחרים יום ושעה שנוחים לך — ה{T('provider')} מאשר/ת וה{T('appointment')} נכנס לרשימה למעלה.</p>
           {picker}
         </section>'''
     # Server-generated dates/times only; '</' escaped anyway so it can't close the <script>.
@@ -400,7 +408,7 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
     exams_section = f'<section class="sec sec-exams">{exams_html}</section>' if exams_html else ''
 
     # ── What we learned ──
-    hw = next((l for l in past if l.get('homework')), None)
+    hw = next((l for l in past if l.get('homework')), None) if notes_on else None
     hw_html = (f'<div class="hw"><div class="hw-label">📝 שיעורי הבית האחרונים · {esc(_fmt_date(hw["date"]))}</div>'
                f'<div class="hw-text">{esc(hw.get("homework"))}</div></div>') if hw else ''
 
@@ -413,19 +421,22 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
             label = 'שולם' if paid else ('שולם חלקית' if partial else 'ממתין לתשלום')
             cls = 'paid' if paid else ('partial' if partial else 'unpaid')
             badge = f'<span class="pill pill-{cls}">{label}</span>'
-        topic = f'<div class="li-sub">📘 {esc(l.get("topic"))}</div>' if l.get('topic') else ''
-        homework = f'<div class="li-sub">📝 {esc(l.get("homework"))}</div>' if l.get('homework') else ''
+        topic = f'<div class="li-sub">📘 {esc(l.get("topic"))}</div>' if notes_on and l.get('topic') else ''
+        homework = f'<div class="li-sub">📝 {esc(l.get("homework"))}</div>' if notes_on and l.get('homework') else ''
         return f'''<div class="li li-past">{_date_tile(l["date"], 'tile-soft')}
           <div class="li-main"><div class="li-title">{_time_range(l, student)}</div>{topic}{homework}</div>{badge}</div>'''
 
-    past_html = ''.join(past_row(l) for l in past) or '<div class="empty">עוד אין שיעורים קודמים</div>'
+    past_html = ''.join(past_row(l) for l in past) or f'<div class="empty">עוד אין {T("appointments")} קודמים</div>'
 
     token_js = json.dumps(token)
     return PAGE_TEMPLATE.format(
         accent=accent, title=esc(name), initial=esc(name[:1] or '?'), first_name=esc(first_name),
         teacher_line=teacher_line, next_html=next_html, lessons_section=lessons_section,
         booking_section=booking_section, money_section=money_section, hw_html=hw_html, exams_section=exams_section,
-        past_html=past_html, token_js=token_js, slots_json=slots_json, lesson_minutes=lesson_minutes)
+        past_html=past_html, token_js=token_js, slots_json=slots_json, lesson_minutes=lesson_minutes,
+        portal_title=esc(T('portal_title')), history_title=esc(T('portal_history')), provider=esc(T('provider')),
+        terms_js=json.dumps({'one': T('one_appointment'), 'many': T('appointments'), 'appointment': T('appointment'),
+                             'provider': T('provider')}, ensure_ascii=False).replace('</', '<\\/'))
 
 
 # Kept as a plain template (not an f-string) so the CSS/JS braces stay readable;
@@ -436,7 +447,7 @@ PAGE_TEMPLATE = '''<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="{accent}">
-<title>{title} — השיעורים שלי</title>
+<title>{title} — {portal_title}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -622,7 +633,7 @@ PAGE_TEMPLATE = '''<!doctype html>
     {money_section}
 
     <section class="sec">
-      <div class="sec-head"><h2>📚 מה למדנו לאחרונה</h2></div>
+      <div class="sec-head"><h2>{history_title}</h2></div>
       {hw_html}
       {past_html}
     </section>
@@ -633,7 +644,7 @@ PAGE_TEMPLATE = '''<!doctype html>
   <div class="sheet" id="sheet"><div class="sheet-in">
     <div class="sheet-grip"></div>
     <div class="sheet-when" id="sheet-when"></div>
-    <textarea id="book-note" rows="2" maxlength="300" placeholder="רוצה להוסיף משהו למורה? (לא חובה)"></textarea>
+    <textarea id="book-note" rows="2" maxlength="300" placeholder="רוצה להוסיף משהו ל{provider}? (לא חובה)"></textarea>
     <button id="book-btn" class="btn" onclick="submitBooking()">שליחת בקשה</button>
     <button class="btn btn-ghost" onclick="closeSheet()">ביטול</button>
   </div></div>
@@ -650,12 +661,13 @@ PAGE_TEMPLATE = '''<!doctype html>
   const TOKEN = {token_js};
   const SLOTS = {slots_json};  // date -> [[start, max back-to-back lessons], ...]
   const PER = {lesson_minutes};
+  const TERMS = {terms_js};  // the business's wording (verticals/*.json)
   const DAYS = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
   let chosen = null, units = 1, activeDate = null;
   const fmt = m => String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
   const endOf = t => {{ const [h, m] = t.split(':').map(Number); return fmt(h * 60 + m + units * PER); }};
   const fits = date => (SLOTS[date] || []).filter(([, max]) => max >= units);
-  function unitsText(n) {{ return n === 1 ? 'שיעור אחד' : n + ' שיעורים ברצף'; }}
+  function unitsText(n) {{ return n === 1 ? TERMS.one : n + ' ' + TERMS.many + ' ברצף'; }}
   function pickUnits(n) {{
     units = n;
     document.querySelectorAll('#units button').forEach(b => b.classList.toggle('on', +b.dataset.units === n));
@@ -681,7 +693,7 @@ PAGE_TEMPLATE = '''<!doctype html>
   function pickDay(btn) {{
     document.querySelectorAll('.day.on').forEach(b => b.classList.remove('on'));
     closeSheet();
-    if (!btn) {{ document.getElementById('times-label').textContent = 'אין זמן פנוי ל' + unitsText(units) + ' — נסו פחות שיעורים'; document.getElementById('times').innerHTML = ''; return; }}
+    if (!btn) {{ document.getElementById('times-label').textContent = 'אין זמן פנוי ל' + unitsText(units) + ' — נסו פחות ' + TERMS.many; document.getElementById('times').innerHTML = ''; return; }}
     btn.classList.add('on');
     const date = activeDate = btn.dataset.date;
     document.getElementById('times-label').textContent = 'שעות פנויות ב' + niceDate(date);
@@ -694,7 +706,7 @@ PAGE_TEMPLATE = '''<!doctype html>
     btn.classList.add('on');
     chosen = {{ date: btn.dataset.date, time: btn.dataset.time, units }};
     document.getElementById('sheet-when').innerHTML = niceDate(chosen.date) + ' · <span dir="ltr">' + chosen.time + '–' + endOf(chosen.time) + '</span>' +
-      '<small>' + unitsText(units) + ' · ייקבע אחרי אישור המורה</small>';
+      '<small>' + unitsText(units) + ' · ייקבע אחרי אישור ה' + TERMS.provider + '</small>';
     document.getElementById('sheet').classList.add('show');
   }}
   function closeSheet() {{
@@ -719,7 +731,7 @@ PAGE_TEMPLATE = '''<!doctype html>
         return;
       }}
       document.getElementById('sheet').classList.remove('show');
-      document.getElementById('done-text').textContent = 'ביקשת ' + unitsText(chosen.units) + ' ב' + niceDate(chosen.date) + ' בשעה ' + chosen.time + '. ברגע שהמורה יאשר/תאשר, השיעור יופיע ברשימת השיעורים שלך.';
+      document.getElementById('done-text').textContent = 'ביקשת ' + unitsText(chosen.units) + ' ב' + niceDate(chosen.date) + ' בשעה ' + chosen.time + '. ברגע שה' + TERMS.provider + ' יאשר/תאשר, ה' + TERMS.appointment + ' יופיע ברשימת ה' + TERMS.many + ' שלך.';
       document.getElementById('done').classList.add('show');
     }} catch (e) {{ toast('שגיאת תקשורת, נסו שוב'); btn.disabled = false; btn.textContent = 'שליחת בקשה'; }}
   }}

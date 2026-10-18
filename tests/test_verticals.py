@@ -76,11 +76,49 @@ class TerminologyTests(unittest.TestCase):
         self.assertEqual(verticals.t('no_such_vertical', 'client'), 'תלמיד')
         self.assertEqual(verticals.normalize(None), 'tutor')
 
+    def test_terms_bound_to_a_business(self):
+        bt = verticals.Terms('barber', 'm')
+        self.assertEqual(bt.t('appointment'), 'תור')
+        self.assertEqual(bt.g('לחצי', 'לחץ'), 'לחץ')
+        self.assertFalse(bt.has('exams'))
+        old = verticals.Terms(None, None)  # a pre-migration row
+        self.assertEqual((old.vertical, old.gender), ('tutor', 'f'))
+        self.assertEqual(old.t('calendar_event', name='דן'), 'שיעור - דן')
+
     def test_feature_flags(self):
         self.assertTrue(verticals.has('tutor', 'exams'))
         self.assertFalse(verticals.has('barber', 'exams'))
         self.assertTrue(verticals.has('barber', 'packages'))
         self.assertFalse(verticals.has('tutor', 'no_such_feature'))
+
+
+class PortalTests(unittest.TestCase):
+    """The client portal follows the owner's vertical: wording and features."""
+
+    def render(self, **kw):
+        import portal_core
+        from datetime import timedelta
+        now = portal_core.now_local()
+        d = lambda n: (now + timedelta(days=n)).strftime('%Y-%m-%d')
+        student = {'id': 's1', 'name': 'נועה כהן'}
+        lessons = [{'id': 'l1', 'studentId': 's1', 'date': d(-2), 'time': '16:00', 'topic': 'שברים', 'homework': 'עמוד 5'},
+                   {'id': 'l2', 'studentId': 's1', 'date': d(1), 'time': '16:00'}]
+        exams = [{'id': 'e1', 'studentId': 's1', 'date': d(2), 'subject': 'מתמטיקה'}]
+        slots = [{'date': d(3), 'time': '10:00', 'maxUnits': 2}]
+        return portal_core.render_portal('tok', student, lessons, [], [], [], slots, True,
+                                         teacher_name='דנה', exams=exams, **kw)
+
+    def test_tutor_portal_keeps_lessons_exams_and_homework(self):
+        page = self.render()
+        for text in ('השיעור הבא שלך', 'מבחן במתמטיקה', 'עמוד 5', 'לקבוע שיעור לבד', 'מה למדנו לאחרונה'):
+            self.assertIn(text, page)
+
+    def test_barber_portal_uses_its_terms_and_hides_tutor_features(self):
+        page = self.render(vertical='barber', gender='m')
+        for text in ('התור הבא שלך', 'לקבוע תור לבד', 'התורים הקודמים'):
+            self.assertIn(text, page)
+        for text in ('שיעור', 'תלמיד', 'מבחן', 'עמוד 5', 'שברים'):
+            self.assertNotIn(text, page)
 
 
 class MigrationAndApiTests(unittest.TestCase):
@@ -135,6 +173,26 @@ class MigrationAndApiTests(unittest.TestCase):
         self.assertEqual((r.json['profession'], r.json['gender']), ('tutor', 'f'))
         r = c.put('/api/account', json={'profession': 'hacker', 'gender': '?'})
         self.assertEqual((r.json['profession'], r.json['gender']), ('tutor', 'f'))
+
+    def test_server_text_follows_the_owners_vertical(self):
+        db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))
+        db.execute("INSERT INTO users (id, email, password_hash, name, profession, gender, cal_token) "
+                   "VALUES ('brb', 'b2@x.com', 'x', 'יוסי', 'barber', 'm', 'caltok')")
+        db.execute("INSERT INTO students (id, user_id, data) VALUES ('s9', 'brb', ?)", [json.dumps({'id': 's9', 'name': 'רון'})])
+        db.execute("INSERT INTO lessons (id, user_id, studentId, date, data) VALUES ('l9', 'brb', 's9', '2030-01-01', ?)",
+                   [json.dumps({'id': 'l9', 'studentId': 's9', 'date': '2030-01-01', 'time': '10:00'})])
+        db.execute("INSERT INTO bookings (id, user_id, studentId, date, data) VALUES ('b9', 'brb', 's9', '2030-01-02', ?)",
+                   [json.dumps({'id': 'b9', 'studentId': 's9', 'date': '2030-01-02', 'time': '11:00', 'units': 2})])
+        db.commit()
+        db.close()
+        secret = self.app_mod.CRON_SECRET
+        r = self.client.get(f'/api/push/booking-notice?token={secret}&booking_id=b9').json
+        self.assertEqual(r['title'], '🗓️ בקשה חדשה לתור')
+        self.assertIn('2 תורים ברצף', r['body'])
+        self.assertIn('לחץ לאישור', r['body'])
+        ics = self.client.get('/calendar.ics?token=caltok').get_data(as_text=True)
+        self.assertIn('SUMMARY:תור - רון', ics)
+        self.assertIn('X-WR-CALNAME:תורים', ics)
 
     def test_public_vertical_list_and_js(self):
         r = self.client.get('/api/verticals')

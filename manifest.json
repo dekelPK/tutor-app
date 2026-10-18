@@ -1,7 +1,7 @@
 {
-  "name": "ניהול שיעורים פרטיים",
-  "short_name": "שיעורים",
-  "description": "ניהול תלמידים, שיעורים ותשלומים",
+  "name": "לוזי",
+  "short_name": "לוזי",
+  "description": "הלו״ז של העסק שלך — במקום אחד",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
