@@ -775,11 +775,18 @@
       width: 100%;
       max-width: 480px;
       max-height: 90vh;
-      overflow-y: auto;
+      max-height: 90dvh; /* dvh: doesn't jump when Safari's toolbars collapse */
+      overflow: hidden;  /* only .modal-body scrolls — header & footer stay put */
       display: flex;
       flex-direction: column;
     }
-    .modal-body { padding: 20px; flex: 1; overflow-y: auto; }
+    .modal-overlay { overscroll-behavior: contain; }
+    .modal-body { padding: 20px; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+    .modal-header, .modal-footer, .modal-handle { flex-shrink: 0; }
+    /* Page behind an open sheet is frozen in place (see lockPageScroll) */
+    body.scroll-locked { position: fixed; left: 0; right: 0; overflow: hidden; }
+    /* Installed app: no rubber-band bounce that drags the fixed bars around */
+    @media (display-mode: standalone) { html, body { overscroll-behavior-y: none; } }
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -814,7 +821,18 @@
     }
 
     /* ===== FORM ===== */
-    .form-group { margin-bottom: 16px; }
+    /* min-width:0 lets side-by-side fields (grid "1fr 1fr") actually shrink —
+       otherwise iOS date inputs keep their own minimum width and spill over
+       the neighbouring field. */
+    .form-group { margin-bottom: 16px; min-width: 0; }
+    .form-group input[type="date"],
+    .form-group input[type="time"] {
+      -webkit-appearance: none; appearance: none;
+      min-width: 0; max-width: 100%; display: block;
+      min-height: 40px; /* an empty iOS date field otherwise collapses */
+    }
+    .form-group input[type="date"]::-webkit-date-and-time-value,
+    .form-group input[type="time"]::-webkit-date-and-time-value { text-align: right; }
     .form-group label {
       display: block;
       font-size: 13px;
@@ -1274,6 +1292,7 @@
       .modal {
         border-radius: 20px 20px 0 0;
         max-height: 88vh;
+        max-height: 88dvh;
         max-width: 100%;
         width: 100%;
       }
@@ -3915,6 +3934,8 @@ function openModal(title, bodyHTML, onSave) {
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-body').innerHTML = bodyHTML;
   document.getElementById('modal-overlay').classList.add('active');
+  lockPageScroll();
+  document.getElementById('modal-body').scrollTop = 0;
   // reset footer to default structure
   const footer = document.getElementById('modal-footer');
   footer.innerHTML = '<button class="btn btn-ghost" onclick="closeModal()">ביטול</button><button class="btn btn-primary" id="modal-save-btn">שמור</button>';
@@ -3939,6 +3960,25 @@ function openModal(title, bodyHTML, onSave) {
 }
 function closeModal() {
   document.getElementById('modal-overlay').classList.remove('active');
+  unlockPageScroll();
+}
+// iOS scrolls the page behind a fixed overlay ("scroll chaining"), which made
+// the sheet and the page jump. Freeze the page at its position while a modal
+// is open and put it back exactly where it was on close.
+function lockPageScroll() {
+  const b = document.body;
+  if (b.classList.contains('scroll-locked')) return;
+  b.dataset.scrollY = String(window.scrollY);
+  b.style.top = `-${window.scrollY}px`;
+  b.classList.add('scroll-locked');
+}
+function unlockPageScroll() {
+  const b = document.body;
+  if (!b.classList.contains('scroll-locked')) return;
+  const y = parseInt(b.dataset.scrollY || '0', 10);
+  b.classList.remove('scroll-locked');
+  b.style.top = '';
+  window.scrollTo(0, y);
 }
 
 // ===== NAVIGATION =====
