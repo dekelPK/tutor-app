@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import json, os, threading, webbrowser, sqlite3, hashlib, secrets, uuid
 import portal_core
 import verticals
+import demo_accounts
 from datetime import datetime, timedelta
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -692,6 +693,29 @@ def admin_pending_users():
     rows = c.execute('SELECT id, name, email, created_at FROM users WHERE approved=0 ORDER BY created_at').fetchall()
     c.close()
     return jsonify([dict(r) for r in rows])
+
+@app.route('/api/admin/demo-account', methods=['POST'])
+def admin_demo_account():
+    # Same as flask_app.admin_demo_account: create/reset a profession's test account.
+    err = require_admin()
+    if err: return err
+    prof = verticals.normalize((request.json or {}).get('profession'))
+    email, password = demo_accounts.email_for(prof), demo_accounts.new_password()
+    label = verticals.load(prof)['label']['f']
+    c = get_db()
+    row = c.execute('SELECT id FROM users WHERE email=?', [email]).fetchone()
+    if row:
+        user_id = row['id']
+        c.execute('UPDATE users SET password_hash=?, approved=1, profession=?, gender=?, custom_fields=NULL WHERE id=?',
+                  [hash_pw(password), prof, verticals.DEFAULT_GENDER, user_id])
+    else:
+        user_id = uuid.uuid4().hex[:12]
+        c.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved,profession,gender) VALUES (?,?,?,?,?,?,?,?)',
+                  [user_id, email, hash_pw(password), f'ניסיון · {label}', datetime.now().isoformat(), 1, prof, verticals.DEFAULT_GENDER])
+    c.commit()
+    c.close()
+    write_data(demo_accounts.build(prof), user_id)
+    return jsonify({'email': email, 'password': password, 'profession': prof})
 
 @app.route('/api/admin/users')
 def admin_users():

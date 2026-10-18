@@ -240,6 +240,28 @@ class MigrationAndApiTests(unittest.TestCase):
         self.assertIn('SUMMARY:תור - רון', ics)
         self.assertIn('X-WR-CALNAME:תורים', ics)
 
+    def test_admin_creates_and_resets_a_demo_account(self):
+        admin = self.app_mod.app.test_client()
+        with admin.session_transaction() as sess:
+            sess['user_id'], sess['user_email'] = 'adm', self.app_mod.ADMIN_EMAIL
+        self.assertEqual(self.client.post('/api/admin/demo-account', json={'profession': 'barber'}).status_code, 401)
+        first = admin.post('/api/admin/demo-account', json={'profession': 'barber'}).json
+        self.assertEqual(first['email'], 'demo.barber@luzi.test')
+        c = self.app_mod.app.test_client()
+        r = c.post('/api/auth/login', json={'email': first['email'], 'password': first['password']})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json['profession'], 'barber')
+        self.assertEqual(len(c.get('/api/students').json), 5)
+        self.assertGreater(len(c.get('/api/lessons').json), 10)
+        self.assertEqual(c.get('/api/exams').json, [])  # barbers have no exams
+        again = admin.post('/api/admin/demo-account', json={'profession': 'barber'}).json  # reset, not duplicate
+        self.assertNotEqual(again['password'], first['password'])
+        db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))
+        n_users = db.execute("SELECT COUNT(*) FROM users WHERE email='demo.barber@luzi.test'").fetchone()[0]
+        n_students = db.execute("SELECT COUNT(*) FROM students WHERE user_id=(SELECT id FROM users WHERE email='demo.barber@luzi.test')").fetchone()[0]
+        db.close()
+        self.assertEqual((n_users, n_students), (1, 5))
+
     def test_public_vertical_list_and_js(self):
         r = self.client.get('/api/verticals')
         ids = [v['id'] for v in r.json['verticals']]

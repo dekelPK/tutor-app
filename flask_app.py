@@ -19,6 +19,7 @@ BASE_DIR = os.environ.get('TUTOR_APP_BASE_DIR', '/home/DekelPA/mysite')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import portal_core
 import verticals
+import demo_accounts
 DB_PATH  = os.path.join(BASE_DIR, 'tutor.db')
 
 app = Flask(__name__, static_folder=BASE_DIR)
@@ -760,6 +761,40 @@ def admin_pending_users():
     with get_db() as db:
         rows = db.execute('SELECT id, name, email, created_at FROM users WHERE approved=0 ORDER BY created_at').fetchall()
     return jsonify([dict(r) for r in rows])
+
+@app.route('/api/admin/demo-account', methods=['POST'])
+def admin_demo_account():
+    # Admin screen → "חשבון ניסיון": creates (or resets) the test account for a
+    # profession with sample data, and returns its login so the admin can see
+    # the app the way that profession does. Same address each time → re-running
+    # resets the password and the data.
+    err = require_admin()
+    if err: return err
+    prof = verticals.normalize((request.json or {}).get('profession'))
+    email, password = demo_accounts.email_for(prof), demo_accounts.new_password()
+    data = demo_accounts.build(prof)
+    label = verticals.load(prof)['label']['f']
+    with get_db() as db:
+        row = db.execute('SELECT id FROM users WHERE email=?', [email]).fetchone()
+        if row:
+            user_id = row['id']
+            for tbl in ('students', 'lessons', 'payments', 'packages', 'exams', 'bookings', 'push_subscriptions'):
+                db.execute(f'DELETE FROM {tbl} WHERE user_id=?', [user_id])
+            db.execute('UPDATE users SET password_hash=?, approved=1, profession=?, gender=?, custom_fields=NULL WHERE id=?',
+                       [hash_pw(password), prof, verticals.DEFAULT_GENDER, user_id])
+        else:
+            user_id = uuid.uuid4().hex[:12]
+            db.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved,profession,gender) VALUES (?,?,?,?,?,?,?,?)',
+                       [user_id, email, hash_pw(password), f'ניסיון · {label}', datetime.now().isoformat(), 1, prof, verticals.DEFAULT_GENDER])
+        db.execute('UPDATE users SET booking_settings=? WHERE id=?',
+                   [json.dumps(data['bookingSettings'], ensure_ascii=False) if data['bookingSettings'] else None, user_id])
+        for s in data['students']:
+            db.execute('INSERT INTO students(id,user_id,data) VALUES (?,?,?)', [s['id'], user_id, json.dumps(s, ensure_ascii=False)])
+        for tbl in ('lessons', 'payments', 'packages', 'exams', 'bookings'):
+            for r in data[tbl]:
+                db.execute(f'INSERT INTO {tbl}(id,user_id,studentId,date,data) VALUES (?,?,?,?,?)',
+                           [r['id'], user_id, r['studentId'], r['date'], json.dumps(r, ensure_ascii=False)])
+    return jsonify({'email': email, 'password': password, 'profession': prof})
 
 @app.route('/api/admin/users')
 def admin_users():
