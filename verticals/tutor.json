@@ -27,18 +27,22 @@
     "schedule_days": "ימי שיעור",
     "portal_title": "השיעורים שלי",
     "portal_history": "📚 מה למדנו לאחרונה",
-    "calendar_name": "שיעורים - הוראה"
+    "calendar_name": "שיעורים - הוראה",
+    "service": "סוג שיעור",
+    "services": "סוגי שיעורים"
   },
   "features": {
     "exams": true,
     "lessonNotes": true,
     "parentContact": true,
     "packages": true,
-    "selfBooking": true
+    "selfBooking": true,
+    "services": false
   },
   "defaults": {
     "price": 150,
     "durationMinutes": 50
   },
-  "fields": []
+  "fields": [],
+  "services": []
 }

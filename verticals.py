@@ -150,3 +150,46 @@ def fields_for(profession, stored):
         except (TypeError, ValueError):
             pass
     return load(profession).get('fields', [])
+
+
+# ── Services (per business) ──────────────────────────────────────────────────
+# Kinds of appointment a business offers, each with its own price and length
+# ("לק ג'ל — ₪100, 60 דק'"). Stored as JSON on users.services; NULL means the
+# vertical's default `services` list. An appointment booked as a service keeps
+# serviceId / serviceName / unitMinutes on the record.
+MAX_SERVICES = 30
+
+
+def normalize_services(raw):
+    """Sanitize an owner-submitted list: [{id, name, price, durationMinutes}, ...]."""
+    out, seen = [], set()
+    for sv in raw if isinstance(raw, list) else []:
+        if not isinstance(sv, dict):
+            continue
+        name = str(sv.get('name') or '').strip()[:MAX_LABEL]
+        if not name:
+            continue
+        try:
+            price = max(0.0, round(float(sv.get('price') or 0), 2))
+            minutes = min(600, max(5, int(float(sv.get('durationMinutes') or 0))))
+        except (TypeError, ValueError):
+            continue
+        sid = ''.join(ch for ch in str(sv.get('id') or '') if ch.isascii() and (ch.isalnum() or ch in '_-'))[:30]
+        while not sid or sid in seen:
+            sid = 's' + secrets.token_hex(3)
+        seen.add(sid)
+        out.append({'id': sid, 'name': name, 'price': int(price) if price == int(price) else price,
+                    'durationMinutes': minutes})
+        if len(out) >= MAX_SERVICES:
+            break
+    return out
+
+
+def services_for(profession, stored):
+    """The business's services: what the owner saved, else the vertical's defaults."""
+    if stored:
+        try:
+            return normalize_services(json.loads(stored))
+        except (TypeError, ValueError):
+            pass
+    return normalize_services(load(profession).get('services', []))

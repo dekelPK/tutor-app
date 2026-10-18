@@ -55,6 +55,8 @@ def init_db():
         c.execute(f"ALTER TABLE users ADD COLUMN gender TEXT DEFAULT '{verticals.DEFAULT_GENDER}'")
     if 'custom_fields' not in cols:
         c.execute('ALTER TABLE users ADD COLUMN custom_fields TEXT')
+    if 'services' not in cols:
+        c.execute('ALTER TABLE users ADD COLUMN services TEXT')
     c.commit()
     c.close()
 
@@ -148,12 +150,13 @@ def auth_me():
 
 def account_info(user_id):
     c = get_db()
-    row = c.execute('SELECT profession, gender, custom_fields FROM users WHERE id=?', [user_id]).fetchone()
+    row = c.execute('SELECT profession, gender, custom_fields, services FROM users WHERE id=?', [user_id]).fetchone()
     c.close()
     prof = verticals.normalize(row['profession'] if row else None)
     gender = verticals.normalize_gender(row['gender'] if row else None)
     return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand(),
-            'customFields': verticals.fields_for(prof, row['custom_fields'] if row else None)}
+            'customFields': verticals.fields_for(prof, row['custom_fields'] if row else None),
+            'services': verticals.services_for(prof, row['services'] if row else None)}
 
 @app.route('/api/verticals')
 def list_verticals():
@@ -171,6 +174,9 @@ def update_account():
     if 'customFields' in body:
         c.execute('UPDATE users SET custom_fields=? WHERE id=?',
                   [json.dumps(verticals.normalize_fields(body['customFields']), ensure_ascii=False), session['user_id']])
+    if 'services' in body:
+        c.execute('UPDATE users SET services=? WHERE id=?',
+                  [json.dumps(verticals.normalize_services(body['services']), ensure_ascii=False), session['user_id']])
     c.commit()
     c.close()
     return jsonify(account_info(session['user_id']))
@@ -706,7 +712,7 @@ def admin_demo_account():
     row = c.execute('SELECT id FROM users WHERE email=?', [email]).fetchone()
     if row:
         user_id = row['id']
-        c.execute('UPDATE users SET password_hash=?, approved=1, profession=?, gender=?, custom_fields=NULL WHERE id=?',
+        c.execute('UPDATE users SET password_hash=?, approved=1, profession=?, gender=?, custom_fields=NULL, services=NULL WHERE id=?',
                   [hash_pw(password), prof, verticals.DEFAULT_GENDER, user_id])
     else:
         user_id = uuid.uuid4().hex[:12]
@@ -824,8 +830,7 @@ def calendar_ics():
         date = l['date'].replace('-', '')
         hh, mm = map(int, (l.get('time', '16:00')).split(':'))
         start_min = hh * 60 + mm
-        lesson_minutes = s.get('lessonDurationMinutes') or 50
-        end_min   = start_min + int((l.get('durationHours', 1) or 1) * lesson_minutes)
+        end_min   = start_min + int((l.get('durationHours', 1) or 1) * portal_core.unit_minutes(l, s))
         sh = str(start_min // 60).zfill(2)
         sm = str(start_min % 60).zfill(2)
         eh = str((end_min // 60) % 24).zfill(2)
@@ -836,7 +841,7 @@ def calendar_ics():
             f'DTSTAMP:{stamp}',
             f'DTSTART;TZID=Asia/Jerusalem:{date}T{sh}{sm}00',
             f'DTEND;TZID=Asia/Jerusalem:{date}T{eh}{em}00',
-            f"SUMMARY:{bt.t('calendar_event', name=name)}",
+            f"SUMMARY:{l['serviceName'] + ' - ' + name if l.get('serviceName') else bt.t('calendar_event', name=name)}",
             f'DESCRIPTION:{l.get("notes","") or ""}',
             'END:VEVENT',
         ]

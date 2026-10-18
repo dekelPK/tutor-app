@@ -40,16 +40,21 @@ def build(profession, today=None):
                  'lessonDurationMinutes': minutes, 'scheduledDays': [], 'isActive': True, 'notes': '',
                  'createdAt': day(-45) + 'T09:00:00'} for name, color, phone in CLIENTS]
 
+    services = verticals.services_for(profession, None) if has('services') else []
     lessons = []
     for n in range(-35, 15):
         for i, s in enumerate(students):
             if (n + i * 3) % 7:
                 continue
             paid = n < -7 or (n < 0 and i % 2 == 0)
-            lessons.append({'id': nid(), 'studentId': s['id'], 'date': day(n), 'time': TIMES[(n + i) % len(TIMES)],
-                            'durationHours': 1, 'amount': price, 'isPaid': paid, 'paidAmount': price if paid else 0,
-                            'notes': '', 'topic': 'חזרה על החומר' if has('lessonNotes') and n < 0 else '',
-                            'homework': ''})
+            lesson = {'id': nid(), 'studentId': s['id'], 'date': day(n), 'time': TIMES[(n + i) % len(TIMES)],
+                      'durationHours': 1, 'amount': price, 'isPaid': paid, 'paidAmount': price if paid else 0,
+                      'notes': '', 'topic': 'חזרה על החומר' if has('lessonNotes') and n < 0 else '', 'homework': ''}
+            if services:  # each client has a usual service
+                sv = services[i % len(services)]
+                lesson.update(serviceId=sv['id'], serviceName=sv['name'], unitMinutes=sv['durationMinutes'],
+                              amount=sv['price'], paidAmount=sv['price'] if paid else 0)
+            lessons.append(lesson)
 
     packages = []
     if has('packages'):

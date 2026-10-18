@@ -122,6 +122,31 @@ class CustomFieldTests(unittest.TestCase):
         self.assertEqual(verticals.normalize_fields(None), [])
 
 
+class ServiceTests(unittest.TestCase):
+    def test_defaults_per_vertical(self):
+        self.assertEqual(verticals.services_for('tutor', None), [])
+        names = [sv['name'] for sv in verticals.services_for('cosmetician', None)]
+        self.assertIn("לק ג'ל ידיים", names)
+        self.assertEqual(verticals.services_for('barber', '[]'), [])
+        self.assertTrue(verticals.has('barber', 'services'))
+        self.assertFalse(verticals.has('tutor', 'services'))
+
+    def test_normalize_services(self):
+        out = verticals.normalize_services([
+            {'name': 'לק', 'price': '100', 'durationMinutes': '60'}, {'name': ''}, {'name': 'x', 'price': 'abc'},
+            {'id': 'a', 'name': 'גבות', 'price': 49.5, 'durationMinutes': 1}, {'id': 'a', 'name': 'כפול', 'price': -5, 'durationMinutes': 99999}])
+        self.assertEqual([(sv['name'], sv['price'], sv['durationMinutes']) for sv in out],
+                         [('לק', 100, 60), ('גבות', 49.5, 5), ('כפול', 0, 600)])
+        self.assertEqual(len({sv['id'] for sv in out}), 3)
+
+    def test_service_length_sets_the_appointment_end(self):
+        import portal_core
+        student = {'lessonDurationMinutes': 50}
+        self.assertEqual(portal_core.lesson_interval({'time': '10:00', 'studentId': 's'}, {'s': student}), (600, 650))
+        self.assertEqual(portal_core.lesson_interval({'time': '10:00', 'studentId': 's', 'unitMinutes': 20, 'durationHours': 2},
+                                                     {'s': student}), (600, 640))
+
+
 class PortalTests(unittest.TestCase):
     """The client portal follows the owner's vertical: wording and features."""
 
@@ -219,6 +244,9 @@ class MigrationAndApiTests(unittest.TestCase):
         r = c.put('/api/account', json={'gender': 'm'})  # saved fields stay with the business
         self.assertEqual(len(r.json['customFields']), 2)
         self.assertEqual(c.get('/api/auth/me').json['customFields'][1]['label'], 'אלרגיות')
+        self.assertEqual(len(r.json['services']), 4)  # barber defaults
+        r = c.put('/api/account', json={'services': [{'name': 'תספורת', 'price': 60, 'durationMinutes': 25}]})
+        self.assertEqual([(sv['name'], sv['price']) for sv in r.json['services']], [('תספורת', 60)])
 
     def test_server_text_follows_the_owners_vertical(self):
         db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))
