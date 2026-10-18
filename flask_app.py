@@ -206,6 +206,8 @@ def init_db():
             db.execute(f"ALTER TABLE users ADD COLUMN profession TEXT DEFAULT '{verticals.DEFAULT_VERTICAL}'")
         if 'gender' not in user_cols:
             db.execute(f"ALTER TABLE users ADD COLUMN gender TEXT DEFAULT '{verticals.DEFAULT_GENDER}'")
+        if 'custom_fields' not in user_cols:  # NULL → the vertical's default client fields
+            db.execute('ALTER TABLE users ADD COLUMN custom_fields TEXT')
 
     # One-time migration from data.json if it exists
     json_path = os.path.join(BASE_DIR, 'data.json')
@@ -266,10 +268,11 @@ def account_info(user_id):
     """The business's profession + owner gender, and the resolved vertical config
     the browser needs for terminology and feature flags (see vertical.js)."""
     with get_db() as db:
-        row = db.execute('SELECT profession, gender FROM users WHERE id=?', [user_id]).fetchone()
+        row = db.execute('SELECT profession, gender, custom_fields FROM users WHERE id=?', [user_id]).fetchone()
     prof = verticals.normalize(row['profession'] if row else None)
     gender = verticals.normalize_gender(row['gender'] if row else None)
-    return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand()}
+    return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand(),
+            'customFields': verticals.fields_for(prof, row['custom_fields'] if row else None)}
 
 def owner_terms(db, user_id):
     """verticals.Terms for a business owner — server-side text in their wording."""
@@ -303,6 +306,9 @@ def update_account():
             db.execute('UPDATE users SET profession=? WHERE id=?', [verticals.normalize(body['profession']), uid()])
         if 'gender' in body:
             db.execute('UPDATE users SET gender=? WHERE id=?', [verticals.normalize_gender(body['gender']), uid()])
+        if 'customFields' in body:
+            db.execute('UPDATE users SET custom_fields=? WHERE id=?',
+                       [json.dumps(verticals.normalize_fields(body['customFields']), ensure_ascii=False), uid()])
     return jsonify(account_info(uid()))
 
 @app.route('/vertical.js')

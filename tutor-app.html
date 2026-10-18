@@ -334,6 +334,14 @@
     .prof-txt { display: flex; flex-direction: column; min-width: 0; }
     .prof-txt b { font-size: 14.5px; }
     .prof-txt small { font-size: 12px; color: var(--text-muted); }
+    .cf-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .cf-row { display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 8px; padding: 6px 10px; }
+    .cf-label { flex: 1; font-weight: 600; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cf-type { font-size: 12px; color: var(--text-muted); }
+    .cf-add { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cf-add input { flex: 1 1 100%; min-width: 0; }
+    .cf-add select { flex: 1; width: auto; min-width: 0; }
+    .cf-add .btn { white-space: nowrap; }
     .gender-pick { display: flex; background: var(--bg); border-radius: 10px; padding: 3px; gap: 3px; }
     .gender-pick button { flex: 1; border: none; background: transparent; color: var(--text-muted); border-radius: 8px; padding: 8px; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
     .gender-pick button.on { background: var(--card); color: var(--primary); box-shadow: var(--shadow); }
@@ -2469,8 +2477,21 @@ async function openBusinessModal() {
   openModal('העסק שלי', `
     <div class="form-group"><label>מה העסק שלך?</label><div class="prof-pick" id="biz-prof-pick"></div></div>
     <div class="form-group"><label>איך לפנות אלייך?</label><div class="gender-pick" id="biz-gender-pick"></div></div>
-    <div class="pkg-sub">משנה את המונחים, הפיצ'רים וברירות המחדל באפליקציה. הנתונים הקיימים שלך לא משתנים.</div>`, async () => {
-    const res = await apiCall('PUT', '/api/account', { profession: _profPick.profession, gender: _profPick.gender });
+    <div class="pkg-sub">משנה את המונחים, הפיצ'רים וברירות המחדל באפליקציה. הנתונים הקיימים שלך לא משתנים.</div>
+    <hr style="margin:14px 0">
+    <div class="form-group"><label>שדות נוספים בכרטיס ה${t('client')}</label>
+      <div class="pkg-sub" style="margin-bottom:8px">מידע שחשוב לעסק שלך — יופיע בטופס ובכרטיס של כל ${t('client')}</div>
+      <div class="cf-list" id="biz-fields"></div>
+      <div class="cf-add">
+        <input type="text" id="biz-field-label" maxlength="40" placeholder="למשל: תאריך לידה, אלרגיות" onkeydown="if(event.key==='Enter'){event.preventDefault();addBizField()}">
+        <select id="biz-field-type">${Object.entries(CF_TYPES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addBizField()">+ הוספה</button>
+      </div>
+    </div>`, async () => {
+    addBizField();  // a label typed but not yet added still counts
+    const body = { profession: _profPick.profession, gender: _profPick.gender };
+    if (_bizFieldsDirty) body.customFields = _bizFields;
+    const res = await apiCall('PUT', '/api/account', body);
     applyAccount(res);
     closeModal();
     renderAccountMenu();
@@ -2478,6 +2499,58 @@ async function openBusinessModal() {
     showToast('ההגדרות נשמרו ✓');
   });
   renderProfessionPicker('biz-prof-pick', 'biz-gender-pick');
+  _bizFields = customFields().map(f => ({ ...f }));
+  _bizFieldsDirty = false;
+  renderBizFields();
+}
+// ── Custom client fields: defined per business (העסק שלי), values on client.customFields ──
+const CF_TYPES = { text: 'טקסט', number: 'מספר', date: 'תאריך' };
+let _bizFields = [], _bizFieldsDirty = false;
+function customFields() { return window._customFields || []; }
+function renderBizFields() {
+  const el = document.getElementById('biz-fields');
+  if (!el) return;
+  el.innerHTML = _bizFields.map((f, i) => `<div class="cf-row">
+      <span class="cf-label">${escapeHtml(f.label)}</span><span class="cf-type">${CF_TYPES[f.type] || ''}</span>
+      <button type="button" class="btn btn-ghost btn-xs btn-icon" onclick="removeBizField(${i})" title="הסרה" aria-label="הסרה">✕</button>
+    </div>`).join('') || '<div class="pkg-sub">אין עדיין שדות נוספים</div>';
+}
+function addBizField() {
+  const input = document.getElementById('biz-field-label');
+  const label = input?.value.trim();
+  if (!label) return;
+  _bizFields.push({ key: 'f' + Date.now().toString(36), label, type: document.getElementById('biz-field-type').value });
+  _bizFieldsDirty = true;
+  input.value = '';
+  document.getElementById('biz-field-type').value = 'text';
+  renderBizFields();
+}
+function removeBizField(i) {
+  _bizFields.splice(i, 1);
+  _bizFieldsDirty = true;
+  renderBizFields();
+}
+function customFieldsFormHtml(s) {
+  const vals = s?.customFields || {};
+  const type = f => ({ number: 'number', date: 'date' })[f.type] || 'text';
+  return customFields().map(f => `<div class="form-group">
+      <label>${escapeHtml(f.label)}</label>
+      <input type="${type(f)}" data-cf="${escapeHtml(f.key)}" value="${escapeHtml(vals[f.key])}">
+    </div>`).join('');
+}
+// Values of fields since removed from the business's list are kept, not lost.
+function readCustomFields(prev) {
+  const out = { ...(prev || {}) };
+  document.querySelectorAll('[data-cf]').forEach(i => {
+    const v = i.value.trim();
+    if (v) out[i.dataset.cf] = v; else delete out[i.dataset.cf];
+  });
+  return out;
+}
+function customFieldsCardHtml(s) {
+  const vals = s.customFields || {};
+  return customFields().filter(f => vals[f.key]).map(f =>
+    `<span>🏷️ ${escapeHtml(f.label)}: ${escapeHtml(f.type === 'date' ? formatDate(vals[f.key]) : vals[f.key])}</span>`).join('');
 }
 // New-record defaults come from the vertical (tutor: ₪150 / 50 min, as before)
 function verticalDefault(key, fallback) {
@@ -3603,6 +3676,7 @@ function applyAccount(data) {
   if (!data) return;
   setVertical(data.vertical, data.gender);
   window._profession = data.profession;
+  window._customFields = data.customFields || [];
   applyTerms();
   applyFeatures();
 }
@@ -4211,6 +4285,7 @@ function renderStudents() {
         <span>⏱ ${s.lessonDurationMinutes || 50} דק' ל${t('appointment')}</span>
         <span>📅 ${days || 'ימים לא הוגדרו'}</span>
         ${s.phone ? `<span>📞 <a href="tel:${escapeHtml(s.phone)}" style="color:var(--primary);text-decoration:none">${escapeHtml(s.phone)}</a></span>` : ''}
+        ${customFieldsCardHtml(s)}
         ${studentPackageLine(s.id) ? `<span class="card-link" onclick="openPackagesModal('${s.id}')">${studentPackageLine(s.id)}</span>` : ''}
         ${studentExamLine(s.id) ? `<span class="card-link" onclick="openExamsModal('${s.id}')">${studentExamLine(s.id)}</span>` : ''}
         <span style="display:flex;gap:10px;flex-wrap:wrap">
@@ -4281,6 +4356,7 @@ function buildStudentForm(s) {
         </div>
       </div>
     </div>
+    ${customFieldsFormHtml(s)}
     <div class="form-group">
       <label>הערות</label>
       <textarea id="f-notes" rows="2">${escapeHtml(s?.notes)}</textarea>
@@ -4314,6 +4390,7 @@ function openAddStudentModal() {
       whatsappTemplate: document.getElementById('f-whatsapp-template').value.trim(),
       parentName: document.getElementById('f-parent-name').value.trim(),
       parentPhone: document.getElementById('f-parent-phone').value.trim(),
+      ...(customFields().length ? { customFields: readCustomFields() } : {}),
       createdAt: new Date().toISOString()
     };
     await apiCall('POST', '/api/students', student);
@@ -4340,7 +4417,8 @@ function openEditStudentModal(id) {
       phone: document.getElementById('f-phone').value.trim(),
       whatsappTemplate: document.getElementById('f-whatsapp-template').value.trim(),
       parentName: document.getElementById('f-parent-name').value.trim(),
-      parentPhone: document.getElementById('f-parent-phone').value.trim() };
+      parentPhone: document.getElementById('f-parent-phone').value.trim(),
+      ...(customFields().length ? { customFields: readCustomFields(s.customFields) } : {}) };
     await apiCall('PUT', `/api/students/${id}`, updated);
     _students = _students.map(st => st.id === id ? updated : st);
     closeModal();
