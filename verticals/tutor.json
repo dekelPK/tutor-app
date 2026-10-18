@@ -24,7 +24,9 @@
     "calendar_event": "שיעור - {name}",
     "reminder_title": "תזכורת: יש לך שיעור היום 📚",
     "reminder_one": "שיעור עם {name} בשעה {time}",
-    "reminder_many": "{count} שיעורים מתוכננים היום"
+    "reminder_many": "{count} שיעורים מתוכננים היום",
+    "schedule_days": "ימי שיעור",
+    "app_title": "שיעורים פרטיים"
   },
   "features": {
     "exams": true,
