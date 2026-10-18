@@ -140,6 +140,7 @@ class MigrationAndApiTests(unittest.TestCase):
         r = self.client.get('/api/verticals')
         ids = [v['id'] for v in r.json['verticals']]
         self.assertEqual(r.json['default'], 'tutor')
+        self.assertEqual(ids[0], 'tutor')  # current profession is listed first
         self.assertIn('barber', ids)
         js = self.client.get('/vertical.js')
         self.assertEqual(js.status_code, 200)

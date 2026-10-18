@@ -324,6 +324,18 @@
     .btn-auth:hover { background: #1d4ed8; box-shadow: 0 6px 24px rgba(37,99,235,0.45); }
     .btn-auth:active { transform: scale(0.98); }
     .btn-auth:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .prof-pick { display: grid; gap: 8px; }
+    .prof-opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: start; background: var(--card); color: var(--text);
+      border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 12px; cursor: pointer; font: inherit; transition: border-color .15s, background .15s; }
+    .prof-opt:hover { border-color: var(--primary); }
+    .prof-opt.on { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent); }
+    .prof-ic { font-size: 24px; width: 32px; text-align: center; flex-shrink: 0; }
+    .prof-txt { display: flex; flex-direction: column; min-width: 0; }
+    .prof-txt b { font-size: 14.5px; }
+    .prof-txt small { font-size: 12px; color: var(--text-muted); }
+    .gender-pick { display: flex; background: var(--bg); border-radius: 10px; padding: 3px; gap: 3px; }
+    .gender-pick button { flex: 1; border: none; background: transparent; color: var(--text-muted); border-radius: 8px; padding: 8px; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+    .gender-pick button.on { background: var(--card); color: var(--primary); box-shadow: var(--shadow); }
     .auth-note { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 14px; }
     .auth-error {
       display: none; margin-top: 14px;
@@ -1842,6 +1854,14 @@
       <!-- REGISTER -->
       <div id="auth-form-register" style="display:none">
         <div class="auth-field">
+          <label>מה העסק שלך?</label>
+          <div class="prof-pick" id="reg-prof-pick"></div>
+        </div>
+        <div class="auth-field">
+          <label>איך לפנות אלייך?</label>
+          <div class="gender-pick" id="reg-gender-pick"></div>
+        </div>
+        <div class="auth-field">
           <label>שם</label>
           <div class="auth-input-wrap">
             <span class="auth-input-icon">👤</span>
@@ -2414,6 +2434,54 @@ function showAuthTab(tab) {
   document.getElementById('auth-tab-login').classList.toggle('active',    tab === 'login');
   document.getElementById('auth-tab-register').classList.toggle('active', tab === 'register');
   document.getElementById('auth-error').classList.remove('visible');
+  if (tab === 'register') renderProfessionPicker('reg-prof-pick', 'reg-gender-pick');
+}
+
+// ===== PROFESSION & GENDER PICKER (signup + "העסק שלי") =====
+// The list comes from /api/verticals (one entry per verticals/<id>.json), so a
+// new profession appears here just by adding its config file.
+const _profPick = { profession: 'tutor', gender: 'f', list: null };
+async function loadVerticalList() {
+  if (_profPick.list) return _profPick.list;
+  try { _profPick.list = (await (await fetch('/api/verticals')).json()).verticals; }
+  catch (e) { _profPick.list = []; }
+  return _profPick.list;
+}
+async function renderProfessionPicker(profElId, genderElId) {
+  const list = await loadVerticalList();
+  const profEl = document.getElementById(profElId), genEl = document.getElementById(genderElId);
+  if (!profEl || !genEl) return;
+  const gk = _profPick.gender;
+  profEl.innerHTML = list.map(v => `
+    <button type="button" class="prof-opt ${v.id === _profPick.profession ? 'on' : ''}"
+      onclick="_profPick.profession='${v.id}';renderProfessionPicker('${profElId}','${genderElId}')">
+      <span class="prof-ic">${v.icon || '•'}</span>
+      <span class="prof-txt"><b>${escapeHtml(v.label[gk] || v.label.f)}</b><small>${escapeHtml(v.description || '')}</small></span>
+    </button>`).join('');
+  genEl.innerHTML = [['f', 'בלשון נקבה'], ['m', 'בלשון זכר']].map(([k, label]) =>
+    `<button type="button" class="${k === gk ? 'on' : ''}" onclick="_profPick.gender='${k}';renderProfessionPicker('${profElId}','${genderElId}')">${label}</button>`).join('');
+}
+// Account menu → "העסק שלי": change profession / how the app addresses you.
+async function openBusinessModal() {
+  _profPick.profession = window._profession || 'tutor';
+  _profPick.gender = gender();
+  openModal('העסק שלי', `
+    <div class="form-group"><label>מה העסק שלך?</label><div class="prof-pick" id="biz-prof-pick"></div></div>
+    <div class="form-group"><label>איך לפנות אלייך?</label><div class="gender-pick" id="biz-gender-pick"></div></div>
+    <div class="pkg-sub">משנה את המונחים, הפיצ'רים וברירות המחדל באפליקציה. הנתונים הקיימים שלך לא משתנים.</div>`, async () => {
+    const res = await apiCall('PUT', '/api/account', { profession: _profPick.profession, gender: _profPick.gender });
+    applyAccount(res);
+    closeModal();
+    renderAccountMenu();
+    refreshAfterDataChange();
+    showToast('ההגדרות נשמרו ✓');
+  });
+  renderProfessionPicker('biz-prof-pick', 'biz-gender-pick');
+}
+// New-record defaults come from the vertical (tutor: ₪150 / 50 min, as before)
+function verticalDefault(key, fallback) {
+  const v = vertical();
+  return (v && v.defaults && v.defaults[key]) || fallback;
 }
 function showAuthError(msg) {
   const el = document.getElementById('auth-error');
@@ -2495,7 +2563,7 @@ async function doRegister() {
   try {
     const r = await fetch('/api/auth/register', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({name, email, password})
+      body: JSON.stringify({name, email, password, profession: _profPick.profession, gender: _profPick.gender})
     });
     const data = await r.json();
     if (data.pending) {
@@ -3588,6 +3656,8 @@ function renderAccountMenu() {
       </button>
     </div>
     <div class="am-group">
+      <button class="am-item" onclick="closeAccountMenu();openBusinessModal()"><span class="am-ic">${escapeHtml(vertical()?.icon || '💼')}</span><span class="am-text"><span class="am-title">העסק שלי</span>
+        <span class="am-desc">${escapeHtml((vertical()?.label || {})[gender()] || '')} · ${gender() === 'm' ? 'פנייה בלשון זכר' : 'פנייה בלשון נקבה'}</span></span></button>
       ${window._isAdmin ? `<button class="am-item" onclick="closeAccountMenu();showPage('admin')"><span class="am-ic">⚙️</span><span class="am-text"><span class="am-title">ניהול מערכת</span><span class="am-desc">משתמשים, בקשות הרשמה, הודעות</span></span></button>` : ''}
       ${isMobile ? '' : `<button class="am-item" onclick="closeAccountMenu();openShortcutsModal()"><span class="am-ic">⌨️</span><span class="am-text"><span class="am-title">קיצורי מקלדת</span></span></button>`}
       <button class="am-item" onclick="closeAccountMenu();openAboutModal()"><span class="am-ic">💬</span><span class="am-text"><span class="am-title">אודות ויצירת קשר</span></span></button>
@@ -3928,7 +3998,8 @@ function renderAdminUsersList(users, isFiltered) {
       <span class="adm-avatar" style="background:${avatarColorFor(u.email)}">${escapeHtml((u.name || u.email || '?')[0].toUpperCase())}
         <i class="adm-status ${activeNow ? 'on' : ''}" title="${activeNow ? 'פעיל/ה החודש' : 'לא פעיל/ה החודש'}"></i></span>
       <div class="adm-main">
-        <div class="adm-name">${escapeHtml(u.name) || '(ללא שם)'} ${u.isAdmin ? '<span class="adm-pill">מנהלת</span>' : ''}</div>
+        <div class="adm-name">${escapeHtml(u.name) || '(ללא שם)'} ${u.isAdmin ? '<span class="adm-pill">מנהלת</span>' : ''}
+          ${(() => { const v = (_profPick.list || []).find(x => x.id === u.profession); return v ? `<span class="adm-pill">${v.icon} ${escapeHtml(v.label[u.gender === 'm' ? 'm' : 'f'])}</span>` : ''; })()}</div>
         <div class="adm-email">${escapeHtml(u.email)}</div>
         <div class="adm-stats">
           <span><b>${u.activeStudentCount}</b> תלמידים${u.studentCount !== u.activeStudentCount ? ` <small>(${u.studentCount} סה״כ)</small>` : ''}</span>
@@ -4163,11 +4234,11 @@ function buildStudentForm(s) {
     </div>
     <div class="form-group">
       <label>מחיר לשיעור (₪)</label>
-      <input type="number" id="f-rate" value="${s?.hourlyRate || 150}" min="0" step="10">
+      <input type="number" id="f-rate" value="${s?.hourlyRate || verticalDefault('price', 150)}" min="0" step="10">
     </div>
     <div class="form-group">
       <label>אורך שיעור בודד (בדקות)</label>
-      <input type="number" id="f-lesson-minutes" value="${s?.lessonDurationMinutes || 50}" min="5" step="5">
+      <input type="number" id="f-lesson-minutes" value="${s?.lessonDurationMinutes || verticalDefault('durationMinutes', 50)}" min="5" step="5">
     </div>
     <div class="form-group">
       <label>ימי שיעור</label>
@@ -4229,8 +4300,8 @@ function openAddStudentModal() {
     const color = document.querySelector('.color-dot.selected')?.dataset.color || STUDENT_COLORS[0];
     const student = {
       id: generateId(), name,
-      hourlyRate: parseFloat(document.getElementById('f-rate').value) || 150,
-      lessonDurationMinutes: parseInt(document.getElementById('f-lesson-minutes').value) || 50,
+      hourlyRate: parseFloat(document.getElementById('f-rate').value) || verticalDefault('price', 150),
+      lessonDurationMinutes: parseInt(document.getElementById('f-lesson-minutes').value) || verticalDefault('durationMinutes', 50),
       scheduledDays: days, color,
       notes: document.getElementById('f-notes').value.trim(),
       isActive: document.getElementById('f-active').checked,
@@ -5474,6 +5545,7 @@ async function showCalSubscribeInfo() {
 let _adminUsers = [];
 
 async function renderAdminPage() {
+  await loadVerticalList(); // user rows show each profession's label
   await Promise.all([loadAdminStats(), loadAdminPending(), loadAdminUsers(), loadAdminAnnouncementIntoForm()]);
 }
 
