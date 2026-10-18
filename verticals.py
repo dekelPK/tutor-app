@@ -16,6 +16,7 @@ All profession-specific behaviour must come from these files — code asks
 has(vertical, 'exams') / t(vertical, 'client'), never "if profession == ...".
 """
 import json
+import secrets
 import os
 
 VERTICALS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'verticals')
@@ -110,3 +111,42 @@ class Terms:
 
     def g(self, feminine, masculine):
         return masculine if self.gender == 'm' else feminine
+
+
+# ── Custom client fields (per business) ──────────────────────────────────────
+# Stored as JSON on the user row (users.custom_fields). NULL means "never
+# edited" → the vertical's default `fields` apply (and follow a profession
+# change); once the owner edits the list it is stored and used as-is.
+# Values live on each client record as client.customFields = {key: value}.
+FIELD_TYPES = ('text', 'number', 'date')
+MAX_FIELDS = 12
+MAX_LABEL = 40
+
+
+def normalize_fields(raw):
+    """Sanitize an owner-submitted field list: [{key, label, type}, ...]."""
+    out, seen = [], set()
+    for i, f in enumerate(raw if isinstance(raw, list) else []):
+        if not isinstance(f, dict):
+            continue
+        label = str(f.get('label') or '').strip()[:MAX_LABEL]
+        if not label:
+            continue
+        key = ''.join(ch for ch in str(f.get('key') or '') if ch.isascii() and (ch.isalnum() or ch == '_'))[:30]
+        while not key or key in seen:
+            key = 'f' + secrets.token_hex(3)
+        seen.add(key)
+        out.append({'key': key, 'label': label, 'type': f.get('type') if f.get('type') in FIELD_TYPES else 'text'})
+        if len(out) >= MAX_FIELDS:
+            break
+    return out
+
+
+def fields_for(profession, stored):
+    """The business's client fields: what the owner saved, else the vertical's defaults."""
+    if stored:
+        try:
+            return normalize_fields(json.loads(stored))
+        except (TypeError, ValueError):
+            pass
+    return load(profession).get('fields', [])

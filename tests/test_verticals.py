@@ -92,6 +92,27 @@ class TerminologyTests(unittest.TestCase):
         self.assertFalse(verticals.has('tutor', 'no_such_feature'))
 
 
+class CustomFieldTests(unittest.TestCase):
+    def test_defaults_follow_the_vertical_until_edited(self):
+        self.assertEqual(verticals.fields_for('tutor', None), [])
+        self.assertEqual([f['key'] for f in verticals.fields_for('barber', None)], ['style'])
+        self.assertEqual(verticals.fields_for('barber', '[]'), [])  # owner removed them all
+        self.assertEqual(verticals.fields_for('barber', 'not json'), verticals.fields_for('barber', None))
+
+    def test_normalize_sanitizes_owner_input(self):
+        out = verticals.normalize_fields([
+            {'label': 'גיל', 'type': 'number'}, {'label': '   '}, 'junk',
+            {'key': 'style', 'label': 'סגנון'}, {'key': 'style', 'label': 'כפול', 'type': 'evil'},
+            {'key': '<x>', 'label': 'א' * 100}])
+        self.assertEqual([f['label'] for f in out], ['גיל', 'סגנון', 'כפול', 'א' * verticals.MAX_LABEL])
+        keys = [f['key'] for f in out]
+        self.assertEqual(len(set(keys)), len(keys))
+        self.assertTrue(all(k.isascii() and k.replace('_', '').isalnum() for k in keys))
+        self.assertEqual(out[2]['type'], 'text')
+        self.assertEqual(len(verticals.normalize_fields([{'label': str(i)} for i in range(50)])), verticals.MAX_FIELDS)
+        self.assertEqual(verticals.normalize_fields(None), [])
+
+
 class PortalTests(unittest.TestCase):
     """The client portal follows the owner's vertical: wording and features."""
 
@@ -173,6 +194,22 @@ class MigrationAndApiTests(unittest.TestCase):
         self.assertEqual((r.json['profession'], r.json['gender']), ('tutor', 'f'))
         r = c.put('/api/account', json={'profession': 'hacker', 'gender': '?'})
         self.assertEqual((r.json['profession'], r.json['gender']), ('tutor', 'f'))
+
+    def test_custom_fields_default_then_saved(self):
+        c = self.app_mod.app.test_client()
+        r = c.post('/api/auth/register', json={'email': 'cf@x.com', 'password': 'secret123', 'name': 'רותם', 'profession': 'barber', 'gender': 'f'})
+        if r.status_code == 202:
+            db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))
+            db.execute("UPDATE users SET approved=1 WHERE email='cf@x.com'")
+            db.commit()
+            db.close()
+            r = c.post('/api/auth/login', json={'email': 'cf@x.com', 'password': 'secret123'})
+        self.assertEqual([f['key'] for f in r.json['customFields']], ['style'])
+        r = c.put('/api/account', json={'customFields': [{'key': 'style', 'label': 'סגנון'}, {'label': 'אלרגיות'}]})
+        self.assertEqual([f['label'] for f in r.json['customFields']], ['סגנון', 'אלרגיות'])
+        r = c.put('/api/account', json={'profession': 'tutor'})  # saved fields stay with the business
+        self.assertEqual(len(r.json['customFields']), 2)
+        self.assertEqual(c.get('/api/auth/me').json['customFields'][1]['label'], 'אלרגיות')
 
     def test_server_text_follows_the_owners_vertical(self):
         db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))

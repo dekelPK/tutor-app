@@ -52,6 +52,8 @@ def init_db():
         c.execute(f"ALTER TABLE users ADD COLUMN profession TEXT DEFAULT '{verticals.DEFAULT_VERTICAL}'")
     if 'gender' not in cols:
         c.execute(f"ALTER TABLE users ADD COLUMN gender TEXT DEFAULT '{verticals.DEFAULT_GENDER}'")
+    if 'custom_fields' not in cols:
+        c.execute('ALTER TABLE users ADD COLUMN custom_fields TEXT')
     c.commit()
     c.close()
 
@@ -145,11 +147,12 @@ def auth_me():
 
 def account_info(user_id):
     c = get_db()
-    row = c.execute('SELECT profession, gender FROM users WHERE id=?', [user_id]).fetchone()
+    row = c.execute('SELECT profession, gender, custom_fields FROM users WHERE id=?', [user_id]).fetchone()
     c.close()
     prof = verticals.normalize(row['profession'] if row else None)
     gender = verticals.normalize_gender(row['gender'] if row else None)
-    return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand()}
+    return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand(),
+            'customFields': verticals.fields_for(prof, row['custom_fields'] if row else None)}
 
 @app.route('/api/verticals')
 def list_verticals():
@@ -165,6 +168,9 @@ def update_account():
         c.execute('UPDATE users SET profession=? WHERE id=?', [verticals.normalize(body['profession']), session['user_id']])
     if 'gender' in body:
         c.execute('UPDATE users SET gender=? WHERE id=?', [verticals.normalize_gender(body['gender']), session['user_id']])
+    if 'customFields' in body:
+        c.execute('UPDATE users SET custom_fields=? WHERE id=?',
+                  [json.dumps(verticals.normalize_fields(body['customFields']), ensure_ascii=False), session['user_id']])
     c.commit()
     c.close()
     return jsonify(account_info(session['user_id']))
