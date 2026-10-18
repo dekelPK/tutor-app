@@ -1333,6 +1333,27 @@
       .modal-handle, .modal-close, .modal-footer { display: none !important; }
     }
 
+    /* ===== STUDENT ACTIONS MENU ===== */
+    .sa-more { margin-inline-start: auto; }
+    .sa-dots { font-size: 16px; line-height: 0; position: relative; top: 1px; }
+    .card-link { cursor: pointer; }
+    .card-link:hover { text-decoration: underline; }
+    .sa-group + .sa-group { margin-top: 14px; }
+    .sa-label { font-size: 12px; font-weight: 700; color: var(--text-muted); margin: 0 4px 6px; }
+    .sa-item { display: flex; align-items: center; gap: 12px; width: 100%; text-align: start; background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 12px; margin-bottom: 6px; cursor: pointer; font: inherit; color: var(--text); }
+    .sa-item:hover { border-color: var(--primary); }
+    .sa-ic { width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; }
+    .sa-item.warn .sa-ic { background: var(--warning-light); color: #b45309; }
+    .sa-item.ok .sa-ic { background: var(--success-light); color: #047857; }
+    [data-theme="dark"] .sa-item.warn .sa-ic { background: #3a2a0c; color: #fbbf24; }
+    [data-theme="dark"] .sa-item.ok .sa-ic { background: #064e3b; color: #34d399; }
+    .sa-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .sa-title { font-weight: 600; font-size: 14.5px; }
+    .sa-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 1px; }
+    .sa-chev { color: var(--text-muted); font-size: 20px; }
+    @media (max-width: 768px) { .desktop-only { display: none !important; } }
+
     /* ===== EXAMS ===== */
     .exam-line { color: #b45309; font-weight: 600; }
     .exam-line.today { color: var(--success); }
@@ -1645,6 +1666,7 @@
               <option value="">כל התלמידים</option>
             </select>
             <button class="btn btn-primary btn-sm" onclick="openAddLessonModal(null)">+ הוסף שיעור</button>
+            <button class="btn btn-ghost btn-sm desktop-only" onclick="openAddExamModal(null)">+ הוסף מבחן</button>
             <div class="cal-views">
               <button class="cal-view-btn" id="cvb-month" onclick="setCalView('month')">חודש</button>
               <button class="cal-view-btn" id="cvb-week" onclick="setCalView('week')">שבוע</button>
@@ -1712,6 +1734,7 @@
           <button class="btn btn-ghost btn-sm" onclick="openAvailabilityModal()"><svg class="icon icon-sm"><use href="#icon-clock"/></svg> זמינות לתלמידים</button>
           <button class="btn btn-ghost btn-sm" onclick="showCalSubscribeInfo()"><svg class="icon icon-sm"><use href="#icon-link"/></svg> מנוי לוח שנה</button>
           <button class="btn btn-ghost btn-sm" onclick="exportToICS()"><svg class="icon icon-sm"><use href="#icon-calendar"/></svg> ייצוא ללוח שנה</button>
+          <button class="btn btn-ghost" onclick="openAddExamModal(null)"><svg class="icon icon-sm"><use href="#icon-graduation"/></svg> הוסף מבחן</button>
           <button class="btn btn-primary" onclick="openAddLessonModal(null)">+ הוסף שיעור</button>
         </div>
       </div>
@@ -3234,6 +3257,83 @@ function handleExamLink(url) {
   return true;
 }
 
+// ===== STUDENT ACTIONS MENU =====
+// The card shows only labeled buttons (+ שיעור / עריכה / עוד פעולות); everything
+// else lives here with a name and a one-line description — icon-only buttons
+// had no way to explain themselves on a phone (no hover tooltips).
+function openStudentActions(studentId) {
+  const s = getStudentById(studentId);
+  if (!s) return;
+  const balance = getStudentBalance(studentId);
+  const today = isoDate(new Date());
+  const upcomingExams = getStudentExams(studentId).filter(e => e.date >= today);
+  const live = getStudentPackages(studentId).filter(p => { const st = packageStatus(p); return !st.expired && st.remaining > 0; });
+  const remaining = live.reduce((t, p) => t + packageStatus(p).remaining, 0);
+  const item = (icon, title, sub, call, tone = '') => `
+    <button type="button" class="sa-item ${tone}" onclick="closeModal();${call}">
+      <span class="sa-ic">${icon.startsWith('#') ? `<svg class="icon"><use href="${icon}"/></svg>` : icon}</span>
+      <span class="sa-text"><span class="sa-title">${title}</span><span class="sa-sub">${sub}</span></span>
+      <span class="sa-chev">‹</span>
+    </button>`;
+  const group = (label, items) => items.filter(Boolean).length ? `<div class="sa-group"><div class="sa-label">${label}</div>${items.join('')}</div>` : '';
+  const html = `
+    ${balance < 0 ? group('תשלום', [
+      item('#icon-file-text', 'דוח תשלום להורה', `פירוט השיעורים הפתוחים · ${formatCurrency(Math.abs(balance))} לתשלום`, `openDebtReport('${s.id}')`, 'warn'),
+      item('#icon-check', 'סימון הכל כשולם', 'כל השיעורים הפתוחים יסומנו כשולמו', `markAllLessonsPaid('${s.id}')`, 'ok'),
+    ]) : ''}
+    ${group('שיעורים', [
+      item('#icon-clock', 'היסטוריית שיעורים', 'כל השיעורים והתשלומים של התלמיד', `viewStudentHistory('${s.id}')`),
+      s.phone ? item('#icon-message-circle', 'שליחת רשימת שיעורים', 'רשימת השיעורים בטווח תאריכים — בווצאפ', `openSendLessonsListModal('${s.id}')`) : '',
+    ])}
+    ${group('מעקב', [
+      item('#icon-graduation', 'מבחנים', upcomingExams.length ? `${upcomingExams.length} קרובים · תזכורת ב-8:00 ביום המבחן` : 'הוספת מבחן + תזכורת והודעת בהצלחה', `openExamsModal('${s.id}')`),
+      item('#icon-ticket', 'כרטיסייה', live.length ? `נותרו ${remaining} שיעורים בכרטיסייה` : 'מכירת כרטיסייה מראש של כמה שיעורים', `openPackagesModal('${s.id}')`),
+    ])}
+    ${group('שיתוף', [
+      item('#icon-link', 'קישור אישי לתלמיד/הורה', 'שיעורים, כרטיסייה וקביעת שיעור לבד', `openShareLinkModal('${s.id}')`),
+    ])}
+    ${group('תלמיד', [
+      item('#icon-pencil', 'עריכת פרטים', 'שם, מחיר, טלפון, הורה, צבע', `openEditStudentModal('${s.id}')`),
+    ])}`;
+  openModal(s.name, html, null);
+}
+
+// Add an exam from the top-level "+ מבחן" buttons (calendar / lessons page),
+// picking the student here — openExamsModal is the per-student view.
+function openAddExamModal(defaultStudentId) {
+  const students = getStudents().filter(s => s.isActive !== false);
+  const today = isoDate(new Date());
+  const html = `
+    <div class="form-group"><label>תלמיד</label>
+      <select id="f-exam-student">
+        <option value="">בחר תלמיד...</option>
+        ${students.map(s => `<option value="${s.id}" ${s.id === defaultStudentId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
+      </select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>תאריך המבחן</label><input type="date" id="f-exam-date" min="${today}"></div>
+      <div class="form-group"><label>מקצוע / נושא</label><input type="text" id="f-exam-subject" placeholder="למשל: מתמטיקה"></div>
+    </div>
+    <div class="form-group"><label>הערות (לא חובה)</label><input type="text" id="f-exam-notes" placeholder="למשל: פרקים 3–5"></div>
+    <div class="pkg-sub">🔔 ביום המבחן ב-8:00 בבוקר תקבלי התראה עם הודעת "בהצלחה" מוכנה לשליחה בווצאפ</div>`;
+  openModal('הוסף מבחן', html, async () => {
+    const studentId = document.getElementById('f-exam-student').value;
+    const date = document.getElementById('f-exam-date').value;
+    if (!studentId) { showToast('נא לבחור תלמיד', 'error'); return; }
+    if (!date) { showToast('נא לבחור תאריך למבחן', 'error'); return; }
+    const exam = { id: generateId(), studentId, date,
+      subject: document.getElementById('f-exam-subject').value.trim(),
+      notes: document.getElementById('f-exam-notes').value.trim(),
+      createdAt: new Date().toISOString() };
+    await apiCall('POST', '/api/exams', exam);
+    _exams.push(exam);
+    closeModal();
+    refreshAfterDataChange();
+    showToast(date === today ? 'המבחן נשמר — הוא היום, אפשר לשלוח "בהצלחה" מהדשבורד' : 'המבחן נשמר — תקבלי תזכורת ב-8:00 ביום המבחן 🔔');
+  });
+  const saveBtn = document.getElementById('modal-save-btn');
+  if (saveBtn) saveBtn.textContent = 'שמירת מבחן';
+}
+
 // ===== MODAL =====
 function openModal(title, bodyHTML, onSave) {
   document.getElementById('modal-title').textContent = title;
@@ -3570,15 +3670,15 @@ function renderStudents() {
           <div class="student-avatar" style="background:${s.color}">${avatarLetter}</div>
           <h3 style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(s.name)} ${inactive ? '<span style="font-size:11px;font-weight:400;color:var(--text-muted);background:var(--border);padding:2px 7px;border-radius:10px;margin-right:4px">לא פעיל</span>' : ''}</h3>
         </div>
-        <span class="badge ${balClass}" style="flex-shrink:0">${balText}</span>
+        <span class="badge ${balClass}" style="flex-shrink:0;${balance < 0 ? 'cursor:pointer' : ''}" ${balance < 0 ? `onclick="openStudentActions('${s.id}')"` : ''}>${balText}</span>
       </div>
       <div class="student-info">
         <span>💰 ${formatCurrency(s.hourlyRate)}/שיעור</span>
         <span>⏱ ${s.lessonDurationMinutes || 50} דק' לשיעור</span>
         <span>📅 ${days || 'ימים לא הוגדרו'}</span>
         ${s.phone ? `<span>📞 <a href="tel:${escapeHtml(s.phone)}" style="color:var(--primary);text-decoration:none">${escapeHtml(s.phone)}</a></span>` : ''}
-        ${studentPackageLine(s.id)}
-        ${studentExamLine(s.id)}
+        ${studentPackageLine(s.id) ? `<span class="card-link" onclick="openPackagesModal('${s.id}')">${studentPackageLine(s.id)}</span>` : ''}
+        ${studentExamLine(s.id) ? `<span class="card-link" onclick="openExamsModal('${s.id}')">${studentExamLine(s.id)}</span>` : ''}
         <span style="display:flex;gap:10px;flex-wrap:wrap">
           <span>📊 ${lessonCount} שיעורים</span>
           <span class="text-success">✅ ${paidCount} שולמו</span>
@@ -3588,14 +3688,8 @@ function renderStudents() {
       ${s.notes ? `<p class="student-notes">${escapeHtml(s.notes)}</p>` : ''}
       <div class="student-actions">
         ${!inactive ? `<button class="btn btn-primary btn-sm" onclick="openAddLessonModal('${s.id}')">+ שיעור</button>` : ''}
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditStudentModal('${s.id}')" title="ערוך פרטי תלמיד"><svg class="icon icon-sm"><use href="#icon-pencil"/></svg></button>
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="viewStudentHistory('${s.id}')" title="היסטוריית שיעורים"><svg class="icon icon-sm"><use href="#icon-clock"/></svg></button>
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="openExamsModal('${s.id}')" title="מבחנים"><svg class="icon icon-sm"><use href="#icon-graduation"/></svg></button>
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="openPackagesModal('${s.id}')" title="כרטיסיות"><svg class="icon icon-sm"><use href="#icon-ticket"/></svg></button>
-        <button class="btn btn-ghost btn-sm btn-icon" onclick="openShareLinkModal('${s.id}')" title="קישור מעקב להורה/תלמיד"><svg class="icon icon-sm"><use href="#icon-link"/></svg></button>
-        ${s.phone ? `<button class="btn btn-ghost btn-sm btn-icon" onclick="openSendLessonsListModal('${s.id}')" title="שלח רשימת שיעורים בווצאפ"><svg class="icon icon-sm"><use href="#icon-message-circle"/></svg></button>` : ''}
-        ${balance < 0 ? `<button class="btn btn-warning btn-sm btn-icon" onclick="openDebtReport('${s.id}')" title="דוח תשלום"><svg class="icon icon-sm"><use href="#icon-file-text"/></svg></button>` : ''}
-        ${balance < 0 ? `<button class="btn btn-success btn-sm btn-icon" onclick="markAllLessonsPaid('${s.id}')" title="סמן הכל שולם"><svg class="icon icon-sm"><use href="#icon-check"/></svg></button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="openEditStudentModal('${s.id}')"><svg class="icon icon-sm"><use href="#icon-pencil"/></svg> עריכה</button>
+        <button class="btn btn-ghost btn-sm sa-more" onclick="openStudentActions('${s.id}')">עוד פעולות <span class="sa-dots">⋯</span></button>
       </div>
     </div>`;
   }).join('');
