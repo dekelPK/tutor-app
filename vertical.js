@@ -10,6 +10,8 @@
 //   applyTerms()           → static HTML: elements with data-tf / data-tf-placeholder /
 //                            data-tf-title get their text from tf() (the original text
 //                            stays in the markup as the tutor default)
+//   applyFeatures()        → static HTML: elements with data-feature="exams" are hidden
+//                            (class feature-off) when the vertical lacks that feature
 // No profession-specific logic belongs anywhere else in the UI.
 (function (root) {
   'use strict';
@@ -44,6 +46,14 @@
     scope.querySelectorAll('[data-tf-title]').forEach(el => { el.title = tf(el.getAttribute('data-tf-title')); });
   }
 
+  function applyFeatures(root) {
+    const scope = root || (typeof document !== 'undefined' ? document : null);
+    if (!scope) return;
+    scope.querySelectorAll('[data-feature]').forEach(el => {
+      el.classList.toggle('feature-off', !has(el.getAttribute('data-feature')));
+    });
+  }
+
   function has(feature) {
     return !!(state.vertical && state.vertical.features && state.vertical.features[feature]);
   }
@@ -55,7 +65,7 @@
   function vertical() { return state.vertical; }
   function gender() { return state.gender; }
 
-  const api = { setVertical, t, tf, applyTerms, has, g, vertical, gender };
+  const api = { setVertical, t, tf, applyTerms, applyFeatures, has, g, vertical, gender };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else Object.assign(root, api);
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -373,11 +373,13 @@ def student_portal(token):
     booking_enabled = settings['enabled'] and student.get('isActive') is not False
     slots = portal_free_slots(d, student) if booking_enabled else []
     c = get_db()
-    owner_row = c.execute('SELECT name FROM users WHERE id=?', [owner]).fetchone()
+    owner_row = c.execute('SELECT name, profession, gender FROM users WHERE id=?', [owner]).fetchone()
     c.close()
+    bt = verticals.Terms(owner_row['profession'] if owner_row else None, owner_row['gender'] if owner_row else None)
     page = portal_core.render_portal(token, student, mine('lessons'), mine('payments'),
                                      mine('packages'), mine('bookings'), slots, booking_enabled,
-                                     teacher_name=(owner_row['name'] if owner_row else '') or '', exams=mine('exams'))
+                                     teacher_name=(owner_row['name'] if owner_row else '') or '', exams=mine('exams'),
+                                     vertical=bt.vertical, gender=bt.gender)
     return page, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 @app.route('/portal/<token>/book', methods=['POST'])
@@ -776,17 +778,20 @@ def calendar_ics():
         return 'Unauthorized', 401
     data     = read_data(cal_user_id)
     students = {s['id']: s for s in data['students']}
+    with get_db() as c:
+        row = c.execute('SELECT profession, gender FROM users WHERE id=?', [cal_user_id]).fetchone()
+    bt = verticals.Terms(row['profession'] if row else None, row['gender'] if row else None)
     stamp    = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
     lines = [
         'BEGIN:VCALENDAR', 'VERSION:2.0',
-        'PRODID:-//שיעורים פרטיים//HE', 'CALSCALE:GREGORIAN',
-        'METHOD:PUBLISH', 'X-WR-CALNAME:שיעורים - הוראה',
+        f"PRODID:-//{verticals.brand()['name']}//HE", 'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH', f"X-WR-CALNAME:{bt.t('calendar_name')}",
         'X-WR-TIMEZONE:Asia/Jerusalem',
         'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
     ]
     for l in data['lessons']:
         s    = students.get(l['studentId'], {})
-        name = s.get('name', 'תלמיד')
+        name = s.get('name', bt.t('client'))
         date = l['date'].replace('-', '')
         hh, mm = map(int, (l.get('time', '16:00')).split(':'))
         start_min = hh * 60 + mm
@@ -802,7 +807,7 @@ def calendar_ics():
             f'DTSTAMP:{stamp}',
             f'DTSTART;TZID=Asia/Jerusalem:{date}T{sh}{sm}00',
             f'DTEND;TZID=Asia/Jerusalem:{date}T{eh}{em}00',
-            f'SUMMARY:שיעור - {name}',
+            f"SUMMARY:{bt.t('calendar_event', name=name)}",
             f'DESCRIPTION:{l.get("notes","") or ""}',
             'END:VEVENT',
         ]

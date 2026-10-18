@@ -92,3 +92,21 @@ def summary():
     ids = sorted(available(), key=lambda v: (load(v).get('order', 99), v))
     return [{'id': v, 'icon': load(v).get('icon', ''), 'label': load(v)['label'],
              'description': load(v).get('description', '')} for v in ids]
+
+
+class Terms:
+    """t / has / g bound to one business (its profession + the owner's gender),
+    for server-side text: pushes, the client portal, the calendar feed."""
+
+    def __init__(self, profession=None, gender=None):
+        self.vertical = normalize(profession)
+        self.gender = normalize_gender(gender)
+
+    def t(self, key, **params):
+        return t(self.vertical, key, self.gender, **params)
+
+    def has(self, feature):
+        return has(self.vertical, feature)
+
+    def g(self, feminine, masculine):
+        return masculine if self.gender == 'm' else feminine

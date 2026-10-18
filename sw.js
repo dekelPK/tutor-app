@@ -5,7 +5,7 @@ self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (e) { /* ignore malformed payload */ }
 
-  const title = data.title || 'תזכורת שיעור';
+  const title = data.title || '📢 עדכון חדש';
   const options = {
     body: data.body || '',
     // Same tag replaces instead of stacking; other kinds (booking requests,

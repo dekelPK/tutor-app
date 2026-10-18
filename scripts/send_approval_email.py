@@ -27,7 +27,7 @@ def main():
     greeting = f'היי {APPROVED_NAME},' if APPROVED_NAME else 'היי,'
     body = f'''{greeting}
 
-החשבון שלך באפליקציית ניהול השיעורים הפרטיים אושר! 🎉
+החשבון שלך באפליקציית לוזי אושר! 🎉
 
 אפשר להתחבר עכשיו:
 {APP_URL}/
@@ -35,7 +35,7 @@ def main():
 בהצלחה!
 '''
     msg = MIMEText(body, 'plain', 'utf-8')
-    msg['Subject'] = 'החשבון שלך אושר - ניהול שיעורים פרטיים'
+    msg['Subject'] = 'החשבון שלך אושר - לוזי'
     msg['From'] = EMAIL_ADDRESS
     msg['To'] = APPROVED_EMAIL
 

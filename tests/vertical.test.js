@@ -70,3 +70,19 @@ test("the app's inline script parses", () => {
   assert.ok(scripts.length > 0);
   for (const s of scripts) assert.doesNotThrow(() => new Function(s));
 });
+
+test('applyFeatures hides elements of features the vertical lacks', () => {
+  const el = (feature) => {
+    const classes = new Set();
+    return { classes, getAttribute: () => feature, classList: { toggle: (c, on) => (on ? classes.add(c) : classes.delete(c)) } };
+  };
+  const exams = el('exams'), packages = el('packages');
+  const root = { querySelectorAll: () => [exams, packages] };
+  V.setVertical(load('barber'), 'm');
+  V.applyFeatures(root);
+  assert.ok(exams.classes.has('feature-off'));
+  assert.ok(!packages.classes.has('feature-off'));
+  V.setVertical(load('tutor'), 'f');
+  V.applyFeatures(root);
+  assert.ok(!exams.classes.has('feature-off'));
+});

@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="שיעורים פרטיים">
+  <meta name="apple-mobile-web-app-title" content="לוזי">
   <meta name="theme-color" content="#2563eb">
-  <title>ניהול שיעורים פרטיים</title>
+  <title>לוזי</title>
   <link rel="manifest" href="/manifest.json?v=2">
   <link rel="icon" type="image/svg+xml" href="/icons/icon-source.svg?v=2">
   <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=2">
@@ -111,6 +111,7 @@
     .page-title { font-size: 20px; font-weight: 700; }
 
     /* ===== BUTTONS ===== */
+    .feature-off { display: none !important; }
     .btn {
       padding: 8px 16px;
       border-radius: 8px;
@@ -1795,9 +1796,9 @@
   <!-- AUTH OVERLAY -->
   <div id="auth-overlay" class="auth-overlay">
     <div class="auth-card">
-      <div class="auth-logo">📚</div>
-      <div class="auth-title">שיעורים פרטיים</div>
-      <div class="auth-subtitle">מערכת ניהול חכמה למורים פרטיים</div>
+      <div class="auth-logo">🗓️</div>
+      <div class="auth-title">לוזי</div>
+      <div class="auth-subtitle">הלו״ז של העסק שלך — במקום אחד</div>
 
       <div class="auth-tabs">
         <button class="auth-tab-btn active" id="auth-tab-login" onclick="showAuthTab('login')">כניסה</button>
@@ -1892,7 +1893,7 @@
   </div>
 
   <header class="app-header">
-    <span class="app-title">📚 <span data-tf="{app_title}">שיעורים פרטיים</span></span>
+    <span class="app-title">🗓️ לוזי</span>
     <div class="header-actions">
       <div class="search-wrapper">
         <svg class="icon icon-sm search-icon"><use href="#icon-search"/></svg>
@@ -1947,7 +1948,7 @@
                   <option value="" data-tf="כל ה{clients}">כל התלמידים</option>
                 </select>
                 <button class="btn btn-primary btn-sm" onclick="openAddLessonModal(null)" data-tf="+ הוסף {appointment}">+ הוסף שיעור</button>
-                <button class="btn btn-ghost btn-sm desktop-only" onclick="openAddExamModal(null)">+ הוסף מבחן</button>
+                <button class="btn btn-ghost btn-sm desktop-only" data-feature="exams" onclick="openAddExamModal(null)">+ הוסף מבחן</button>
                 <div class="cal-views">
                   <button class="cal-view-btn" id="cvb-month" onclick="setCalView('month')">חודש</button>
                   <button class="cal-view-btn" id="cvb-week" onclick="setCalView('week')">שבוע</button>
@@ -2009,10 +2010,10 @@
       <div class="page-header">
         <h2 class="page-title" data-tf="{appointments}">שיעורים</h2>
         <div style="display:flex; gap:8px; flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="openAvailabilityModal()"><svg class="icon icon-sm"><use href="#icon-clock"/></svg> <span data-tf="זמינות ל{clients}">זמינות לתלמידים</span></button>
+          <button class="btn btn-ghost btn-sm" data-feature="selfBooking" onclick="openAvailabilityModal()"><svg class="icon icon-sm"><use href="#icon-clock"/></svg> <span data-tf="זמינות ל{clients}">זמינות לתלמידים</span></button>
           <button class="btn btn-ghost btn-sm" onclick="showCalSubscribeInfo()"><svg class="icon icon-sm"><use href="#icon-link"/></svg> מנוי לוח שנה</button>
           <button class="btn btn-ghost btn-sm" onclick="exportToICS()"><svg class="icon icon-sm"><use href="#icon-calendar"/></svg> ייצוא ללוח שנה</button>
-          <button class="btn btn-ghost" onclick="openAddExamModal(null)"><svg class="icon icon-sm"><use href="#icon-graduation"/></svg> הוסף מבחן</button>
+          <button class="btn btn-ghost" data-feature="exams" onclick="openAddExamModal(null)"><svg class="icon icon-sm"><use href="#icon-graduation"/></svg> הוסף מבחן</button>
           <button class="btn btn-primary" onclick="openAddLessonModal(null)" data-tf="+ הוסף {appointment}">+ הוסף שיעור</button>
         </div>
       </div>
@@ -2158,7 +2159,7 @@
             <p class="adm-hint">נשלחת מיד לכל מי שהפעיל/ה התראות — מגיעה לאייפון כמו הודעה רגילה.</p>
             <div class="adm-preview-label">כך זה ייראה באייפון</div>
             <div class="adm-push-preview">
-              <div class="adm-push-app"><img src="/icons/icon-192.png" alt=""><span>שיעורים פרטיים</span><span class="adm-push-time">עכשיו</span></div>
+              <div class="adm-push-app"><img src="/icons/icon-192.png" alt=""><span>לוזי</span><span class="adm-push-time">עכשיו</span></div>
               <div class="adm-push-title" id="admin-push-preview-title">📢 עדכון חדש</div>
               <div class="adm-push-body" id="admin-push-preview-body">מה חדש...</div>
             </div>
@@ -2264,7 +2265,7 @@ const getLessons  = () => _lessons;
 const getPayments = () => _payments;
 const getPackages = () => _packages;
 const getBookings = () => _bookings;
-const getExams    = () => _exams;
+const getExams    = () => has('exams') ? _exams : [];
 
 async function loadData() {
   showLoading();
@@ -2394,9 +2395,9 @@ function dismissInstallBanner() {
 function openAboutModal() {
   const html = `
     <div style="text-align:center;margin-bottom:18px">
-      <div style="font-size:42px;margin-bottom:6px">📚</div>
-      <h3 style="margin:0 0 4px">שיעורים פרטיים</h3>
-      <p style="color:var(--text-muted);font-size:13.5px;margin:0">מערכת ניהול חכמה למורים פרטיים — ${t('clients')}, ${t('appointments')} ותשלומים במקום אחד</p>
+      <div style="font-size:42px;margin-bottom:6px">🗓️</div>
+      <h3 style="margin:0 0 4px">לוזי</h3>
+      <p style="color:var(--text-muted);font-size:13.5px;margin:0">מערכת ניהול חכמה — ${t('clients')}, ${t('appointments')} ותשלומים במקום אחד</p>
     </div>
     <div class="form-group" style="background:var(--bg);border-radius:10px;padding:14px">
       <div style="font-weight:600;margin-bottom:6px">יצירת קשר</div>
@@ -2815,7 +2816,7 @@ async function openShareLinkModal(studentId) {
     ? `היי ${s.name} 😊\nהנה קישור למעקב אחר ה${t('appointments')} והתשלומים שלך — אפשר גם לבחור בו מועד ל${t('appointment')} הבא:\n${url}`
     : `היי ${s.name} 😊\nהנה קישור למעקב אחר ה${t('appointments')} והתשלומים שלך:\n${url}`;
   const html = `
-    <p style="margin-bottom:12px;font-size:13.5px;color:var(--text-muted)">קישור קבוע, בלי צורך בהתחברות — מראה להורה/${t('client')} את ה${t('appointments')} הקרובים, היתרה, הכרטיסייה, ומה שסימנת כ"מה עשינו היום" ו"שיעורי בית" בכל ${t('appointment')}.${_bookingSettings?.enabled ? ` ה${t('client')} יכול גם לבקש ${t('appointment')} במועד פנוי — הבקשה מחכה לאישורך.` : ` <a href="#" onclick="closeModal();openAvailabilityModal();return false">אפשר גם לתת ל${t('client')} לבקש ${t('appointment')} לפי הזמינות שלך</a>.`}</p>
+    <p style="margin-bottom:12px;font-size:13.5px;color:var(--text-muted)">קישור קבוע, בלי צורך בהתחברות — מראה ל${has('parentContact') ? 'הורה/' : ''}${t('client')} את ה${t('appointments')} הקרובים, היתרה${has('packages') ? ', הכרטיסייה' : ''}${has('lessonNotes') ? `, ומה שסימנת כ"מה עשינו היום" ו"שיעורי בית" בכל ${t('appointment')}` : ''}.${_bookingSettings?.enabled ? ` ה${t('client')} יכול גם לבקש ${t('appointment')} במועד פנוי — הבקשה מחכה לאישורך.` : ` <a href="#" onclick="closeModal();openAvailabilityModal();return false">אפשר גם לתת ל${t('client')} לבקש ${t('appointment')} לפי הזמינות שלך</a>.`}</p>
     <div style="display:flex;gap:8px;align-items:center;background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:12px">
       <input type="text" readonly value="${url}" id="share-link-input" style="flex:1;border:none;background:transparent;font-size:13px;direction:ltr;text-align:left;color:var(--text)" onclick="this.select()">
     </div>
@@ -3482,7 +3483,7 @@ function openGoodLuck(examId) {
     <p style="text-align:center;margin-bottom:12px;color:var(--text-muted)">${escapeHtml(s?.name || '')} · מבחן${e.subject ? ` ב${escapeHtml(e.subject)}` : ''} · ${examDayLabel(e.date)}</p>
     <div class="form-group"><label>ההודעה (אפשר לערוך)</label>
       <textarea id="f-goodluck-msg" rows="5">${escapeHtml(goodLuckMessage(e, s))}</textarea></div>
-    ${intl ? '' : `<div class="pkg-sub" style="color:var(--danger)">ל${t('client_of')} ולהורה אין מספר טלפון — אפשר להוסיף בעריכת ה${t('client')}</div>`}`;
+    ${intl ? '' : `<div class="pkg-sub" style="color:var(--danger)">ל${t('client_of')}${has('parentContact') ? ' ולהורה' : ''} אין מספר טלפון — אפשר להוסיף בעריכת ה${t('client')}</div>`}`;
   openModal('הודעת בהצלחה', html, intl ? async () => {
     const msg = document.getElementById('f-goodluck-msg').value;
     window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -3526,10 +3527,12 @@ function openStudentActions(studentId) {
       <span class="sa-text"><span class="sa-title">${title}</span><span class="sa-sub">${sub}</span></span>
       <span class="sa-chev">‹</span>
     </button>`;
-  const group = (label, items) => items.filter(Boolean).length ? `<div class="sa-group"><div class="sa-label">${label}</div>${items.join('')}</div>` : '';
+  // "א, ב וג" — skipping parts of features this business doesn't use
+  const heList = parts => { const p = parts.filter(Boolean); return p.length > 1 ? `${p.slice(0, -1).join(', ')} ו${p[p.length - 1]}` : (p[0] || ''); };
+  const group = (label, items) => items.filter(Boolean).length ? `<div class="sa-group"><div class="sa-label">${label}</div>${items.filter(Boolean).join('')}</div>` : '';
   const html = `
     ${balance < 0 ? group('תשלום', [
-      item('#icon-file-text', 'דוח תשלום להורה', `פירוט ה${t('appointments')} הפתוחים · ${formatCurrency(Math.abs(balance))} לתשלום`, `openDebtReport('${s.id}')`, 'warn'),
+      item('#icon-file-text', has('parentContact') ? 'דוח תשלום להורה' : 'דוח תשלום', `פירוט ה${t('appointments')} הפתוחים · ${formatCurrency(Math.abs(balance))} לתשלום`, `openDebtReport('${s.id}')`, 'warn'),
       item('#icon-check', 'סימון הכל כשולם', `כל ה${t('appointments')} הפתוחים יסומנו כשולמו`, `markAllLessonsPaid('${s.id}')`, 'ok'),
     ]) : ''}
     ${group(`${t('appointments')}`, [
@@ -3537,14 +3540,14 @@ function openStudentActions(studentId) {
       s.phone ? item('#icon-message-circle', `שליחת רשימת ${t('appointments')}`, `רשימת ה${t('appointments')} בטווח תאריכים — בווצאפ`, `openSendLessonsListModal('${s.id}')`) : '',
     ])}
     ${group('מעקב', [
-      item('#icon-graduation', 'מבחנים', upcomingExams.length ? `${upcomingExams.length} קרובים · תזכורת ב-8:00 ביום המבחן` : 'הוספת מבחן + תזכורת והודעת בהצלחה', `openExamsModal('${s.id}')`),
-      item('#icon-ticket', 'כרטיסייה', live.length ? `נותרו ${remaining} ${t('appointments')} בכרטיסייה` : `מכירת כרטיסייה מראש של כמה ${t('appointments')}`, `openPackagesModal('${s.id}')`),
+      has('exams') && item('#icon-graduation', 'מבחנים', upcomingExams.length ? `${upcomingExams.length} קרובים · תזכורת ב-8:00 ביום המבחן` : 'הוספת מבחן + תזכורת והודעת בהצלחה', `openExamsModal('${s.id}')`),
+      has('packages') && item('#icon-ticket', 'כרטיסייה', live.length ? `נותרו ${remaining} ${t('appointments')} בכרטיסייה` : `מכירת כרטיסייה מראש של כמה ${t('appointments')}`, `openPackagesModal('${s.id}')`),
     ])}
     ${group('שיתוף', [
-      item('#icon-link', `קישור אישי ל${t('client')}/הורה`, `${t('appointments')}, כרטיסייה וקביעת ${t('appointment')} לבד`, `openShareLinkModal('${s.id}')`),
+      item('#icon-link', `קישור אישי ל${t('client')}${has('parentContact') ? '/הורה' : ''}`, heList([t('appointments'), has('packages') && 'כרטיסייה', has('selfBooking') && `קביעת ${t('appointment')} לבד`]), `openShareLinkModal('${s.id}')`),
     ])}
     ${group(`${t('client')}`, [
-      item('#icon-pencil', 'עריכת פרטים', 'שם, מחיר, טלפון, הורה, צבע', `openEditStudentModal('${s.id}')`),
+      item('#icon-pencil', 'עריכת פרטים', has('parentContact') ? 'שם, מחיר, טלפון, הורה, צבע' : 'שם, מחיר, טלפון, צבע', `openEditStudentModal('${s.id}')`),
     ])}`;
   openModal(s.name, html, null);
 }
@@ -3601,6 +3604,7 @@ function applyAccount(data) {
   setVertical(data.vertical, data.gender);
   window._profession = data.profession;
   applyTerms();
+  applyFeatures();
 }
 function hideAuthOverlay(userName, isAdmin) {
   document.getElementById('auth-overlay').classList.remove('visible');
@@ -3714,7 +3718,7 @@ function renderDashGreeting() {
     </div>
     <div class="dx-actions">
       <button class="dx-act dx-act-primary" onclick="openAddLessonModal(null)"><span>＋</span> ${t('appointment')}</button>
-      <button class="dx-act" onclick="openAddExamModal(null)"><span>📝</span> מבחן</button>
+      ${has('exams') ? `<button class="dx-act" onclick="openAddExamModal(null)"><span>📝</span> מבחן</button>` : ''}
     </div>`;
 }
 function lessonsForDateAll(ds) {
@@ -4264,7 +4268,7 @@ function buildStudentForm(s) {
       <textarea id="f-whatsapp-template" rows="3" placeholder="אם ריק, תישלח ההודעה הרגילה">${escapeHtml(s?.whatsappTemplate)}</textarea>
       <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px">אפשר להשתמש ב: {שם} {תאריך} {שעה} {כמות}</div>
     </div>
-    <div class="form-group" style="background:var(--primary-light);border-radius:10px;padding:12px;margin-top:4px">
+    <div class="form-group${has('parentContact') ? '' : ' feature-off'}" style="background:var(--primary-light);border-radius:10px;padding:12px;margin-top:4px">
       <div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:10px">📲 פרטי הורה (לדוח תשלום)</div>
       <div style="display:flex;gap:8px">
         <div style="flex:1">
@@ -4591,7 +4595,7 @@ function buildLessonForm(l, defaultStudentId, defaultDate) {
         <input type="number" id="f-amount" value="${l?.amount || ''}" placeholder="אוטומטי" min="0">
       </div>
     </div>
-    <div class="form-group" style="background:var(--primary-light);border-radius:10px;padding:12px">
+    <div class="form-group${has('lessonNotes') ? '' : ' feature-off'}" style="background:var(--primary-light);border-radius:10px;padding:12px">
       <div style="font-size:12.5px;font-weight:600;color:var(--primary);margin-bottom:8px">👀 גלוי להורה/${t('client')} בקישור המעקב</div>
       <label>מה עשינו היום</label>
       <input type="text" id="f-topic" value="${escapeHtml(l?.topic)}" placeholder="למשל: שברים, פרק ב'">
@@ -4599,7 +4603,7 @@ function buildLessonForm(l, defaultStudentId, defaultDate) {
       <textarea id="f-homework" rows="2" placeholder="מה לתרגל עד ה${t('appointment')} הבא">${escapeHtml(l?.homework)}</textarea>
     </div>
     <div class="form-group">
-      <label>הערות (פנימי, לא מוצג להורה)</label>
+      <label>הערות (פנימי, לא מוצג ל${has('parentContact') ? 'הורה' : t('client')})</label>
       <textarea id="f-notes" rows="2">${escapeHtml(l?.notes)}</textarea>
     </div>
     <div class="form-group pkg-box" id="f-pkg-box" data-lesson-id="${l?.id || ''}" data-current-pkg="${l?.packageId || ''}" style="display:none"></div>
@@ -5117,7 +5121,7 @@ function exportSingleLesson(lesson) {
     `DESCRIPTION:${lesson.notes || ''}`,
     'END:VEVENT'
   ].join('\r\n');
-  const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//ניהול שיעורים פרטיים//HE\r\nCALSCALE:GREGORIAN\r\nX-WR-CALNAME:שיעורים פרטיים\r\nX-WR-TIMEZONE:Asia/Jerusalem\r\n${vevent}\r\nEND:VCALENDAR`;
+  const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//לוזי//HE\r\nCALSCALE:GREGORIAN\r\nX-WR-CALNAME:${t('calendar_name')}\r\nX-WR-TIMEZONE:Asia/Jerusalem\r\n${vevent}\r\nEND:VCALENDAR`;
   const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -5163,7 +5167,7 @@ function exportToICS() {
     ].join('\r\n');
   }).join('\r\n');
 
-  const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//ניהול שיעורים פרטיים//HE\r\nCALSCALE:GREGORIAN\r\nX-WR-CALNAME:שיעורים פרטיים\r\nX-WR-TIMEZONE:Asia/Jerusalem\r\n${vevent}\r\nEND:VCALENDAR`;
+  const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//לוזי//HE\r\nCALSCALE:GREGORIAN\r\nX-WR-CALNAME:${t('calendar_name')}\r\nX-WR-TIMEZONE:Asia/Jerusalem\r\n${vevent}\r\nEND:VCALENDAR`;
 
   const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
@@ -5381,7 +5385,7 @@ function renderCalendar() {
     }
     html += `<div class="cal-add-day-row">
       <button class="cal-add-day-btn" onclick="openAddLessonModal(null,'${ds}')">+ הוסף ${t('appointment')} ל-${d.getDate()} ${HE_MONTHS[d.getMonth()]}</button>
-      ${ds >= today ? `<button class="cal-add-day-btn cal-add-exam-btn" onclick="openAddExamModal(null,'${ds}')">📝 הוסף מבחן</button>` : ''}
+      ${ds >= today && has('exams') ? `<button class="cal-add-day-btn cal-add-exam-btn" onclick="openAddExamModal(null,'${ds}')">📝 הוסף מבחן</button>` : ''}
     </div>`;
     html += '</div>';
     body.innerHTML = html;
