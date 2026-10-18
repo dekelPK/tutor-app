@@ -25,7 +25,12 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
       for (const client of windowClients) {
-        if ('focus' in client) return client.focus();
+        if ('focus' in client) {
+          // The app is already open: tell it which screen the notification
+          // points to (e.g. /?exam=<id> → the "good luck" message), then focus.
+          client.postMessage({ type: 'open-url', url });
+          return client.focus();
+        }
       }
       if (clients.openWindow) return clients.openWindow(url);
     })

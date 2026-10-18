@@ -255,8 +255,9 @@ def _date_tile(iso, extra_cls=''):
 
 
 def render_portal(token, student, lessons, payments, packages=None, bookings=None,
-                  free_slots=None, booking_enabled=False, teacher_name=''):
+                  free_slots=None, booking_enabled=False, teacher_name='', exams=None):
     packages = packages or []
+    exams = exams or []
     bookings = bookings or []
     free_slots = free_slots or []
     esc = _esc
@@ -383,6 +384,21 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
         </div>'''
     money_section = f'<section class="sec sec-card">{cards_html}</section>' if cards_html else ''
 
+    # ── Upcoming exams (next 30 days) ──
+    soon = (now + timedelta(days=30)).strftime('%Y-%m-%d')
+    exams_html = ''
+    for e in sorted((e for e in exams if today <= e.get('date', '') <= soon), key=lambda e: e['date'])[:3]:
+        is_today = e['date'] == today
+        subj = esc(e.get('subject')) or 'מבחן'
+        notes = f'<div class="exam-notes">{esc(e.get("notes"))}</div>' if e.get('notes') else ''
+        exams_html += f'''<div class="exam {'exam-today' if is_today else ''}">
+          <div class="exam-icon">{'🍀' if is_today else '📝'}</div>
+          <div class="exam-main"><div class="exam-title">{'היום מבחן ב' + subj + ' — בהצלחה!' if is_today else 'מבחן ב' + subj}</div>
+            <div class="exam-when">{esc(_long_date(e['date']))}</div>{notes}</div>
+          {'' if is_today else f'<div class="exam-count">{esc(_countdown(e["date"], today))}</div>'}
+        </div>'''
+    exams_section = f'<section class="sec sec-exams">{exams_html}</section>' if exams_html else ''
+
     # ── What we learned ──
     hw = next((l for l in past if l.get('homework')), None)
     hw_html = (f'<div class="hw"><div class="hw-label">📝 שיעורי הבית האחרונים · {esc(_fmt_date(hw["date"]))}</div>'
@@ -408,7 +424,7 @@ def render_portal(token, student, lessons, payments, packages=None, bookings=Non
     return PAGE_TEMPLATE.format(
         accent=accent, title=esc(name), initial=esc(name[:1] or '?'), first_name=esc(first_name),
         teacher_line=teacher_line, next_html=next_html, lessons_section=lessons_section,
-        booking_section=booking_section, money_section=money_section, hw_html=hw_html,
+        booking_section=booking_section, money_section=money_section, hw_html=hw_html, exams_section=exams_section,
         past_html=past_html, token_js=token_js, slots_json=slots_json, lesson_minutes=lesson_minutes)
 
 
@@ -539,6 +555,17 @@ PAGE_TEMPLATE = '''<!doctype html>
   .hole.used {{ border: none; background: var(--card-c); color: #fff; font-size: 16px; transform: rotate(-8deg); box-shadow: inset 0 0 0 3px rgba(255,255,255,.25); }}
   .bar {{ height: 10px; background: var(--card); border-radius: 8px; margin: 14px 0 8px; overflow: hidden; }}
   .bar div {{ height: 100%; background: var(--card-c); border-radius: 8px; }}
+  .sec-exams {{ padding: 6px; }}
+  .exam {{ display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 16px; background: var(--warn-soft); }}
+  .exam + .exam {{ margin-top: 6px; }}
+  .exam-today {{ background: linear-gradient(135deg, #dcfce7, #fef9c3); }}
+  @media (prefers-color-scheme: dark) {{ .exam-today {{ background: linear-gradient(135deg, #0f3326, #3a2a0c); }} }}
+  .exam-icon {{ font-size: 26px; }}
+  .exam-main {{ flex: 1; min-width: 0; }}
+  .exam-title {{ font-weight: 700; font-size: 15px; }}
+  .exam-when {{ font-size: 13px; color: var(--muted); margin-top: 2px; }}
+  .exam-notes {{ font-size: 12.5px; color: var(--muted); margin-top: 4px; }}
+  .exam-count {{ flex-shrink: 0; background: var(--card); color: var(--warn); font-weight: 700; font-size: 13px; padding: 6px 10px; border-radius: 12px; }}
   .sec-card {{ padding: 6px; }}
   .sec-card .punch {{ margin: 0; }}
   .sec-card .punch + .punch {{ margin-top: 6px; }}
@@ -585,6 +612,8 @@ PAGE_TEMPLATE = '''<!doctype html>
       </div>
       {next_html}
     </header>
+
+    {exams_section}
 
     {lessons_section}
 

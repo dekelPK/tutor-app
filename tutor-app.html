@@ -1333,6 +1333,20 @@
       .modal-handle, .modal-close, .modal-footer { display: none !important; }
     }
 
+    /* ===== EXAMS ===== */
+    .exam-line { color: #b45309; font-weight: 600; }
+    .exam-line.today { color: var(--success); }
+    .exams-card { border: 2px solid #f59e0b; margin-bottom: 20px; }
+    .exam-group-label { font-size: 12.5px; font-weight: 700; color: var(--text-muted); margin: 4px 0 8px; }
+    .exam-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--warning-light); margin-bottom: 8px; }
+    [data-theme="dark"] .exam-item { background: #3a2a0c; }
+    .exam-item.past { background: var(--bg); opacity: .75; }
+    .exam-item-main { flex: 1; min-width: 0; }
+    .exam-item-title { font-weight: 700; }
+    .exam-item-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+    .exam-form { border: 1px dashed var(--border); border-radius: 12px; padding: 12px; margin-top: 12px; }
+    .goodluck-hero { font-size: 52px; text-align: center; margin-bottom: 6px; }
+
     /* ===== PUNCH CARDS & BOOKING REQUESTS ===== */
     .badge-card { background: #7c3aed; color: white; }
     .pkg-line { color: #6d28d9; font-weight: 600; }
@@ -1437,6 +1451,7 @@
     <symbol id="icon-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
     <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
     <symbol id="icon-share" viewBox="0 0 24 24"><path d="M12 2v13"/><path d="m8 6 4-4 4 4"/><path d="M8 21h8a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2Z"/></symbol>
+    <symbol id="icon-graduation" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/><path d="M22 10v6"/></symbol>
     <symbol id="icon-ticket" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></symbol>
   </defs>
 </svg>
@@ -1586,6 +1601,8 @@
       <div id="debt-banner"></div>
       <!-- Pending lesson requests from student portal links -->
       <div id="booking-requests"></div>
+      <!-- This week's exams, with today's "good luck" WhatsApp button -->
+      <div id="exams-today"></div>
       <!-- Month Filter -->
       <div id="dash-month-wrap">
         <label style="font-size:13px;font-weight:500;color:var(--text-muted)">תקופה:</label>
@@ -1916,12 +1933,13 @@ function escapeHtml(str) {
 }
 
 // ===== STORAGE (in-memory cache + REST API) =====
-let _students = [], _lessons = [], _payments = [], _packages = [], _bookings = [], _bookingSettings = null;
+let _students = [], _lessons = [], _payments = [], _packages = [], _bookings = [], _bookingSettings = null, _exams = [];
 const getStudents = () => _students;
 const getLessons  = () => _lessons;
 const getPayments = () => _payments;
 const getPackages = () => _packages;
 const getBookings = () => _bookings;
+const getExams    = () => _exams;
 
 async function loadData() {
   showLoading();
@@ -1929,15 +1947,16 @@ async function loadData() {
     // Cards/bookings/settings are optional extras — a failure there (e.g. an
     // older server) must never block the core app from loading.
     const optional = (url, fallback) => fetch(url).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
-    const [s, l, p, pk, bk, bs] = await Promise.all([
+    const [s, l, p, pk, bk, bs, ex] = await Promise.all([
       fetch('/api/students').then(r => { if (r.status === 401) { showAuthOverlay(); throw new Error('unauth'); } return r.json(); }),
       fetch('/api/lessons').then(r => r.json()),
       fetch('/api/payments').then(r => r.json()),
       optional('/api/packages', []),
       optional('/api/bookings', []),
       optional('/api/booking-settings', null),
+      optional('/api/exams', []),
     ]);
-    _students = s; _lessons = l; _payments = p; _packages = pk; _bookings = bk; _bookingSettings = bs;
+    _students = s; _lessons = l; _payments = p; _packages = pk; _bookings = bk; _bookingSettings = bs; _exams = ex;
     updateBookingBadge();
     checkOnboarding();
   } finally {
@@ -3072,6 +3091,149 @@ function avAddBlocked() {
   availRender();
 }
 
+// ===== EXAMS (מבחנים) =====
+// On the exam's morning at 08:00 the server pushes the teacher a reminder
+// (exam-reminders.yml); tapping it lands here as /?exam=<id> and opens the
+// ready-made "good luck" WhatsApp message.
+function getStudentExams(studentId) {
+  return getExams().filter(e => e.studentId === studentId).sort((a, b) => a.date.localeCompare(b.date));
+}
+function examDayLabel(iso) {
+  const today = isoDate(new Date());
+  const n = Math.round((new Date(iso + 'T00:00:00') - new Date(today + 'T00:00:00')) / 86400000);
+  if (n === 0) return 'היום';
+  if (n === 1) return 'מחר';
+  if (n > 1) return `בעוד ${n} ימים`;
+  return formatDate(iso);
+}
+function studentExamLine(studentId) {
+  const next = getStudentExams(studentId).find(e => e.date >= isoDate(new Date()));
+  if (!next) return '';
+  const today = next.date === isoDate(new Date());
+  return `<span class="exam-line ${today ? 'today' : ''}">📝 מבחן${next.subject ? ` ב${escapeHtml(next.subject)}` : ''} · ${examDayLabel(next.date)}${today ? '' : ` (${formatDate(next.date).slice(0, 5)})`}</span>`;
+}
+
+function openExamsModal(studentId) {
+  const s = getStudentById(studentId);
+  if (!s) return;
+  const today = isoDate(new Date());
+  const all = getStudentExams(studentId);
+  const upcoming = all.filter(e => e.date >= today);
+  const past = all.filter(e => e.date < today).reverse().slice(0, 5);
+  const row = e => `<div class="exam-item ${e.date < today ? 'past' : ''}">
+      <div class="exam-item-main">
+        <div class="exam-item-title">${e.subject ? escapeHtml(e.subject) : 'מבחן'}</div>
+        <div class="exam-item-sub">${getDayName(new Date(e.date + 'T00:00:00').getDay())} ${formatDate(e.date)}${e.date >= today ? ` · ${examDayLabel(e.date)}` : ''}${e.notes ? ` · ${escapeHtml(e.notes)}` : ''}</div>
+      </div>
+      ${e.date === today ? `<button class="btn btn-success btn-xs" onclick="openGoodLuck('${e.id}')">🍀 בהצלחה</button>` : ''}
+      <button class="btn btn-ghost btn-xs btn-icon" onclick="deleteExam('${e.id}')" title="מחיקה"><svg class="icon icon-sm"><use href="#icon-trash"/></svg></button>
+    </div>`;
+  const html = `
+    ${upcoming.length ? `<div class="exam-group-label">מבחנים קרובים</div>${upcoming.map(row).join('')}` : ''}
+    ${past.length ? `<div class="exam-group-label">היו לאחרונה</div>${past.map(row).join('')}` : ''}
+    <div class="exam-form">
+      <div style="font-weight:700;margin-bottom:10px">+ מבחן חדש</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>תאריך המבחן</label><input type="date" id="f-exam-date" min="${today}" value=""></div>
+        <div class="form-group"><label>מקצוע / נושא</label><input type="text" id="f-exam-subject" placeholder="למשל: מתמטיקה"></div>
+      </div>
+      <div class="form-group"><label>הערות (לא חובה)</label><input type="text" id="f-exam-notes" placeholder="למשל: פרקים 3–5"></div>
+      <div class="pkg-sub">🔔 ביום המבחן ב-8:00 בבוקר תקבלי התראה עם הודעת "בהצלחה" מוכנה לשליחה בווצאפ</div>
+    </div>`;
+  openModal(`מבחנים — ${escapeHtml(s.name)}`, html, async () => {
+    const date = document.getElementById('f-exam-date').value;
+    if (!date) { showToast('נא לבחור תאריך למבחן', 'error'); return; }
+    const exam = { id: generateId(), studentId, date,
+      subject: document.getElementById('f-exam-subject').value.trim(),
+      notes: document.getElementById('f-exam-notes').value.trim(),
+      createdAt: new Date().toISOString() };
+    await apiCall('POST', '/api/exams', exam);
+    _exams.push(exam);
+    refreshAfterDataChange();
+    openExamsModal(studentId);
+    showToast(date === today ? 'המבחן נשמר — הוא היום, אפשר לשלוח "בהצלחה" כבר עכשיו' : 'המבחן נשמר — תקבלי תזכורת ב-8:00 ביום המבחן 🔔');
+  });
+  const saveBtn = document.getElementById('modal-save-btn');
+  if (saveBtn) saveBtn.textContent = 'שמירת מבחן';
+}
+
+async function deleteExam(id) {
+  const e = _exams.find(x => x.id === id);
+  if (!e) return;
+  confirmAction('למחוק את המבחן?', async () => {
+    await apiCall('DELETE', `/api/exams/${id}`);
+    _exams = _exams.filter(x => x.id !== id);
+    refreshAfterDataChange();
+    openExamsModal(e.studentId);
+  });
+}
+
+function goodLuckMessage(exam, s) {
+  const first = (s?.name || '').split(' ')[0];
+  return `היי ${first} 🍀\nבהצלחה היום במבחן${exam.subject ? ` ב${exam.subject}` : ''}!\nעבדנו על זה יחד ואני בטוחה שיהיה מעולה 💪\nמחזיקה לך אצבעות ✨`;
+}
+function openGoodLuck(examId) {
+  const e = _exams.find(x => x.id === examId);
+  if (!e) { showToast('המבחן לא נמצא', 'warning'); return; }
+  const s = getStudentById(e.studentId);
+  const intl = phoneToIntl(s?.phone) || phoneToIntl(s?.parentPhone);
+  const html = `
+    <div class="goodluck-hero">🍀</div>
+    <p style="text-align:center;margin-bottom:12px;color:var(--text-muted)">${escapeHtml(s?.name || '')} · מבחן${e.subject ? ` ב${escapeHtml(e.subject)}` : ''} · ${examDayLabel(e.date)}</p>
+    <div class="form-group"><label>ההודעה (אפשר לערוך)</label>
+      <textarea id="f-goodluck-msg" rows="5">${escapeHtml(goodLuckMessage(e, s))}</textarea></div>
+    ${intl ? '' : '<div class="pkg-sub" style="color:var(--danger)">לתלמיד/ה ולהורה אין מספר טלפון — אפשר להוסיף בעריכת התלמיד</div>'}`;
+  openModal('הודעת בהצלחה', html, intl ? async () => {
+    const msg = document.getElementById('f-goodluck-msg').value;
+    window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, '_blank');
+    const updated = { ...e, wishedAt: new Date().toISOString() };
+    _exams = _exams.map(x => x.id === e.id ? updated : x);
+    closeModal();
+    refreshAfterDataChange();
+    try { await apiCall('PUT', `/api/exams/${e.id}`, updated); } catch (err) { /* cosmetic flag only */ }
+  } : null);
+  const saveBtn = document.getElementById('modal-save-btn');
+  if (saveBtn) { saveBtn.textContent = '💬 שליחה בווצאפ'; saveBtn.classList.replace('btn-primary', 'btn-success'); }
+}
+
+// Dashboard: today's exams (with the good-luck button) + the coming week.
+function renderExamsToday() {
+  const el = document.getElementById('exams-today');
+  if (!el) return;
+  const today = isoDate(new Date());
+  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7);
+  const list = getExams().filter(e => e.date >= today && e.date <= isoDate(weekEnd))
+    .filter(e => getStudentById(e.studentId)).sort((a, b) => a.date.localeCompare(b.date));
+  if (!list.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="card exams-card">
+    <div class="dash-card-title">📝 מבחנים השבוע</div>
+    ${list.map(e => {
+      const s = getStudentById(e.studentId);
+      const isToday = e.date === today;
+      return `<div class="breq">
+        <span class="student-dot" style="background:${s.color || '#2563eb'}"></span>
+        <div class="breq-main">
+          <div class="breq-when">${escapeHtml(s.name)}${e.subject ? ` · ${escapeHtml(e.subject)}` : ''}</div>
+          <div class="breq-note">${isToday ? '<strong style="color:var(--success)">היום!</strong>' : `${getDayName(new Date(e.date + 'T00:00:00').getDay())} ${formatDate(e.date).slice(0, 5)} · ${examDayLabel(e.date)}`}</div>
+        </div>
+        ${isToday ? (e.wishedAt
+          ? `<button class="btn btn-ghost btn-sm" onclick="openGoodLuck('${e.id}')">✓ נשלח</button>`
+          : `<button class="btn btn-success btn-sm" onclick="openGoodLuck('${e.id}')">🍀 שלחי בהצלחה</button>`) : ''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// /?exam=<id> — from the 08:00 push (cold start), or forwarded by the service
+// worker as a message when the app was already open.
+function handleExamLink(url) {
+  const id = new URL(url, location.origin).searchParams.get('exam');
+  if (!id) return false;
+  showPage('dashboard');
+  openGoodLuck(id);
+  return true;
+}
+
 // ===== MODAL =====
 function openModal(title, bodyHTML, onSave) {
   document.getElementById('modal-title').textContent = title;
@@ -3153,6 +3315,7 @@ function renderDashGreeting() {
 function renderDashboard() {
   renderDashGreeting();
   renderBookingRequests();
+  renderExamsToday();
   populateDashMonthFilter();
   const students = getStudents();
   const lessons  = getLessons();
@@ -3415,6 +3578,7 @@ function renderStudents() {
         <span>📅 ${days || 'ימים לא הוגדרו'}</span>
         ${s.phone ? `<span>📞 <a href="tel:${escapeHtml(s.phone)}" style="color:var(--primary);text-decoration:none">${escapeHtml(s.phone)}</a></span>` : ''}
         ${studentPackageLine(s.id)}
+        ${studentExamLine(s.id)}
         <span style="display:flex;gap:10px;flex-wrap:wrap">
           <span>📊 ${lessonCount} שיעורים</span>
           <span class="text-success">✅ ${paidCount} שולמו</span>
@@ -3426,6 +3590,7 @@ function renderStudents() {
         ${!inactive ? `<button class="btn btn-primary btn-sm" onclick="openAddLessonModal('${s.id}')">+ שיעור</button>` : ''}
         <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditStudentModal('${s.id}')" title="ערוך פרטי תלמיד"><svg class="icon icon-sm"><use href="#icon-pencil"/></svg></button>
         <button class="btn btn-ghost btn-sm btn-icon" onclick="viewStudentHistory('${s.id}')" title="היסטוריית שיעורים"><svg class="icon icon-sm"><use href="#icon-clock"/></svg></button>
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openExamsModal('${s.id}')" title="מבחנים"><svg class="icon icon-sm"><use href="#icon-graduation"/></svg></button>
         <button class="btn btn-ghost btn-sm btn-icon" onclick="openPackagesModal('${s.id}')" title="כרטיסיות"><svg class="icon icon-sm"><use href="#icon-ticket"/></svg></button>
         <button class="btn btn-ghost btn-sm btn-icon" onclick="openShareLinkModal('${s.id}')" title="קישור מעקב להורה/תלמיד"><svg class="icon icon-sm"><use href="#icon-link"/></svg></button>
         ${s.phone ? `<button class="btn btn-ghost btn-sm btn-icon" onclick="openSendLessonsListModal('${s.id}')" title="שלח רשימת שיעורים בווצאפ"><svg class="icon icon-sm"><use href="#icon-message-circle"/></svg></button>` : ''}
@@ -3567,6 +3732,7 @@ async function deleteStudent(id) {
     _payments = _payments.filter(p => p.studentId !== id);
     _packages = _packages.filter(p => p.studentId !== id);
     _bookings = _bookings.filter(b => b.studentId !== id);
+    _exams    = _exams.filter(e => e.studentId !== id);
     updateBookingBadge();
     closeModal();
     renderStudents();
@@ -4947,6 +5113,13 @@ async function initApp() {
     document.getElementById('cvb-month').classList.add('active');
   }
   showPage('dashboard');
+
+  // Opened from the 08:00 exam push (cold start)
+  if (handleExamLink(location.href)) history.replaceState(null, '', location.pathname);
+  // ...or the app was already open and the service worker forwarded the tap
+  navigator.serviceWorker?.addEventListener('message', ev => {
+    if (ev.data?.type === 'open-url') handleExamLink(ev.data.url);
+  });
 
   // Launched from the home-screen "הוסף שיעור" shortcut (see manifest.json)
   if (new URLSearchParams(location.search).get('action') === 'add-lesson') {
