@@ -342,6 +342,7 @@
     .cf-add input { flex: 1 1 100%; min-width: 0; }
     .cf-add select { flex: 1; width: auto; min-width: 0; }
     .cf-add .btn { white-space: nowrap; }
+    .prof-opt:disabled { cursor: default; opacity: 1; }
     .gender-pick { display: flex; background: var(--bg); border-radius: 10px; padding: 3px; gap: 3px; }
     .gender-pick button { flex: 1; border: none; background: transparent; color: var(--text-muted); border-radius: 8px; padding: 8px; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
     .gender-pick button.on { background: var(--card); color: var(--primary); box-shadow: var(--shadow); }
@@ -1533,6 +1534,12 @@
     .adm-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
     .adm-side { display: flex; flex-direction: column; gap: 20px; }
     .adm-count { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    .adm-prof-filter { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; }
+    .adm-prof-filter::-webkit-scrollbar { display: none; }
+    .adm-prof-filter button { flex-shrink: 0; border: 1px solid var(--border); background: var(--card); color: var(--text-muted);
+      border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .adm-prof-filter button.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .adm-prof-filter button small { font-weight: 500; opacity: .8; margin-inline-start: 2px; }
     .adm-search { position: relative; margin-bottom: 8px; }
     .adm-search .icon { position: absolute; inset-inline-start: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
     .adm-search input { width: 100%; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 12px; padding: 10px 38px 10px 12px; font: inherit; font-size: 14px; }
@@ -2134,6 +2141,7 @@
               <option value="name">לפי שם</option>
             </select>
           </div>
+          <div class="adm-prof-filter" id="admin-prof-filter" role="tablist" aria-label="סינון לפי מקצוע"></div>
           <div class="adm-search">
             <svg class="icon icon-sm"><use href="#icon-search"/></svg>
             <input type="text" id="admin-user-search" placeholder="חיפוש לפי שם או אימייל..." oninput="filterAdminUsers(this.value)">
@@ -2452,32 +2460,35 @@ function showAuthTab(tab) {
 const _profPick = { profession: 'tutor', gender: 'f', list: null };
 async function loadVerticalList() {
   if (_profPick.list) return _profPick.list;
-  try { _profPick.list = (await (await fetch('/api/verticals')).json()).verticals; }
+  try { const j = await (await fetch('/api/verticals')).json(); _profPick.list = j.verticals; _profPick.defaultId = j.default; }
   catch (e) { _profPick.list = []; }
   return _profPick.list;
 }
-async function renderProfessionPicker(profElId, genderElId) {
+// locked: the profession is fixed after signup — show only the current one.
+async function renderProfessionPicker(profElId, genderElId, locked = false) {
   const list = await loadVerticalList();
   const profEl = document.getElementById(profElId), genEl = document.getElementById(genderElId);
   if (!profEl || !genEl) return;
   const gk = _profPick.gender;
-  profEl.innerHTML = list.map(v => `
-    <button type="button" class="prof-opt ${v.id === _profPick.profession ? 'on' : ''}"
-      onclick="_profPick.profession='${v.id}';renderProfessionPicker('${profElId}','${genderElId}')">
+  const rerender = `renderProfessionPicker('${profElId}','${genderElId}',${locked})`;
+  profEl.innerHTML = list.filter(v => !locked || v.id === _profPick.profession).map(v => `
+    <button type="button" class="prof-opt ${v.id === _profPick.profession ? 'on' : ''}" ${locked ? 'disabled' : ''}
+      onclick="_profPick.profession='${v.id}';${rerender}">
       <span class="prof-ic">${v.icon || '•'}</span>
       <span class="prof-txt"><b>${escapeHtml(v.label[gk] || v.label.f)}</b><small>${escapeHtml(v.description || '')}</small></span>
     </button>`).join('');
   genEl.innerHTML = [['f', 'בלשון נקבה'], ['m', 'בלשון זכר']].map(([k, label]) =>
-    `<button type="button" class="${k === gk ? 'on' : ''}" onclick="_profPick.gender='${k}';renderProfessionPicker('${profElId}','${genderElId}')">${label}</button>`).join('');
+    `<button type="button" class="${k === gk ? 'on' : ''}" onclick="_profPick.gender='${k}';${rerender}">${label}</button>`).join('');
 }
-// Account menu → "העסק שלי": change profession / how the app addresses you.
+// Account menu → "העסק שלי": the profession (read-only for now), how the app
+// addresses you, and the business's custom client fields.
 async function openBusinessModal() {
   _profPick.profession = window._profession || 'tutor';
   _profPick.gender = gender();
   openModal('העסק שלי', `
-    <div class="form-group"><label>מה העסק שלך?</label><div class="prof-pick" id="biz-prof-pick"></div></div>
+    <div class="form-group"><label>סוג העסק</label><div class="prof-pick" id="biz-prof-pick"></div>
+      <div class="pkg-sub" style="margin-top:6px">סוג העסק נקבע בהרשמה ולא ניתן לשנות אותו כרגע</div></div>
     <div class="form-group"><label>איך לפנות אלייך?</label><div class="gender-pick" id="biz-gender-pick"></div></div>
-    <div class="pkg-sub">משנה את המונחים, הפיצ'רים וברירות המחדל באפליקציה. הנתונים הקיימים שלך לא משתנים.</div>
     <hr style="margin:14px 0">
     <div class="form-group"><label>שדות נוספים בכרטיס ה${t('client')}</label>
       <div class="pkg-sub" style="margin-bottom:8px">מידע שחשוב לעסק שלך — יופיע בטופס ובכרטיס של כל ${t('client')}</div>
@@ -2489,7 +2500,7 @@ async function openBusinessModal() {
       </div>
     </div>`, async () => {
     addBizField();  // a label typed but not yet added still counts
-    const body = { profession: _profPick.profession, gender: _profPick.gender };
+    const body = { gender: _profPick.gender };
     if (_bizFieldsDirty) body.customFields = _bizFields;
     const res = await apiCall('PUT', '/api/account', body);
     applyAccount(res);
@@ -2498,7 +2509,7 @@ async function openBusinessModal() {
     refreshAfterDataChange();
     showToast('ההגדרות נשמרו ✓');
   });
-  renderProfessionPicker('biz-prof-pick', 'biz-gender-pick');
+  renderProfessionPicker('biz-prof-pick', 'biz-gender-pick', true);
   _bizFields = customFields().map(f => ({ ...f }));
   _bizFieldsDirty = false;
   renderBizFields();
@@ -4054,21 +4065,35 @@ async function loadAdminPending() {
     </section>`;
   } catch (e) { el.innerHTML = ''; }
 }
+// Profession filter: all / the default profession (tutors — the original user
+// base, verticals.DEFAULT_VERTICAL) / every other profession.
+let _adminProf = 'all';
+const adminProfMatch = (u, f) => f === 'all' || ((u.profession === _profPick.defaultId) === (f === 'core'));
+function renderAdminProfFilter() {
+  const el = document.getElementById('admin-prof-filter');
+  if (!el) return;
+  const core = (_profPick.list || []).find(v => v.id === _profPick.defaultId);
+  const opts = [['all', 'הכל'], ['core', `${core?.icon || ''} מורים`], ['other', '✨ שאר המקצועות']];
+  el.innerHTML = opts.map(([k, label]) => `<button type="button" role="tab" aria-selected="${_adminProf === k}" class="${_adminProf === k ? 'on' : ''}"
+      onclick="_adminProf='${k}';filterAdminUsers(document.getElementById('admin-user-search').value)">${label}
+      <small>${_adminUsers.filter(u => adminProfMatch(u, k)).length}</small></button>`).join('');
+}
 function filterAdminUsers(query) {
   const q = (query || '').trim().toLowerCase();
-  let list = !q ? [..._adminUsers] : _adminUsers.filter(u =>
-    (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
+  let list = _adminUsers.filter(u => adminProfMatch(u, _adminProf) && (!q ||
+    (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)));
   const sort = document.getElementById('admin-user-sort')?.value || 'recent';
   if (sort === 'active') list.sort((a, b) => (b.lessonsThisMonth || 0) - (a.lessonsThisMonth || 0));
   if (sort === 'name') list.sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email, 'he'));
-  renderAdminUsersList(list, !!q);
+  renderAdminProfFilter();
+  renderAdminUsersList(list, !!q || _adminProf !== 'all');
 }
 function renderAdminUsersList(users, isFiltered) {
   const el = document.getElementById('admin-users-list');
   const cnt = document.getElementById('admin-users-count');
   if (cnt) cnt.textContent = _adminUsers.length ? `(${_adminUsers.length})` : '';
   if (!_adminUsers.length) { el.innerHTML = '<div class="dx-empty dx-empty-sm"><div class="dx-empty-title">אין משתמשים עדיין</div></div>'; return; }
-  if (!users.length) { el.innerHTML = `<div class="dx-empty dx-empty-sm"><div class="dx-empty-title">${isFiltered ? 'אין תוצאות לחיפוש' : 'אין משתמשים'}</div></div>`; return; }
+  if (!users.length) { el.innerHTML = `<div class="dx-empty dx-empty-sm"><div class="dx-empty-title">${isFiltered ? 'אין משתמשים שמתאימים לסינון' : 'אין משתמשים'}</div></div>`; return; }
   const today = isoDate(new Date());
   el.innerHTML = users.map(u => {
     const activeNow = (u.lessonsThisMonth || 0) > 0;
@@ -5657,7 +5682,7 @@ async function loadAdminUsers() {
     const r = await fetch('/api/admin/users');
     if (!r.ok) { el.innerHTML = '<p class="text-muted" style="font-size:13px">שגיאה בטעינה</p>'; return; }
     _adminUsers = await r.json();
-    renderAdminUsersList(_adminUsers);
+    filterAdminUsers(document.getElementById('admin-user-search')?.value);
   } catch (e) {
     el.innerHTML = '<p class="text-muted" style="font-size:13px">שגיאה בטעינה</p>';
   }
