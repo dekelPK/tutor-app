@@ -1,0 +1,55 @@
+{
+  "id": "cosmetician",
+  "order": 3,
+  "icon": "💅",
+  "label": {
+    "f": "קוסמטיקאית",
+    "m": "קוסמטיקאי"
+  },
+  "description": "טיפולים, לקוחות קבועים וכרטיסיות טיפולים",
+  "terms": {
+    "provider": {
+      "f": "קוסמטיקאית",
+      "m": "קוסמטיקאי"
+    },
+    "client": "לקוח",
+    "clients": "לקוחות",
+    "client_of": "לקוח/ה",
+    "appointment": "טיפול",
+    "appointments": "טיפולים",
+    "one_appointment": "טיפול אחד",
+    "package": "כרטיסייה",
+    "packages": "כרטיסיות",
+    "calendar_event": "טיפול - {name}",
+    "reminder_title": "תזכורת: יש לך טיפולים היום 💅",
+    "reminder_one": "טיפול עם {name} בשעה {time}",
+    "reminder_many": "{count} טיפולים מתוכננים היום",
+    "schedule_days": "ימים קבועים",
+    "portal_title": "הטיפולים שלי",
+    "portal_history": "💅 הטיפולים הקודמים",
+    "calendar_name": "טיפולים"
+  },
+  "features": {
+    "exams": false,
+    "lessonNotes": false,
+    "parentContact": false,
+    "packages": true,
+    "selfBooking": true
+  },
+  "defaults": {
+    "price": 250,
+    "durationMinutes": 60
+  },
+  "fields": [
+    {
+      "key": "skin_type",
+      "label": "סוג עור",
+      "type": "text"
+    },
+    {
+      "key": "sensitivities",
+      "label": "רגישויות ואלרגיות",
+      "type": "text"
+    }
+  ]
+}
