@@ -2098,7 +2098,7 @@
               <div class="adm-push-body" id="admin-push-preview-body">מה חדש...</div>
             </div>
             <div class="form-group" style="margin-top:12px">
-              <label>כותרת</label>
+              <label>כותרת <span style="font-weight:400">(לא חובה — ברירת מחדל: 📢 עדכון חדש)</span></label>
               <input type="text" id="admin-push-title" placeholder="📢 עדכון חדש" maxlength="60" oninput="adminPushPreview()">
             </div>
             <div class="form-group">
@@ -3924,8 +3924,9 @@ function adminAnnPreview() {
   document.querySelector('#admin-ann-preview span').textContent = v.trim() || 'הטקסט יופיע כאן';
   document.getElementById('admin-ann-count').textContent = v.length;
 }
+const ADMIN_PUSH_DEFAULT_TITLE = '📢 עדכון חדש';
 function adminPushPreview() {
-  document.getElementById('admin-push-preview-title').textContent = document.getElementById('admin-push-title').value.trim() || '📢 עדכון חדש';
+  document.getElementById('admin-push-preview-title').textContent = document.getElementById('admin-push-title').value.trim() || ADMIN_PUSH_DEFAULT_TITLE;
   document.getElementById('admin-push-preview-body').textContent = document.getElementById('admin-push-body').value.trim() || 'מה חדש...';
 }
 
@@ -5391,9 +5392,10 @@ async function adminClearAnnouncement() {
   else showToast('שגיאה', 'danger');
 }
 async function adminSendPushBroadcast() {
-  const title = document.getElementById('admin-push-title').value.trim();
+  // Empty title → the placeholder title shown in the preview ("📢 עדכון חדש")
+  const title = document.getElementById('admin-push-title').value.trim() || ADMIN_PUSH_DEFAULT_TITLE;
   const body  = document.getElementById('admin-push-body').value.trim();
-  if (!title || !body) { showToast('כותרת וטקסט דרושים', 'warning'); return; }
+  if (!body) { showToast('נא לכתוב את טקסט ההתראה', 'warning'); return; }
   const btn = document.getElementById('admin-push-btn');
   btn.disabled = true; btn.textContent = 'שולח...';
   try {

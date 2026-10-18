@@ -666,9 +666,10 @@ def admin_push_broadcast():
     err = require_admin()
     if err: return err
     body = request.json or {}
-    title, text = (body.get('title') or '').strip(), (body.get('body') or '').strip()
-    if not title or not text:
-        return jsonify({'error': 'כותרת וטקסט דרושים'}), 400
+    title = (body.get('title') or '').strip() or '📢 עדכון חדש'  # same default the admin form previews
+    text = (body.get('body') or '').strip()
+    if not text:
+        return jsonify({'error': 'נא לכתוב את טקסט ההתראה'}), 400
 
     ok, err_resp = trigger_github_workflow('broadcast-notification.yml', {'title': title, 'body': text})
     if err_resp: return err_resp
