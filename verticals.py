@@ -89,5 +89,6 @@ def has(vid, feature):
 
 def summary():
     """Public list for the signup picker."""
+    ids = sorted(available(), key=lambda v: (load(v).get('order', 99), v))
     return [{'id': v, 'icon': load(v).get('icon', ''), 'label': load(v)['label'],
-             'description': load(v).get('description', '')} for v in available()]
+             'description': load(v).get('description', '')} for v in ids]

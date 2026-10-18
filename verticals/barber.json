@@ -1,10 +1,17 @@
 {
   "id": "barber",
+  "order": 2,
   "icon": "✂️",
-  "label": { "f": "ספרית", "m": "ספר" },
+  "label": {
+    "f": "ספרית",
+    "m": "ספר"
+  },
   "description": "תורים, לקוחות קבועים וכרטיסיות תספורת",
   "terms": {
-    "provider": { "f": "ספרית", "m": "ספר" },
+    "provider": {
+      "f": "ספרית",
+      "m": "ספר"
+    },
     "client": "לקוח",
     "clients": "לקוחות",
     "client_of": "לקוח/ה",
@@ -31,6 +38,10 @@
     "durationMinutes": 30
   },
   "fields": [
-    { "key": "style", "label": "סגנון תספורת קבוע", "type": "text" }
+    {
+      "key": "style",
+      "label": "סגנון תספורת קבוע",
+      "type": "text"
+    }
   ]
 }
