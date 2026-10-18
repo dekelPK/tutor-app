@@ -62,6 +62,15 @@ class TerminologyTests(unittest.TestCase):
         self.assertEqual(verticals.t('barber', 'client'), 'לקוח')
         self.assertEqual(verticals.t('barber', 'appointment'), 'תור')
 
+    def test_cosmetician_terms_features_and_fields(self):
+        self.assertIn('cosmetician', verticals.available())
+        self.assertEqual(verticals.t('cosmetician', 'appointment'), 'טיפול')
+        self.assertEqual(verticals.t('cosmetician', 'provider', gender='f'), 'קוסמטיקאית')
+        self.assertEqual(verticals.t('cosmetician', 'reminder_many', count=2), '2 טיפולים מתוכננים היום')
+        self.assertTrue(verticals.has('cosmetician', 'packages'))
+        self.assertFalse(verticals.has('cosmetician', 'exams'))
+        self.assertEqual([f['key'] for f in verticals.fields_for('cosmetician', None)], ['skin_type', 'sensitivities'])
+
     def test_gendered_terms(self):
         self.assertEqual(verticals.t('barber', 'provider', gender='f'), 'ספרית')
         self.assertEqual(verticals.t('barber', 'provider', gender='m'), 'ספר')
