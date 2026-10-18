@@ -14,9 +14,11 @@ try:
 except Exception:
     ISRAEL_TZ = None  # falls back to naive UTC date — a few hours off around midnight
 
-BASE_DIR = '/home/DekelPA/mysite'
+# Overridable only so tests can run against a throwaway directory.
+BASE_DIR = os.environ.get('TUTOR_APP_BASE_DIR', '/home/DekelPA/mysite')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import portal_core
+import verticals
 DB_PATH  = os.path.join(BASE_DIR, 'tutor.db')
 
 app = Flask(__name__, static_folder=BASE_DIR)
@@ -198,6 +200,12 @@ def init_db():
             db.execute('ALTER TABLE users ADD COLUMN reset_token_expires TEXT')
         if 'booking_settings' not in user_cols:
             db.execute('ALTER TABLE users ADD COLUMN booking_settings TEXT')
+        # Multi-profession: every pre-existing account is a (female) tutor —
+        # the defaults backfill them so nothing changes for current users.
+        if 'profession' not in user_cols:
+            db.execute(f"ALTER TABLE users ADD COLUMN profession TEXT DEFAULT '{verticals.DEFAULT_VERTICAL}'")
+        if 'gender' not in user_cols:
+            db.execute(f"ALTER TABLE users ADD COLUMN gender TEXT DEFAULT '{verticals.DEFAULT_GENDER}'")
 
     # One-time migration from data.json if it exists
     json_path = os.path.join(BASE_DIR, 'data.json')
@@ -254,6 +262,15 @@ def index():
         return f.read(), 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
+def account_info(user_id):
+    """The business's profession + owner gender, and the resolved vertical config
+    the browser needs for terminology and feature flags (see vertical.js)."""
+    with get_db() as db:
+        row = db.execute('SELECT profession, gender FROM users WHERE id=?', [user_id]).fetchone()
+    prof = verticals.normalize(row['profession'] if row else None)
+    gender = verticals.normalize_gender(row['gender'] if row else None)
+    return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand()}
+
 @app.route('/api/auth/me')
 def auth_me():
     if 'user_id' not in session:
@@ -261,7 +278,33 @@ def auth_me():
     return jsonify({
         'id': session['user_id'], 'name': session.get('user_name',''), 'email': session.get('user_email',''),
         'isAdmin': (session.get('user_email') or '').lower() == ADMIN_EMAIL.lower(),
+        **account_info(session['user_id']),
     })
+
+@app.route('/api/verticals')
+def list_verticals():
+    # Public: the signup screen shows these before there's an account.
+    return jsonify({'verticals': verticals.summary(), 'default': verticals.DEFAULT_VERTICAL, 'brand': verticals.brand()})
+
+@app.route('/api/account', methods=['PUT'])
+def update_account():
+    # Change profession / gender later (account menu). Only terminology,
+    # feature flags and defaults follow — existing data is untouched.
+    err = require_auth()
+    if err: return err
+    body = request.json or {}
+    with get_db() as db:
+        if 'profession' in body:
+            db.execute('UPDATE users SET profession=? WHERE id=?', [verticals.normalize(body['profession']), uid()])
+        if 'gender' in body:
+            db.execute('UPDATE users SET gender=? WHERE id=?', [verticals.normalize_gender(body['gender']), uid()])
+    return jsonify(account_info(uid()))
+
+@app.route('/vertical.js')
+def vertical_js():
+    # Code lives next to this file (== BASE_DIR in production, not in tests)
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'vertical.js'), 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/javascript; charset=utf-8'}
 
 @app.route('/api/auth/login', methods=['POST'])
 def auth_login():
@@ -283,7 +326,7 @@ def auth_login():
     session['user_name']  = user['name']
     session['user_email'] = user['email']
     return jsonify({'id': user['id'], 'name': user['name'], 'email': user['email'],
-                     'isAdmin': user['email'].lower() == ADMIN_EMAIL.lower()})
+                     'isAdmin': user['email'].lower() == ADMIN_EMAIL.lower(), **account_info(user['id'])})
 
 @app.route('/api/auth/register', methods=['POST'])
 def auth_register():
@@ -293,6 +336,8 @@ def auth_register():
     email = (body.get('email') or '').strip().lower()
     pw    = body.get('password', '')
     name  = (body.get('name') or '').strip()
+    profession = verticals.normalize(body.get('profession'))
+    gender = verticals.normalize_gender(body.get('gender'))
     if not email or not pw:
         return jsonify({'error': 'נא למלא אימייל וסיסמה'}), 400
     if len(pw) < 6:
@@ -304,8 +349,8 @@ def auth_register():
         is_first = db.execute('SELECT COUNT(*) FROM users').fetchone()[0] == 0
         new_id   = uuid.uuid4().hex[:12]
         approved = 1 if (is_first or is_admin_account) else 0
-        db.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved) VALUES (?,?,?,?,?,?)',
-                   [new_id, email, hash_pw(pw), name, datetime.now().isoformat(), approved])
+        db.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved,profession,gender) VALUES (?,?,?,?,?,?,?,?)',
+                   [new_id, email, hash_pw(pw), name, datetime.now().isoformat(), approved, profession, gender])
         if is_first:
             # Associate all existing data (no user_id) with this first user
             for tbl in ('students', 'lessons', 'payments'):
@@ -325,7 +370,7 @@ def auth_register():
     session['user_name']  = name
     session['user_email'] = email
     return jsonify({'id': new_id, 'name': name, 'email': email,
-                     'isAdmin': is_admin_account}), 201
+                     'isAdmin': is_admin_account, **account_info(new_id)}), 201
 
 @app.route('/api/auth/logout', methods=['POST'])
 def auth_logout():
@@ -707,7 +752,7 @@ def admin_users():
     err = require_admin()
     if err: return err
     with get_db() as db:
-        rows = db.execute('SELECT id, name, email, created_at FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
+        rows = db.execute('SELECT id, name, email, created_at, profession, gender FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
         out = []
         for u in rows:
             students = rows_to_list(db.execute('SELECT data FROM students WHERE user_id=?', [u['id']]).fetchall())

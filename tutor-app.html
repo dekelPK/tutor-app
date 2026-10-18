@@ -2222,6 +2222,7 @@
 
 <!-- Hidden file input -->
 
+<script src="/vertical.js"></script>
 <script>
 // ===== CONSTANTS =====
 const STUDENT_COLORS = ['#2563eb','#10b981','#f59e0b','#ef4444','#0891b2','#8b5cf6','#ec4899','#f97316','#14b8a6','#84cc16','#f43f5e','#6366f1','#d946ef','#64748b'];
@@ -2439,6 +2440,7 @@ async function doLogin() {
     });
     const data = await r.json();
     if (!r.ok) { showAuthError(data.error || 'שגיאה בהתחברות'); return; }
+    applyAccount(data);
     hideAuthOverlay(data.name || data.email, data.isAdmin);
     await loadData();
     showPage('dashboard');
@@ -2502,6 +2504,7 @@ async function doRegister() {
       return;
     }
     if (!r.ok) { showAuthError(data.error || 'שגיאה בהרשמה'); return; }
+    applyAccount(data);
     hideAuthOverlay(data.name || data.email, data.isAdmin);
     await loadData();
     showPage('dashboard');
@@ -3522,6 +3525,13 @@ function showAuthOverlay() {
   document.getElementById('auth-overlay').classList.add('visible');
   document.getElementById('acct-btn').style.display = 'none';
   closeAccountMenu();
+}
+// Installs the business's profession (vertical) + owner gender from an auth
+// response — terminology t(), feature flags has() and g() read from it.
+function applyAccount(data) {
+  if (!data) return;
+  setVertical(data.vertical, data.gender);
+  window._profession = data.profession;
 }
 function hideAuthOverlay(userName, isAdmin) {
   document.getElementById('auth-overlay').classList.remove('visible');
@@ -5683,6 +5693,7 @@ async function initApp() {
     const r = await fetch('/api/auth/me');
     if (r.ok) {
       const user = await r.json();
+      applyAccount(user);
       hideAuthOverlay(user.name || user.email, user.isAdmin);
     } else {
       hideLoading();

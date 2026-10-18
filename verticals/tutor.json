@@ -1,0 +1,34 @@
+{
+  "id": "tutor",
+  "icon": "📚",
+  "label": { "f": "מורה פרטית", "m": "מורה פרטי" },
+  "description": "שיעורים פרטיים, תלמידים, מבחנים ושיעורי בית",
+  "terms": {
+    "provider": { "f": "מורה", "m": "מורה" },
+    "client": "תלמיד",
+    "clients": "תלמידים",
+    "client_of": "תלמיד/ה",
+    "appointment": "שיעור",
+    "appointments": "שיעורים",
+    "one_appointment": "שיעור אחד",
+    "package": "כרטיסייה",
+    "packages": "כרטיסיות",
+    "app_subtitle": "ניהול שיעורים פרטיים",
+    "calendar_event": "שיעור - {name}",
+    "reminder_title": "תזכורת: יש לך שיעור היום 📚",
+    "reminder_one": "שיעור עם {name} בשעה {time}",
+    "reminder_many": "{count} שיעורים מתוכננים היום"
+  },
+  "features": {
+    "exams": true,
+    "lessonNotes": true,
+    "parentContact": true,
+    "packages": true,
+    "selfBooking": true
+  },
+  "defaults": {
+    "price": 150,
+    "durationMinutes": 50
+  },
+  "fields": []
+}

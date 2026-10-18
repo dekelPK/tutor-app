@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 import json, os, threading, webbrowser, sqlite3, hashlib, secrets, uuid
 import portal_core
+import verticals
 from datetime import datetime, timedelta
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -46,6 +47,11 @@ def init_db():
         c.execute('ALTER TABLE users ADD COLUMN reset_token TEXT')
     if 'reset_token_expires' not in cols:
         c.execute('ALTER TABLE users ADD COLUMN reset_token_expires TEXT')
+    # Multi-profession: existing accounts are (female) tutors — see flask_app.py
+    if 'profession' not in cols:
+        c.execute(f"ALTER TABLE users ADD COLUMN profession TEXT DEFAULT '{verticals.DEFAULT_VERTICAL}'")
+    if 'gender' not in cols:
+        c.execute(f"ALTER TABLE users ADD COLUMN gender TEXT DEFAULT '{verticals.DEFAULT_GENDER}'")
     c.commit()
     c.close()
 
@@ -134,7 +140,39 @@ def auth_me():
         'name':  session.get('user_name', ''),
         'email': session.get('user_email', ''),
         'isAdmin': (session.get('user_email') or '').lower() == ADMIN_EMAIL.lower(),
+        **account_info(session['user_id']),
     })
+
+def account_info(user_id):
+    c = get_db()
+    row = c.execute('SELECT profession, gender FROM users WHERE id=?', [user_id]).fetchone()
+    c.close()
+    prof = verticals.normalize(row['profession'] if row else None)
+    gender = verticals.normalize_gender(row['gender'] if row else None)
+    return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand()}
+
+@app.route('/api/verticals')
+def list_verticals():
+    return jsonify({'verticals': verticals.summary(), 'default': verticals.DEFAULT_VERTICAL, 'brand': verticals.brand()})
+
+@app.route('/api/account', methods=['PUT'])
+def update_account():
+    err = require_auth()
+    if err: return err
+    body = request.json or {}
+    c = get_db()
+    if 'profession' in body:
+        c.execute('UPDATE users SET profession=? WHERE id=?', [verticals.normalize(body['profession']), session['user_id']])
+    if 'gender' in body:
+        c.execute('UPDATE users SET gender=? WHERE id=?', [verticals.normalize_gender(body['gender']), session['user_id']])
+    c.commit()
+    c.close()
+    return jsonify(account_info(session['user_id']))
+
+@app.route('/vertical.js')
+def vertical_js():
+    with open(os.path.join(BASE_DIR, 'vertical.js'), encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'application/javascript; charset=utf-8'}
 
 @app.route('/api/auth/login', methods=['POST'])
 def auth_login():
@@ -158,7 +196,7 @@ def auth_login():
     session['user_name']  = user['name']
     session['user_email'] = user['email']
     return jsonify({'id': user['id'], 'name': user['name'], 'email': user['email'],
-                     'isAdmin': user['email'].lower() == ADMIN_EMAIL.lower()})
+                     'isAdmin': user['email'].lower() == ADMIN_EMAIL.lower(), **account_info(user['id'])})
 
 @app.route('/api/auth/register', methods=['POST'])
 def auth_register():
@@ -168,6 +206,8 @@ def auth_register():
     email = (body.get('email') or '').strip().lower()
     pw    = body.get('password', '')
     name  = (body.get('name') or '').strip()
+    profession = verticals.normalize(body.get('profession'))
+    gender = verticals.normalize_gender(body.get('gender'))
     if not email or not pw:
         return jsonify({'error': 'נא למלא אימייל וסיסמה'}), 400
     if len(pw) < 6:
@@ -181,8 +221,8 @@ def auth_register():
     is_first = c.execute('SELECT COUNT(*) FROM users').fetchone()[0] == 0
     uid = uuid.uuid4().hex[:12]
     approved = 1 if (is_first or is_admin_account) else 0
-    c.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved) VALUES (?,?,?,?,?,?)',
-              [uid, email, hash_pw(pw), name, datetime.now().isoformat(), approved])
+    c.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved,profession,gender) VALUES (?,?,?,?,?,?,?,?)',
+              [uid, email, hash_pw(pw), name, datetime.now().isoformat(), approved, profession, gender])
     c.commit()
     c.close()
     if is_first and os.path.exists(DATA_FILE):
@@ -198,7 +238,7 @@ def auth_register():
     session['user_name']  = name
     session['user_email'] = email
     return jsonify({'id': uid, 'name': name, 'email': email,
-                     'isAdmin': is_admin_account}), 201
+                     'isAdmin': is_admin_account, **account_info(uid)}), 201
 
 @app.route('/api/auth/logout', methods=['POST'])
 def auth_logout():
@@ -651,7 +691,7 @@ def admin_users():
     err = require_admin()
     if err: return err
     c = get_db()
-    rows = c.execute('SELECT id, name, email, created_at FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
+    rows = c.execute('SELECT id, name, email, created_at, profession, gender FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
     c.close()
     out = []
     for u in rows:
