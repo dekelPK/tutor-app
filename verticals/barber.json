@@ -1,0 +1,36 @@
+{
+  "id": "barber",
+  "icon": "✂️",
+  "label": { "f": "ספרית", "m": "ספר" },
+  "description": "תורים, לקוחות קבועים וכרטיסיות תספורת",
+  "terms": {
+    "provider": { "f": "ספרית", "m": "ספר" },
+    "client": "לקוח",
+    "clients": "לקוחות",
+    "client_of": "לקוח/ה",
+    "appointment": "תור",
+    "appointments": "תורים",
+    "one_appointment": "תור אחד",
+    "package": "כרטיסייה",
+    "packages": "כרטיסיות",
+    "app_subtitle": "ניהול תורים ולקוחות",
+    "calendar_event": "תור - {name}",
+    "reminder_title": "תזכורת: יש לך תורים היום ✂️",
+    "reminder_one": "תור עם {name} בשעה {time}",
+    "reminder_many": "{count} תורים מתוכננים היום"
+  },
+  "features": {
+    "exams": false,
+    "lessonNotes": false,
+    "parentContact": false,
+    "packages": true,
+    "selfBooking": true
+  },
+  "defaults": {
+    "price": 70,
+    "durationMinutes": 30
+  },
+  "fields": [
+    { "key": "style", "label": "סגנון תספורת קבוע", "type": "text" }
+  ]
+}
