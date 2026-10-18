@@ -1534,6 +1534,11 @@
     .adm-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
     .adm-side { display: flex; flex-direction: column; gap: 20px; }
     .adm-count { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    .adm-demo-list { display: flex; flex-direction: column; gap: 6px; }
+    .adm-demo-list .btn { justify-content: flex-start; }
+    .demo-cred { background: var(--bg); border-radius: 12px; padding: 12px 14px; margin: 10px 0; display: grid; gap: 8px; }
+    .demo-cred div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .demo-cred code { direction: ltr; font-size: 15px; font-weight: 700; user-select: all; overflow-wrap: anywhere; }
     .adm-prof-filter { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; }
     .adm-prof-filter::-webkit-scrollbar { display: none; }
     .adm-prof-filter button { flex-shrink: 0; border: 1px solid var(--border); background: var(--card); color: var(--text-muted);
@@ -2150,6 +2155,13 @@
         </section>
 
         <aside class="adm-side">
+          <section class="card dx-card">
+            <div class="dx-card-head">
+              <h3 class="dx-title"><span class="dx-ic dx-ic-blue">🧪</span>חשבונות ניסיון</h3>
+            </div>
+            <p class="adm-hint">חשבון מוכן עם לקוחות ותורים לדוגמה — כדי לראות איך האפליקציה נראית לכל מקצוע. יצירה מחדש מאפסת את החשבון ונותנת סיסמה חדשה.</p>
+            <div class="adm-demo-list" id="admin-demo-list"></div>
+          </section>
           <section class="card dx-card">
             <div class="dx-card-head">
               <h3 class="dx-title"><span class="dx-ic dx-ic-amber">📢</span>באנר בתוך האפליקציה</h3>
@@ -5652,8 +5664,47 @@ async function showCalSubscribeInfo() {
 // ===== ADMIN =====
 let _adminUsers = [];
 
+// ── Test accounts: one per profession, with sample data (demo_accounts.py) ──
+function renderAdminDemoList() {
+  const el = document.getElementById('admin-demo-list');
+  if (!el) return;
+  el.innerHTML = (_profPick.list || []).map(v => `<button type="button" class="btn btn-ghost btn-sm" onclick="createDemoAccount('${v.id}')">
+      ${v.icon || ''} חשבון ניסיון — ${escapeHtml(v.label.f)}</button>`).join('');
+}
+async function createDemoAccount(profession) {
+  const v = (_profPick.list || []).find(x => x.id === profession);
+  const r = await fetch('/api/admin/demo-account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profession }) });
+  if (!r.ok) { showToast('שגיאה ביצירת החשבון', 'error'); return; }
+  const { email, password } = await r.json();
+  window._demoLogin = { email, password };
+  loadAdminUsers();
+  openModal(`${v?.icon || ''} חשבון ניסיון — ${escapeHtml(v?.label.f || '')}`, `
+    <p style="margin:0;color:var(--text-muted);font-size:14px">החשבון מוכן, עם לקוחות, תורים, כרטיסייה ובקשה ממתינה לדוגמה.</p>
+    <div class="demo-cred">
+      <div><span>אימייל</span><code>${escapeHtml(email)}</code></div>
+      <div><span>סיסמה</span><code>${escapeHtml(password)}</code></div>
+    </div>
+    <p style="margin:0;color:var(--text-muted);font-size:13px">כדי לחזור לחשבון שלך — התנתקי מחשבון הניסיון והתחברי כרגיל.</p>`,
+    loginToDemoAccount);
+  const saveBtn = document.getElementById('modal-save-btn');
+  if (saveBtn) saveBtn.textContent = 'כניסה לחשבון הניסיון';
+}
+// Log out of the admin account and sign straight in to the test account.
+async function loginToDemoAccount() {
+  const d = window._demoLogin;
+  if (!d) return;
+  closeModal();
+  await doLogout();
+  document.getElementById('auth-email').value = d.email;
+  document.getElementById('auth-password').value = d.password;
+  window._demoLogin = null;
+  window.scrollTo(0, 0);
+  doLogin();
+}
+
 async function renderAdminPage() {
   await loadVerticalList(); // user rows show each profession's label
+  renderAdminDemoList();
   await Promise.all([loadAdminStats(), loadAdminPending(), loadAdminUsers(), loadAdminAnnouncementIntoForm()]);
 }
 
