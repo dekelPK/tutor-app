@@ -711,7 +711,12 @@ def admin_users():
         for u in rows:
             students = rows_to_list(db.execute('SELECT data FROM students WHERE user_id=?', [u['id']]).fetchall())
             lesson_count = db.execute('SELECT COUNT(*) FROM lessons WHERE user_id=?', [u['id']]).fetchone()[0]
+            today = portal_core.now_local().strftime('%Y-%m-%d')
+            month_count = db.execute('SELECT COUNT(*) FROM lessons WHERE user_id=? AND date LIKE ?', [u['id'], today[:7] + '%']).fetchone()[0]
+            last = db.execute('SELECT MAX(date) FROM lessons WHERE user_id=? AND date<=?', [u['id'], today]).fetchone()[0]
             d = dict(u)
+            d['lessonsThisMonth'] = month_count
+            d['lastLessonDate'] = last
             d['studentCount'] = len(students)
             d['activeStudentCount'] = sum(1 for s in students if s.get('isActive') is not False)
             d['lessonCount'] = lesson_count

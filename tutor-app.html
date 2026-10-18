@@ -1333,6 +1333,236 @@
       .modal-handle, .modal-close, .modal-footer { display: none !important; }
     }
 
+
+    /* ===================================================================
+       REDESIGN — header account menu, "today first" dashboard, admin
+       =================================================================== */
+    /* Header account button + menu */
+    .acct-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28);
+      color: #fff; border-radius: 999px; padding: 4px 6px 4px 12px; cursor: pointer; font: inherit; font-size: 13.5px; font-weight: 600; transition: background .15s; }
+    .acct-btn:hover, .acct-btn[aria-expanded="true"] { background: rgba(255,255,255,.24); }
+    .acct-avatar { width: 30px; height: 30px; border-radius: 50%; background: #fff; color: var(--primary); display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 14px; flex-shrink: 0; }
+    .acct-chev { opacity: .8; }
+    .acct-menu { position: fixed; top: 64px; inset-inline-end: 20px; width: 300px; max-width: calc(100vw - 24px); z-index: 300; background: var(--card); color: var(--text);
+      border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 20px 50px rgba(15,23,42,.18), 0 2px 6px rgba(15,23,42,.06); padding: 8px;
+      opacity: 0; transform: translateY(-6px) scale(.98); transform-origin: top left; pointer-events: none; transition: opacity .15s, transform .15s; }
+    .acct-menu.open { opacity: 1; transform: none; pointer-events: auto; }
+    .am-head { display: flex; align-items: center; gap: 12px; padding: 10px 10px 12px; }
+    .am-avatar { width: 40px; height: 40px; font-size: 17px; background: var(--primary); color: #fff; }
+    .am-name { font-weight: 700; font-size: 15px; }
+    .am-sub { font-size: 12px; color: var(--text-muted); }
+    .am-group { border-top: 1px solid var(--border); padding: 6px 0; }
+    .am-item { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; border-radius: 10px; padding: 9px 10px; cursor: pointer;
+      font: inherit; color: var(--text); text-align: start; }
+    .am-item:hover { background: var(--bg); }
+    .am-item[data-off] { opacity: .55; }
+    .am-ic { width: 32px; height: 32px; border-radius: 9px; background: var(--bg); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+    .am-text { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .am-title { font-size: 14px; font-weight: 600; }
+    .am-desc { font-size: 12px; color: var(--text-muted); }
+    .am-danger .am-title { color: var(--danger); }
+    .am-switch { width: 38px; height: 22px; border-radius: 11px; background: var(--border); position: relative; flex-shrink: 0; transition: background .15s; }
+    .am-switch span { position: absolute; top: 3px; inset-inline-start: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: inset-inline-start .15s; }
+    .am-switch.on { background: var(--success); }
+    .am-switch.on span { inset-inline-start: 19px; }
+    .kbd { font-family: ui-monospace, monospace; font-size: 12px; background: var(--bg); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 6px; padding: 2px 7px; }
+
+    /* Dashboard shell */
+    .dx-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin: 4px 0 20px; }
+    .dx-hello { font-size: 26px; font-weight: 800; letter-spacing: -.4px; }
+    .dx-date { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+    .dx-date span { color: var(--text); font-weight: 500; }
+    .dx-actions { display: flex; gap: 8px; }
+    .dx-act { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 12px;
+      padding: 9px 16px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow); transition: transform .12s, box-shadow .12s, border-color .12s; }
+    .dx-act span { font-size: 15px; }
+    .dx-act:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); border-color: var(--primary); }
+    .dx-act-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .dx-act-primary:hover { background: var(--primary-dark); }
+
+    .dx-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; }
+    .dx-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+    .dx-card { border-radius: 18px; padding: 18px 20px; border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(15,23,42,.04); margin: 0; }
+    .dx-card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .dx-title { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; margin: 0; }
+    .dx-title-sub { font-size: 13px; font-weight: 400; color: var(--text-muted); }
+    .dx-ic { width: 32px; height: 32px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+    .dx-ic-blue { background: var(--primary-light); }
+    .dx-ic-amber { background: var(--warning-light); }
+    .dx-ic-violet { background: #ede9fe; }
+    [data-theme="dark"] .dx-ic-amber { background: #3a2a0c; }
+    [data-theme="dark"] .dx-ic-violet { background: #2e1065; }
+    .dx-count { min-width: 26px; height: 26px; padding: 0 8px; border-radius: 13px; background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 13px;
+      display: inline-flex; align-items: center; justify-content: center; }
+    .dx-count-warn { background: var(--warning-light); color: #b45309; }
+    [data-theme="dark"] .dx-count-warn { background: #3a2a0c; color: #fbbf24; }
+    .dx-select { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 10px; padding: 6px 10px; font: inherit; font-size: 13px; }
+    .dx-subtitle { font-size: 12.5px; font-weight: 600; color: var(--text-muted); margin: 18px 0 8px; }
+    .dx-link-btn { background: none; border: none; color: var(--primary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 10px 0 0; }
+    .dx-foot { display: flex; justify-content: space-between; width: 100%; margin-top: 12px; padding: 10px 12px; border: none; border-radius: 12px; background: var(--bg);
+      color: var(--text-muted); font: inherit; font-size: 13px; cursor: pointer; }
+    .dx-foot:hover { color: var(--primary); }
+    .dx-empty { text-align: center; padding: 18px 10px 10px; }
+    .dx-empty-ic { font-size: 34px; margin-bottom: 6px; }
+    .dx-empty-title { font-weight: 700; font-size: 15px; }
+    .dx-empty-sub { font-size: 13px; color: var(--text-muted); margin: 4px 0 12px; }
+    .dx-empty-sm { padding: 10px 6px 4px; }
+    .dx-empty-sm .dx-empty-ic { font-size: 26px; }
+
+    /* Today timeline */
+    .tl { display: flex; flex-direction: column; gap: 4px; }
+    .tl-row { display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-radius: 12px; transition: background .12s; }
+    .tl-row:hover { background: var(--bg); }
+    .tl-row.is-past { opacity: .55; }
+    .tl-row.is-live { background: var(--primary-light); }
+    .tl-time { width: 48px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+    .tl-time b { font-size: 15px; }
+    .tl-time small { font-size: 11.5px; color: var(--text-muted); }
+    .tl-bar { width: 4px; align-self: stretch; border-radius: 4px; flex-shrink: 0; }
+    .tl-main { flex: 1; min-width: 0; cursor: pointer; }
+    .tl-name { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+    .tl-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tl-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--primary-light); color: var(--primary); }
+    .tl-live { background: var(--success); color: #fff; }
+    .tl-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .tl-btn { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 9px; padding: 5px 10px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+    .tl-btn:hover { border-color: var(--success); color: var(--success); }
+    .tl-icon { padding: 5px 8px; }
+
+    /* Inbox */
+    .ib-sec + .ib-sec { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
+    .ib-label { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+    .ib-link { background: none; border: none; color: var(--primary); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 0; }
+    .ib-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-radius: 10px; }
+    .ib-row:hover { background: var(--bg); }
+    .ib-row-hl { background: linear-gradient(90deg, transparent, var(--success-light)); }
+    [data-theme="dark"] .ib-row-hl { background: linear-gradient(90deg, transparent, #064e3b); }
+    .ib-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .ib-emoji { width: 20px; text-align: center; flex-shrink: 0; }
+    .ib-main { flex: 1; min-width: 0; cursor: pointer; }
+    .ib-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ib-sub { font-size: 12.5px; color: var(--text-muted); }
+    .ib-note { font-size: 12.5px; color: var(--text-muted); font-style: italic; margin-top: 2px; }
+    .ib-warn { font-size: 12px; color: var(--danger); margin-top: 2px; }
+    .ib-btns { display: flex; gap: 6px; flex-shrink: 0; }
+    .ib-btn { width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text-muted); cursor: pointer; font-size: 14px; }
+    .ib-btn:hover { border-color: var(--danger); color: var(--danger); }
+    .ib-ok { background: var(--success); border-color: var(--success); color: #fff; }
+    .ib-ok:hover { background: #059669; color: #fff; border-color: #059669; }
+    .ib-pill { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+    .ib-pill:hover { border-color: var(--primary); color: var(--primary); }
+    .ib-pill-go { background: var(--success); border-color: var(--success); color: #fff; }
+    .ib-pill-go:hover { color: #fff; background: #059669; }
+    .ib-pill-done { color: var(--success); }
+    .ib-amount { font-weight: 700; color: var(--danger); font-size: 14px; flex-shrink: 0; }
+    .ib-more { background: none; border: none; color: var(--text-muted); font: inherit; font-size: 12.5px; cursor: pointer; padding: 6px; }
+    .ib-more:hover { color: var(--primary); }
+
+    /* Month KPIs + bars */
+    .dx-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .dx-kpi { background: var(--bg); border-radius: 14px; padding: 12px 14px; }
+    .dx-kpi-link { cursor: pointer; }
+    .dx-kpi-link:hover { outline: 1px solid var(--primary); }
+    .dx-kpi-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+    .dx-kpi-val { font-size: 22px; font-weight: 800; letter-spacing: -.3px; margin-top: 2px; }
+    .dx-kpi-warn { color: #b45309; }
+    [data-theme="dark"] .dx-kpi-warn { color: #fbbf24; }
+    .dx-kpi .stat-delta { font-size: 11.5px; margin-top: 2px; }
+    .dx-bars { display: flex; align-items: flex-end; gap: 10px; height: 130px; padding-top: 4px; }
+    .dx-bar-col { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; }
+    .dx-bar-val { font-size: 10.5px; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
+    .dx-bar { width: 100%; max-width: 34px; border-radius: 8px 8px 4px 4px; background: color-mix(in srgb, var(--primary) 28%, transparent); transition: height .3s; }
+    .dx-bar.is-current { background: var(--primary); }
+    .dx-bar-label { font-size: 11px; color: var(--text-muted); }
+
+    /* Calendar card inside the new shell */
+    .dx-cal { padding: 16px; }
+
+    /* Admin */
+    .adm-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 18px; }
+    .adm-sub { font-size: 13.5px; color: var(--text-muted); margin-top: 4px; }
+    .adm-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    .adm-kpi { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; }
+    .adm-kpi.is-hot { border-color: #f59e0b; box-shadow: 0 0 0 3px color-mix(in srgb, #f59e0b 18%, transparent); }
+    .adm-kpi-ic { width: 42px; height: 42px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 19px;
+      background: color-mix(in srgb, var(--c) 14%, transparent); flex-shrink: 0; }
+    .adm-kpi-val { font-size: 24px; font-weight: 800; line-height: 1.1; }
+    .adm-kpi-label { font-size: 12.5px; color: var(--text-muted); }
+    .adm-pending { border-color: #f59e0b; margin-bottom: 20px; }
+    .adm-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
+    .adm-side { display: flex; flex-direction: column; gap: 20px; }
+    .adm-count { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    .adm-search { position: relative; margin-bottom: 8px; }
+    .adm-search .icon { position: absolute; inset-inline-start: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .adm-search input { width: 100%; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 12px; padding: 10px 38px 10px 12px; font: inherit; font-size: 14px; }
+    .adm-search input:focus { outline: none; border-color: var(--primary); background: var(--card); }
+    .adm-user, .adm-prow { display: flex; gap: 14px; padding: 14px 6px; border-bottom: 1px solid var(--border); align-items: flex-start; }
+    .adm-user:last-child, .adm-prow:last-child { border-bottom: none; }
+    .adm-prow { align-items: center; }
+    .adm-avatar { position: relative; width: 42px; height: 42px; border-radius: 50%; color: #fff; display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px; flex-shrink: 0; }
+    .adm-status { position: absolute; bottom: -1px; inset-inline-end: -1px; width: 12px; height: 12px; border-radius: 50%; background: var(--border); border: 2px solid var(--card); }
+    .adm-status.on { background: var(--success); }
+    .adm-main { flex: 1; min-width: 0; }
+    .adm-name { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+    .adm-email { font-size: 13px; color: var(--text-muted); direction: ltr; text-align: right; }
+    .adm-stats { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 12.5px; color: var(--text-muted); }
+    .adm-stats b { color: var(--text); font-size: 14px; }
+    .adm-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .adm-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+    .adm-students { flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .adm-chip { font-size: 12px; background: var(--success-light); color: #047857; border-radius: 999px; padding: 3px 10px; }
+    .adm-chip.off { background: var(--bg); color: var(--text-muted); }
+    [data-theme="dark"] .adm-chip { background: #064e3b; color: #6ee7b7; }
+    .adm-pill { font-size: 11px; font-weight: 700; background: var(--bg); color: var(--text-muted); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+    .adm-pill-live { background: var(--success-light); color: #047857; }
+    [data-theme="dark"] .adm-pill-live { background: #064e3b; color: #6ee7b7; }
+    .adm-hint { font-size: 13px; color: var(--text-muted); margin: -6px 0 12px; }
+    .adm-preview-label { font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; letter-spacing: .2px; }
+    .adm-ann-preview { background: linear-gradient(90deg, #1d4ed8, #2563eb); color: #fff; border-radius: 10px; padding: 9px 14px; font-size: 13px; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .adm-counter { text-align: end; font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
+    .adm-push-preview { background: color-mix(in srgb, var(--bg) 70%, #cbd5e1); border-radius: 18px; padding: 12px 14px; font-family: -apple-system, 'Segoe UI', sans-serif; }
+    [data-theme="dark"] .adm-push-preview { background: #273449; }
+    .adm-push-app { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); }
+    .adm-push-app img { width: 20px; height: 20px; border-radius: 5px; }
+    .adm-push-time { margin-inline-start: auto; }
+    .adm-push-title { font-weight: 700; font-size: 14px; margin-top: 6px; }
+    .adm-push-body { font-size: 13.5px; margin-top: 1px; }
+
+    @media (max-width: 1080px) {
+      .dx-grid, .adm-grid { grid-template-columns: 1fr; }
+      /* Flatten the two columns so the cards can be reordered for one-column reading */
+      .dx-grid { display: flex; flex-direction: column; align-items: stretch; }
+      .dx-card { min-width: 0; }
+      .dx-cal { overflow: hidden; }
+      .dx-col { display: contents; }
+      .dx-today { order: 1; } .dx-inbox { order: 2; } .dx-month { order: 3; } .dx-cal { order: 4; }
+    }
+    @media (max-width: 768px) {
+      .acct-btn { padding: 3px; }
+      .acct-name, .acct-chev { display: none; }
+      .acct-avatar { width: 30px; height: 30px; }
+      .acct-menu { top: 58px; inset-inline-end: 12px; }
+      .dx-hero { margin: 0 0 14px; gap: 12px; }
+      .dx-hello { font-size: 22px; }
+      .dx-date { font-size: 13px; }
+      .dx-actions { width: 100%; }
+      .dx-act { flex: 1; justify-content: center; padding: 10px 8px; }
+      .dx-grid { gap: 14px; }
+      .dx-card { padding: 16px 14px; border-radius: 16px; }
+      .tl-actions .badge { display: none; }
+      /* the hero's quick actions + the FAB already cover "add" on phones */
+      .dx-cal .cal-toolbar .btn-primary { display: none; }
+      .adm-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .adm-head { align-items: flex-start; }
+      .adm-user { flex-wrap: wrap; }
+      .adm-user .adm-actions { width: 100%; padding-inline-start: 56px; }
+      .adm-prow { flex-wrap: wrap; }
+      .adm-prow .adm-actions { width: 100%; padding-inline-start: 56px; }
+    }
+
     /* ===== STUDENT ACTIONS MENU ===== */
     .sa-more { margin-inline-start: auto; }
     .sa-dots { font-size: 16px; line-height: 0; position: relative; top: 1px; }
@@ -1587,28 +1817,18 @@
     <div class="header-actions">
       <div class="search-wrapper">
         <svg class="icon icon-sm search-icon"><use href="#icon-search"/></svg>
-        <input class="search-input" id="search-input" placeholder="חיפוש..." oninput="onSearch(this.value)" onblur="setTimeout(()=>document.getElementById('search-results').classList.remove('show'),200)">
+        <input class="search-input" id="search-input" placeholder="חיפוש תלמיד או שיעור..." oninput="onSearch(this.value)" onblur="setTimeout(()=>document.getElementById('search-results').classList.remove('show'),200)">
         <div class="search-results" id="search-results"></div>
       </div>
-      <span id="user-display" style="color:rgba(255,255,255,0.85);font-size:13px;white-space:nowrap;display:none"></span>
-      <button class="kb-hint-btn" id="kb-hint-btn" title="קיצורי מקלדת"><svg class="icon"><use href="#icon-keyboard"/></svg>
-        <div class="kb-tooltip">
-          <strong>קיצורי מקלדת:</strong><br>
-          N / נ — הוסף שיעור<br>
-          S / ד — תלמידים<br>
-          L / כ — שיעורים<br>
-          D / ג — דשבורד
-        </div>
-      </button>
-      <button class="btn-import" id="admin-btn" onclick="showPage('admin')" title="ניהול מערכת" style="display:none"><svg class="icon"><use href="#icon-settings"/></svg></button>
-      <button class="btn-import" id="reminders-btn" onclick="toggleLessonReminders()" title="תזכורות על שיעורי היום" style="display:none">🔔</button>
-      <button class="btn-import" id="about-btn" onclick="openAboutModal()" title="אודות ויצירת קשר"><svg class="icon"><use href="#icon-info"/></svg></button>
-      <button class="btn-import" id="dark-mode-btn" onclick="toggleDarkMode()"><svg class="icon" id="dark-mode-icon"><use href="#icon-moon"/></svg></button>
-      <button class="btn-import" id="logout-btn" onclick="doLogout()" style="display:none">
-        <svg class="icon icon-sm"><use href="#icon-log-out"/></svg><span class="logout-label"> יציאה</span>
+      <!-- One labeled account menu instead of a row of unexplained icons -->
+      <button class="acct-btn" id="acct-btn" onclick="toggleAccountMenu(event)" aria-haspopup="menu" aria-expanded="false" style="display:none">
+        <span class="acct-avatar" id="acct-avatar">?</span>
+        <span class="acct-name" id="acct-name"></span>
+        <svg class="acct-chev" viewBox="0 0 24 24" width="16" height="16"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </div>
   </header>
+  <div class="acct-menu" id="acct-menu" role="menu"></div>
 
   <!-- ANNOUNCEMENT (broadcast banner, shown once per announcement id) -->
   <div id="announcement-banner" style="display:none"></div>
@@ -1626,96 +1846,63 @@
 
   <main class="main">
 
-    <!-- PAGE: DASHBOARD -->
+    <!-- PAGE: DASHBOARD — "today first": what's happening today, what needs you, then the bigger picture -->
     <div id="page-dashboard" class="page">
-      <!-- Greeting -->
-      <div id="dash-greeting"></div>
-      <!-- Debt Banner -->
-      <div id="debt-banner"></div>
-      <!-- Pending lesson requests from student portal links -->
-      <div id="booking-requests"></div>
-      <!-- This week's exams, with today's "good luck" WhatsApp button -->
-      <div id="exams-today"></div>
-      <!-- Month Filter -->
-      <div id="dash-month-wrap">
-        <label style="font-size:13px;font-weight:500;color:var(--text-muted)">תקופה:</label>
-        <select id="dash-month" onchange="renderDashboard()"></select>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">הכנסות החודש</div>
-          <div class="stat-value" id="stat-income">₪0</div>
-          <div class="stat-delta" id="stat-income-delta"></div>
-        </div>
-        <div class="stat-card stat-card--success">
-          <div class="stat-label">תלמידים פעילים</div>
-          <div class="stat-value" id="stat-active">0</div>
-        </div>
-        <div class="stat-card stat-card--warning">
-          <div class="stat-label">שיעורים החודש</div>
-          <div class="stat-value" id="stat-lessons">0</div>
-        </div>
-        <div class="stat-card stat-card--danger">
-          <div class="stat-label">תשלומים פתוחים</div>
-          <div class="stat-value" id="stat-debt">₪0</div>
-        </div>
-      </div>
+      <section class="dx-hero" id="dash-greeting"></section>
 
-      <!-- NEXT LESSON -->
-      <div id="next-lesson-widget"></div>
+      <div class="dx-grid">
+        <div class="dx-col dx-col-main">
+          <section class="card dx-card dx-today" id="dx-today"></section>
 
-      <!-- CALENDAR -->
-      <div class="card" style="margin-bottom:20px">
-        <div class="cal-toolbar">
-          <div class="cal-nav">
-            <button class="btn btn-ghost btn-sm" onclick="calNav(-1)">→</button>
-            <button class="btn btn-ghost btn-sm" onclick="calToday()">היום</button>
-            <button class="btn btn-ghost btn-sm" onclick="calNav(1)">←</button>
-          </div>
-          <div class="cal-title" id="cal-title"></div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <select class="cal-filter-select" id="cal-student-filter" onchange="calStudentFilter=this.value;renderCalendar()">
-              <option value="">כל התלמידים</option>
-            </select>
-            <button class="btn btn-primary btn-sm" onclick="openAddLessonModal(null)">+ הוסף שיעור</button>
-            <button class="btn btn-ghost btn-sm desktop-only" onclick="openAddExamModal(null)">+ הוסף מבחן</button>
-            <div class="cal-views">
-              <button class="cal-view-btn" id="cvb-month" onclick="setCalView('month')">חודש</button>
-              <button class="cal-view-btn" id="cvb-week" onclick="setCalView('week')">שבוע</button>
-              <button class="cal-view-btn" id="cvb-day" onclick="setCalView('day')">יום</button>
+          <!-- CALENDAR -->
+          <section class="card dx-card dx-cal" id="dx-cal">
+            <div class="cal-toolbar">
+              <div class="cal-nav">
+                <button class="btn btn-ghost btn-sm" onclick="calNav(-1)">→</button>
+                <button class="btn btn-ghost btn-sm" onclick="calToday()">היום</button>
+                <button class="btn btn-ghost btn-sm" onclick="calNav(1)">←</button>
+              </div>
+              <div class="cal-title" id="cal-title"></div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select class="cal-filter-select" id="cal-student-filter" onchange="calStudentFilter=this.value;renderCalendar()">
+                  <option value="">כל התלמידים</option>
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="openAddLessonModal(null)">+ הוסף שיעור</button>
+                <button class="btn btn-ghost btn-sm desktop-only" onclick="openAddExamModal(null)">+ הוסף מבחן</button>
+                <div class="cal-views">
+                  <button class="cal-view-btn" id="cvb-month" onclick="setCalView('month')">חודש</button>
+                  <button class="cal-view-btn" id="cvb-week" onclick="setCalView('week')">שבוע</button>
+                  <button class="cal-view-btn" id="cvb-day" onclick="setCalView('day')">יום</button>
+                </div>
+              </div>
             </div>
-          </div>
+            <div id="cal-body"></div>
+          </section>
         </div>
-        <div id="cal-body"></div>
-      </div>
 
-      <div class="dash-grid">
-        <div class="card">
-          <div class="dash-card-title">סיכום תלמידים</div>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>תלמיד</th>
-                  <th>שיעורים החודש</th>
-                  <th>יתרה</th>
-                  <th>שיעור אחרון</th>
-                </tr>
-              </thead>
-              <tbody id="student-summary-tbody">
-                <tr><td colspan="4" class="empty-cell">אין נתונים</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="card">
-          <div class="dash-card-title">הכנסות — 6 חודשים אחרונים</div>
-          <div id="income-chart"></div>
-          <div class="dash-card-title" style="margin-top:14px">שיעורים אחרונים</div>
-          <div id="recent-lessons">
-            <p class="empty-cell">אין שיעורים עדיין</p>
-          </div>
-        </div>
+        <aside class="dx-col dx-col-side">
+          <!-- Everything that's waiting on the teacher, in one place -->
+          <section class="card dx-card dx-inbox" id="dx-inbox">
+            <div id="booking-requests"></div>
+            <div id="exams-today"></div>
+          </section>
+
+          <section class="card dx-card dx-month">
+            <div class="dx-card-head">
+              <h3 class="dx-title"><span class="dx-ic dx-ic-blue">📈</span>במבט על</h3>
+              <select id="dash-month" class="dx-select" onchange="renderDashboard()"></select>
+            </div>
+            <div class="dx-kpis">
+              <div class="dx-kpi"><div class="dx-kpi-label">הכנסות</div><div class="dx-kpi-val" id="stat-income">₪0</div><div class="stat-delta" id="stat-income-delta"></div></div>
+              <div class="dx-kpi"><div class="dx-kpi-label">שיעורים</div><div class="dx-kpi-val" id="stat-lessons">0</div></div>
+              <div class="dx-kpi dx-kpi-link" onclick="showPage('payments')"><div class="dx-kpi-label">פתוח לגבייה</div><div class="dx-kpi-val dx-kpi-warn" id="stat-debt">₪0</div></div>
+              <div class="dx-kpi dx-kpi-link" onclick="showPage('students')"><div class="dx-kpi-label">תלמידים פעילים</div><div class="dx-kpi-val" id="stat-active">0</div></div>
+            </div>
+            <div class="dx-subtitle">הכנסות — 6 חודשים אחרונים</div>
+            <div id="income-chart"></div>
+            <button class="dx-link-btn" onclick="openYearlyReport()">לדוח השנתי ←</button>
+          </section>
+        </aside>
       </div>
     </div>
 
@@ -1824,66 +2011,84 @@
       </div>
     </div>
 
-    <!-- PAGE: ADMIN (dekelkartel@gmail.com only — showPage() refuses to render this for anyone else) -->
+    <!-- PAGE: ADMIN (ADMIN_EMAIL only — showPage() refuses to render this for anyone else) -->
     <div id="page-admin" class="page">
-      <div class="page-header">
-        <h2 class="page-title">⚙️ ניהול מערכת</h2>
+      <div class="adm-head">
+        <div>
+          <h2 class="page-title">ניהול מערכת</h2>
+          <div class="adm-sub">כל המשתמשים, הבקשות והתקשורת — במקום אחד</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="renderAdminPage()">↻ רענון</button>
       </div>
 
-      <div class="stats-grid" id="admin-stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">👤 משתמשים פעילים</div>
-          <div class="stat-value" id="admin-stat-users">–</div>
-        </div>
-        <div class="stat-card stat-card--warning">
-          <div class="stat-label">⏳ בקשות ממתינות</div>
-          <div class="stat-value" id="admin-stat-pending">–</div>
-        </div>
-        <div class="stat-card stat-card--success">
-          <div class="stat-label">🎓 תלמידים פעילים (הכל)</div>
-          <div class="stat-value" id="admin-stat-students">–</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">📚 שיעורים החודש (הכל)</div>
-          <div class="stat-value" id="admin-stat-lessons-month">–</div>
-        </div>
+      <div class="adm-kpis">
+        <div class="adm-kpi"><span class="adm-kpi-ic" style="--c:#2563eb">👤</span><div><div class="adm-kpi-val" id="admin-stat-users">–</div><div class="adm-kpi-label">משתמשים פעילים</div></div></div>
+        <div class="adm-kpi" id="admin-kpi-pending"><span class="adm-kpi-ic" style="--c:#f59e0b">⏳</span><div><div class="adm-kpi-val" id="admin-stat-pending">–</div><div class="adm-kpi-label">ממתינים לאישור</div></div></div>
+        <div class="adm-kpi"><span class="adm-kpi-ic" style="--c:#10b981">🎓</span><div><div class="adm-kpi-val" id="admin-stat-students">–</div><div class="adm-kpi-label">תלמידים פעילים</div></div></div>
+        <div class="adm-kpi"><span class="adm-kpi-ic" style="--c:#8b5cf6">📚</span><div><div class="adm-kpi-val" id="admin-stat-lessons-month">–</div><div class="adm-kpi-label">שיעורים החודש</div></div></div>
       </div>
 
-      <div class="card" style="margin-bottom:20px">
-        <div class="dash-card-title">⏳ בקשות הרשמה ממתינות</div>
-        <div id="admin-pending-list"><p class="text-muted" style="font-size:13px">טוען...</p></div>
-      </div>
+      <!-- Only rendered when someone is waiting -->
+      <div id="admin-pending-list"></div>
 
-      <div class="card" style="margin-bottom:20px">
-        <div class="dash-card-title">👥 משתמשים רשומים</div>
-        <input type="text" id="admin-user-search" placeholder="🔍 חיפוש לפי שם או אימייל..." oninput="filterAdminUsers(this.value)" style="width:100%;margin-bottom:12px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;background:var(--card);color:var(--text)">
-        <div id="admin-users-list"><p class="text-muted" style="font-size:13px">טוען...</p></div>
-      </div>
+      <div class="adm-grid">
+        <section class="card dx-card adm-users">
+          <div class="dx-card-head">
+            <h3 class="dx-title"><span class="dx-ic dx-ic-blue">👥</span>משתמשים <span class="adm-count" id="admin-users-count"></span></h3>
+            <select class="dx-select" id="admin-user-sort" onchange="filterAdminUsers(document.getElementById('admin-user-search').value)">
+              <option value="recent">הצטרפו לאחרונה</option>
+              <option value="active">הכי פעילים החודש</option>
+              <option value="name">לפי שם</option>
+            </select>
+          </div>
+          <div class="adm-search">
+            <svg class="icon icon-sm"><use href="#icon-search"/></svg>
+            <input type="text" id="admin-user-search" placeholder="חיפוש לפי שם או אימייל..." oninput="filterAdminUsers(this.value)">
+          </div>
+          <div id="admin-users-list"><p class="text-muted" style="font-size:13px">טוען...</p></div>
+        </section>
 
-      <div class="card" style="margin-bottom:20px">
-        <div class="dash-card-title">📢 באנר בתוך האפליקציה</div>
-        <p style="font-size:12.5px;color:var(--text-muted);margin:-6px 0 10px">מוצג לכל מי שמתחבר, עד שהם סוגרים אותו.</p>
-        <div class="form-group">
-          <textarea id="admin-ann-text" rows="3" placeholder="טקסט העדכון..."></textarea>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-primary btn-sm" onclick="adminPublishAnnouncement()">פרסם</button>
-          <button class="btn btn-ghost btn-sm" onclick="adminClearAnnouncement()">נקה באנר</button>
-        </div>
-      </div>
+        <aside class="adm-side">
+          <section class="card dx-card">
+            <div class="dx-card-head">
+              <h3 class="dx-title"><span class="dx-ic dx-ic-amber">📢</span>באנר בתוך האפליקציה</h3>
+              <span class="adm-pill" id="admin-ann-status">—</span>
+            </div>
+            <p class="adm-hint">מוצג בראש האפליקציה לכל מי שמתחבר/ת, עד שסוגרים אותו.</p>
+            <div class="adm-preview-label">תצוגה מקדימה</div>
+            <div class="adm-ann-preview" id="admin-ann-preview">📢 <span>הטקסט יופיע כאן</span></div>
+            <div class="form-group" style="margin-top:12px">
+              <textarea id="admin-ann-text" rows="3" maxlength="300" placeholder="למשל: חדש! אפשר לשלוח לתלמידים קישור לקביעת שיעור 🎉" oninput="adminAnnPreview()"></textarea>
+              <div class="adm-counter"><span id="admin-ann-count">0</span>/300</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary btn-sm" onclick="adminPublishAnnouncement()">פרסום</button>
+              <button class="btn btn-ghost btn-sm" onclick="adminClearAnnouncement()">הסרת הבאנר</button>
+            </div>
+          </section>
 
-      <div class="card">
-        <div class="dash-card-title">🔔 Push לכל מי שהפעיל תזכורות</div>
-        <p style="font-size:12.5px;color:var(--text-muted);margin:-6px 0 10px">נשלח מיידית כהתראה אמיתית למכשיר.</p>
-        <div class="form-group">
-          <label>כותרת</label>
-          <input id="admin-push-title" placeholder="📢 עדכון חדש">
-        </div>
-        <div class="form-group">
-          <label>טקסט</label>
-          <textarea id="admin-push-body" rows="2" placeholder="מה חדש..."></textarea>
-        </div>
-        <button class="btn btn-primary btn-sm" id="admin-push-btn" onclick="adminSendPushBroadcast()">שלח לכולם</button>
+          <section class="card dx-card">
+            <div class="dx-card-head">
+              <h3 class="dx-title"><span class="dx-ic dx-ic-violet">🔔</span>התראת Push לכולם</h3>
+            </div>
+            <p class="adm-hint">נשלחת מיד לכל מי שהפעיל/ה התראות — מגיעה לאייפון כמו הודעה רגילה.</p>
+            <div class="adm-preview-label">כך זה ייראה באייפון</div>
+            <div class="adm-push-preview">
+              <div class="adm-push-app"><img src="/icons/icon-192.png" alt=""><span>שיעורים פרטיים</span><span class="adm-push-time">עכשיו</span></div>
+              <div class="adm-push-title" id="admin-push-preview-title">📢 עדכון חדש</div>
+              <div class="adm-push-body" id="admin-push-preview-body">מה חדש...</div>
+            </div>
+            <div class="form-group" style="margin-top:12px">
+              <label>כותרת</label>
+              <input type="text" id="admin-push-title" placeholder="📢 עדכון חדש" maxlength="60" oninput="adminPushPreview()">
+            </div>
+            <div class="form-group">
+              <label>טקסט</label>
+              <textarea id="admin-push-body" rows="2" maxlength="160" placeholder="מה חדש..." oninput="adminPushPreview()"></textarea>
+            </div>
+            <button class="btn btn-primary btn-sm" id="admin-push-btn" onclick="adminSendPushBroadcast()">שליחה לכולם</button>
+          </section>
+        </aside>
       </div>
     </div>
 
@@ -2045,26 +2250,6 @@ async function apiCall(method, url, body) {
 }
 
 // ===== AUTH =====
-function showAuthOverlay() {
-  document.getElementById('auth-overlay').classList.add('visible');
-  document.getElementById('user-display').style.display = 'none';
-  document.getElementById('logout-btn').style.display = 'none';
-  document.getElementById('reminders-btn').style.display = 'none';
-}
-function hideAuthOverlay(userName, isAdmin) {
-  document.getElementById('auth-overlay').classList.remove('visible');
-  if (userName) {
-    const el = document.getElementById('user-display');
-    el.textContent = '👤 ' + userName;
-    el.style.display = '';
-    document.getElementById('logout-btn').style.display = '';
-    document.getElementById('admin-btn').style.display = isAdmin ? '' : 'none';
-    window._isAdmin = !!isAdmin;
-    initPushUI();
-    checkAnnouncement();
-    checkInstallBanner();
-  }
-}
 
 // ===== INSTALL APP BANNER =====
 // Chrome/Android/Edge fire beforeinstallprompt and let us trigger a real
@@ -2325,12 +2510,6 @@ function confirmAction(msg, onConfirm, icon = '🗑️', okLabel = 'מחק') {
 }
 
 // ===== DARK MODE =====
-function toggleDarkMode() {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
-  localStorage.setItem('theme', isDark ? '' : 'dark');
-  document.getElementById('dark-mode-icon').innerHTML = `<use href="#icon-${isDark ? 'moon' : 'sun'}"/>`;
-}
 
 // ===== PUSH NOTIFICATIONS (lesson reminders) =====
 function urlBase64ToUint8Array(base64String) {
@@ -2344,25 +2523,7 @@ function pushIsSupported() {
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
 
-async function initPushUI() {
-  const btn = document.getElementById('reminders-btn');
-  if (!pushIsSupported()) { btn.style.display = 'none'; return; }
-  btn.style.display = '';
-  try {
-    const reg = await navigator.serviceWorker.register('/sw.js');
-    const existing = await reg.pushManager.getSubscription();
-    updateReminderBtnState(!!existing);
-  } catch (e) {
-    console.warn('Service worker registration failed', e);
-  }
-}
 
-function updateReminderBtnState(active) {
-  const btn = document.getElementById('reminders-btn');
-  if (!btn) return;
-  btn.textContent = active ? '🔔' : '🔕';
-  btn.title = active ? 'תזכורות פעילות — לחץ לביטול' : 'הפעל תזכורות על שיעורי היום';
-}
 
 async function toggleLessonReminders() {
   if (!pushIsSupported()) {
@@ -2826,37 +2987,6 @@ function bookingConflict(b) {
     return start < le && end > ls;
   });
 }
-function renderBookingRequests() {
-  const el = document.getElementById('booking-requests');
-  if (!el) return;
-  updateBookingBadge();
-  const list = pendingBookings();
-  if (!list.length) { el.innerHTML = ''; return; }
-  el.innerHTML = `<div class="card">
-    <div class="dash-card-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-      <span>🗓️ בקשות לשיעור (${list.length})</span>
-      <button class="btn btn-ghost btn-xs" onclick="openAvailabilityModal()">ניהול זמינות</button>
-    </div>
-    ${list.map(b => {
-      const s = getStudentById(b.studentId);
-      const d = new Date(b.date + 'T00:00:00');
-      const clash = bookingConflict(b);
-      const units = b.units || 1;
-      const pkg = getActivePackage(b.studentId, units);
-      return `<div class="breq">
-        <span class="student-dot" style="background:${s?.color || '#2563eb'}"></span>
-        <div class="breq-main">
-          <div class="breq-when">${escapeHtml(s?.name || '?')} · יום ${getDayName(d.getDay())} ${formatDate(b.date)} · ${escapeHtml(b.time)}${units > 1 ? ` · ${units} שיעורים` : ''}</div>
-          ${b.note ? `<div class="breq-note">💬 ${escapeHtml(b.note)}</div>` : ''}
-          ${pkg ? `<div class="breq-note pkg-line">🎟 ינוכה מהכרטיסייה</div>` : ''}
-          ${clash ? `<div class="breq-warn">⚠ חופף לשיעור קיים של ${escapeHtml(getStudentById(clash.studentId)?.name || '')} ב-${escapeHtml(clash.time)}</div>` : ''}
-        </div>
-        <button class="btn btn-success btn-sm" onclick="approveBooking('${b.id}')">✓ אישור</button>
-        <button class="btn btn-ghost btn-sm" onclick="openRejectBookingModal('${b.id}')">✕ דחייה</button>
-      </div>`;
-    }).join('')}
-  </div>`;
-}
 
 async function approveBooking(id) {
   const b = _bookings.find(x => x.id === id);
@@ -3232,32 +3362,6 @@ function openGoodLuck(examId) {
 }
 
 // Dashboard: today's exams (with the good-luck button) + the coming week.
-function renderExamsToday() {
-  const el = document.getElementById('exams-today');
-  if (!el) return;
-  const today = isoDate(new Date());
-  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7);
-  const list = getExams().filter(e => e.date >= today && e.date <= isoDate(weekEnd))
-    .filter(e => getStudentById(e.studentId)).sort((a, b) => a.date.localeCompare(b.date));
-  if (!list.length) { el.innerHTML = ''; return; }
-  el.innerHTML = `<div class="card exams-card">
-    <div class="dash-card-title">📝 מבחנים השבוע</div>
-    ${list.map(e => {
-      const s = getStudentById(e.studentId);
-      const isToday = e.date === today;
-      return `<div class="breq">
-        <span class="student-dot" style="background:${s.color || '#2563eb'}"></span>
-        <div class="breq-main">
-          <div class="breq-when">${escapeHtml(s.name)}${e.subject ? ` · ${escapeHtml(e.subject)}` : ''}</div>
-          <div class="breq-note">${isToday ? '<strong style="color:var(--success)">היום!</strong>' : `${getDayName(new Date(e.date + 'T00:00:00').getDay())} ${formatDate(e.date).slice(0, 5)} · ${examDayLabel(e.date)}`}</div>
-        </div>
-        ${isToday ? (e.wishedAt
-          ? `<button class="btn btn-ghost btn-sm" onclick="openGoodLuck('${e.id}')">✓ נשלח</button>`
-          : `<button class="btn btn-success btn-sm" onclick="openGoodLuck('${e.id}')">🍀 שלחי בהצלחה</button>`) : ''}
-      </div>`;
-    }).join('')}
-  </div>`;
-}
 
 // /?exam=<id> — from the 08:00 push (cold start), or forwarded by the service
 // worker as a message when the app was already open.
@@ -3346,6 +3450,467 @@ function openAddExamModal(defaultStudentId, defaultDate) {
   if (saveBtn) saveBtn.textContent = 'שמירת מבחן';
 }
 
+// ===== ACCOUNT MENU (header) =====
+// Replaces the row of icon-only header buttons (keyboard, admin, bell, info,
+// dark mode, logout) with one avatar button and a labeled menu.
+window._userName = ''; window._pushSupported = false; window._pushActive = false;
+function showAuthOverlay() {
+  document.getElementById('auth-overlay').classList.add('visible');
+  document.getElementById('acct-btn').style.display = 'none';
+  closeAccountMenu();
+}
+function hideAuthOverlay(userName, isAdmin) {
+  document.getElementById('auth-overlay').classList.remove('visible');
+  if (userName) {
+    window._userName = userName;
+    window._isAdmin = !!isAdmin;
+    document.getElementById('acct-avatar').textContent = (userName.trim()[0] || '?').toUpperCase();
+    document.getElementById('acct-name').textContent = userName.split(' ')[0];
+    document.getElementById('acct-btn').style.display = '';
+    initPushUI();
+    checkAnnouncement();
+    checkInstallBanner();
+  }
+}
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+  localStorage.setItem('theme', isDark ? '' : 'dark');
+  renderAccountMenu();
+}
+async function initPushUI() {
+  window._pushSupported = pushIsSupported();
+  if (!window._pushSupported) return;
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const existing = await reg.pushManager.getSubscription();
+    updateReminderBtnState(!!existing);
+  } catch (e) {
+    console.warn('Service worker registration failed', e);
+  }
+}
+function updateReminderBtnState(active) {
+  window._pushActive = !!active;
+  renderAccountMenu();
+}
+function renderAccountMenu() {
+  const menu = document.getElementById('acct-menu');
+  if (!menu) return;
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const isMobile = window.innerWidth <= 768;
+  const toggle = (on) => `<span class="am-switch ${on ? 'on' : ''}"><span></span></span>`;
+  menu.innerHTML = `
+    <div class="am-head">
+      <span class="acct-avatar am-avatar">${escapeHtml((window._userName.trim()[0] || '?').toUpperCase())}</span>
+      <div><div class="am-name">${escapeHtml(window._userName)}</div><div class="am-sub">${window._isAdmin ? 'מנהלת המערכת' : 'החשבון שלי'}</div></div>
+    </div>
+    <div class="am-group">
+      <button class="am-item" onclick="toggleLessonReminders()" ${window._pushSupported ? '' : 'data-off="1"'}>
+        <span class="am-ic">🔔</span><span class="am-text"><span class="am-title">התראות לטלפון</span>
+        <span class="am-desc">${window._pushSupported ? 'שיעורים, בקשות ומבחנים' : 'זמין כשהאפליקציה במסך הבית'}</span></span>${toggle(window._pushActive)}
+      </button>
+      <button class="am-item" onclick="toggleDarkMode()">
+        <span class="am-ic">${dark ? '☀️' : '🌙'}</span><span class="am-text"><span class="am-title">מצב כהה</span></span>${toggle(dark)}
+      </button>
+    </div>
+    <div class="am-group">
+      ${window._isAdmin ? `<button class="am-item" onclick="closeAccountMenu();showPage('admin')"><span class="am-ic">⚙️</span><span class="am-text"><span class="am-title">ניהול מערכת</span><span class="am-desc">משתמשים, בקשות הרשמה, הודעות</span></span></button>` : ''}
+      ${isMobile ? '' : `<button class="am-item" onclick="closeAccountMenu();openShortcutsModal()"><span class="am-ic">⌨️</span><span class="am-text"><span class="am-title">קיצורי מקלדת</span></span></button>`}
+      <button class="am-item" onclick="closeAccountMenu();openAboutModal()"><span class="am-ic">💬</span><span class="am-text"><span class="am-title">אודות ויצירת קשר</span></span></button>
+    </div>
+    <div class="am-group">
+      <button class="am-item am-danger" onclick="closeAccountMenu();doLogout()"><span class="am-ic">↩</span><span class="am-text"><span class="am-title">יציאה מהחשבון</span></span></button>
+    </div>`;
+}
+function toggleAccountMenu(e) {
+  e?.stopPropagation();
+  const menu = document.getElementById('acct-menu');
+  if (menu.classList.contains('open')) { closeAccountMenu(); return; }
+  renderAccountMenu();
+  menu.classList.add('open');
+  document.getElementById('acct-btn').setAttribute('aria-expanded', 'true');
+  setTimeout(() => document.addEventListener('click', _acctOutside, true), 0);
+}
+// Capture phase: runs before any element's own handler — so it still sees clicks
+// that stopPropagation (calendar events do), and sees menu items before a toggle
+// re-renders the menu and detaches the clicked node.
+function _acctOutside(e) { if (!e.target.closest('#acct-menu, #acct-btn')) closeAccountMenu(); }
+function closeAccountMenu() {
+  document.getElementById('acct-menu')?.classList.remove('open');
+  document.getElementById('acct-btn')?.setAttribute('aria-expanded', 'false');
+  document.removeEventListener('click', _acctOutside, true);
+}
+function openShortcutsModal() {
+  const row = (k, t) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${t}</span><span><kbd class="kbd">${k}</kbd></span></div>`;
+  openModal('קיצורי מקלדת', row('N / נ', 'הוספת שיעור') + row('D / ג', 'דשבורד') + row('S / ד', 'תלמידים') + row('L / כ', 'שיעורים') + row('Esc', 'סגירת חלון'), null);
+}
+
+// ===== DASHBOARD =====
+function renderDashGreeting() {
+  const el = document.getElementById('dash-greeting');
+  if (!el) return;
+  const firstName = (window._userName || '').split(' ')[0];
+  const hour = new Date().getHours();
+  const greeting = hour < 5 ? 'לילה טוב' : hour < 12 ? 'בוקר טוב' : hour < 18 ? 'צהריים טובים' : 'ערב טוב';
+  const dateStr = new Date().toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+  const today = isoDate(new Date());
+  const nLessons = lessonsForDateAll(today).length;
+  const nReq = pendingBookings().length;
+  const nExams = getExams().filter(e => e.date === today && getStudentById(e.studentId)).length;
+  const bits = [
+    nLessons ? `${nLessons === 1 ? 'שיעור אחד' : nLessons + ' שיעורים'} היום` : 'אין שיעורים היום',
+    nExams ? (nExams === 1 ? 'מבחן אחד' : nExams + ' מבחנים') : '',
+    nReq ? `${nReq === 1 ? 'בקשה אחת מחכה' : nReq + ' בקשות מחכות'} לאישור` : '',
+  ].filter(Boolean);
+  el.innerHTML = `
+    <div class="dx-hero-text">
+      <div class="dx-hello">${firstName ? `${greeting}, ${escapeHtml(firstName)}` : greeting} 👋</div>
+      <div class="dx-date">${dateStr} · <span>${bits.join(' · ')}</span></div>
+    </div>
+    <div class="dx-actions">
+      <button class="dx-act dx-act-primary" onclick="openAddLessonModal(null)"><span>＋</span> שיעור</button>
+      <button class="dx-act" onclick="openAddPaymentModal(null)"><span>₪</span> תשלום</button>
+      <button class="dx-act" onclick="openAddExamModal(null)"><span>📝</span> מבחן</button>
+    </div>`;
+}
+function lessonsForDateAll(ds) {
+  return getLessons().filter(l => l.date === ds).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+}
+
+function renderToday() {
+  const el = document.getElementById('dx-today');
+  if (!el) return;
+  const now = new Date();
+  const today = isoDate(now);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const lessons = lessonsForDateAll(today);
+  const dateStr = now.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+  let body;
+  if (lessons.length) {
+    let nextMarked = false;
+    body = `<div class="tl">${lessons.map(l => {
+      const s = getStudentById(l.studentId) || {};
+      const range = lessonTimeRange(l, s);
+      const [start, end] = range.split('-');
+      const endMin = timeToMin(end) < timeToMin(start) ? 24 * 60 : timeToMin(end);
+      const past = endMin <= nowMin;
+      const live = timeToMin(start) <= nowMin && nowMin < endMin;
+      const isNext = !past && !live && !nextMarked && (nextMarked = true);
+      const sub = [l.durationHours > 1 ? `${l.durationHours} שיעורים` : 'שיעור', l.packageId ? `🎟 ${lessonPackagePosition(l)}` : '', l.topic ? `📘 ${escapeHtml(l.topic)}` : '']
+        .filter(Boolean).join(' · ');
+      return `<div class="tl-row ${past ? 'is-past' : ''} ${live ? 'is-live' : ''}">
+        <div class="tl-time"><b>${start}</b><small>${end}</small></div>
+        <div class="tl-bar" style="background:${s.color || '#2563eb'}"></div>
+        <div class="tl-main" onclick="openEditLessonModal('${l.id}')">
+          <div class="tl-name">${escapeHtml(s.name || '?')} ${live ? '<span class="tl-tag tl-live">עכשיו</span>' : isNext ? '<span class="tl-tag">הבא</span>' : ''}</div>
+          <div class="tl-sub">${sub}</div>
+        </div>
+        <div class="tl-actions">
+          ${lessonBadge(l)}
+          ${l.packageId || getLessonPayStatus(l) === 'paid' ? '' : `<button class="tl-btn" title="סימון כשולם" onclick="toggleLessonPaid('${l.id}').then(renderDashboard)">₪ שולם</button>`}
+          ${s.phone ? `<button class="tl-btn tl-icon" title="ווצאפ לתלמיד" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))">💬</button>` : ''}
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  } else {
+    const next = getLessons().filter(l => l.date > today).sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')))[0];
+    const ns = next && getStudentById(next.studentId);
+    body = `<div class="dx-empty">
+      <div class="dx-empty-ic">☕</div>
+      <div class="dx-empty-title">אין שיעורים היום</div>
+      ${next ? `<div class="dx-empty-sub">השיעור הבא: <b>${escapeHtml(ns?.name || '')}</b> · ${examDayLabel(next.date)} ב-${next.time || ''}</div>` : '<div class="dx-empty-sub">יום חופשי — או זמן מצוין לקבוע שיעורים</div>'}
+      <button class="btn btn-ghost btn-sm" onclick="openAddLessonModal(null,'${today}')">+ שיעור להיום</button>
+    </div>`;
+  }
+  const tomorrow = isoDate(new Date(Date.now() + 86400000));
+  const nTomorrow = lessonsForDateAll(tomorrow).length;
+  el.innerHTML = `
+    <div class="dx-card-head">
+      <h3 class="dx-title"><span class="dx-ic dx-ic-blue">🗓️</span>היום <span class="dx-title-sub">${dateStr}</span></h3>
+      ${lessons.length ? `<span class="dx-count">${lessons.length}</span>` : ''}
+    </div>
+    ${body}
+    ${nTomorrow ? `<button class="dx-foot" onclick="calGoDay('${tomorrow}');document.getElementById('dx-cal').scrollIntoView({behavior:'smooth'})">מחר: ${nTomorrow === 1 ? 'שיעור אחד' : nTomorrow + ' שיעורים'} <span>←</span></button>` : ''}`;
+}
+
+// The "needs you" inbox: booking requests, exams, open payments, cards running low.
+function renderBookingRequests() { updateBookingBadge(); renderInbox(); }
+function renderExamsToday() { renderInbox(); }
+function renderInbox() {
+  const el = document.getElementById('dx-inbox');
+  if (!el) return;
+  updateBookingBadge();
+  const today = isoDate(new Date());
+  const sections = [];
+  let total = 0;
+
+  const reqs = pendingBookings();
+  if (reqs.length) {
+    total += reqs.length;
+    sections.push(`<div class="ib-sec">
+      <div class="ib-label">בקשות לשיעור <button class="ib-link" onclick="openAvailabilityModal()">זמינות</button></div>
+      ${reqs.map(b => {
+        const s = getStudentById(b.studentId) || {};
+        const d = new Date(b.date + 'T00:00:00');
+        const clash = bookingConflict(b);
+        const units = b.units || 1;
+        return `<div class="ib-row">
+          <span class="ib-dot" style="background:${s.color || '#2563eb'}"></span>
+          <div class="ib-main">
+            <div class="ib-title">${escapeHtml(s.name || '?')}</div>
+            <div class="ib-sub">${getDayName(d.getDay())} ${formatDate(b.date).slice(0, 5)} · ${escapeHtml(b.time)}${units > 1 ? ` · ${units} שיעורים` : ''}${getActivePackage(b.studentId, units) ? ' · 🎟' : ''}</div>
+            ${b.note ? `<div class="ib-note">“${escapeHtml(b.note)}”</div>` : ''}
+            ${clash ? `<div class="ib-warn">⚠ חופף לשיעור של ${escapeHtml(getStudentById(clash.studentId)?.name || '')} ב-${escapeHtml(clash.time)}</div>` : ''}
+          </div>
+          <div class="ib-btns">
+            <button class="ib-btn ib-ok" onclick="approveBooking('${b.id}')" title="אישור">✓</button>
+            <button class="ib-btn" onclick="openRejectBookingModal('${b.id}')" title="דחייה">✕</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`);
+  }
+
+  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7);
+  const exams = getExams().filter(e => e.date >= today && e.date <= isoDate(weekEnd) && getStudentById(e.studentId))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (exams.length) {
+    total += exams.filter(e => e.date === today && !e.wishedAt).length;
+    sections.push(`<div class="ib-sec">
+      <div class="ib-label">מבחנים השבוע</div>
+      ${exams.map(e => {
+        const s = getStudentById(e.studentId);
+        const isToday = e.date === today;
+        return `<div class="ib-row ${isToday ? 'ib-row-hl' : ''}">
+          <span class="ib-emoji">${isToday ? '🍀' : '📝'}</span>
+          <div class="ib-main" onclick="openExamsModal('${e.studentId}')">
+            <div class="ib-title">${escapeHtml(s.name)}${e.subject ? ` · ${escapeHtml(e.subject)}` : ''}</div>
+            <div class="ib-sub">${isToday ? 'היום!' : `${getDayName(new Date(e.date + 'T00:00:00').getDay())} ${formatDate(e.date).slice(0, 5)} · ${examDayLabel(e.date)}`}</div>
+          </div>
+          ${isToday ? (e.wishedAt
+            ? `<button class="ib-pill ib-pill-done" onclick="openGoodLuck('${e.id}')">✓ נשלח</button>`
+            : `<button class="ib-pill ib-pill-go" onclick="openGoodLuck('${e.id}')">שלחי בהצלחה</button>`) : ''}
+        </div>`;
+      }).join('')}
+    </div>`);
+  }
+
+  const debtors = getStudents().filter(s => s.isActive !== false)
+    .map(s => ({ s, owed: -getStudentBalance(s.id) })).filter(x => x.owed > 0).sort((a, b) => b.owed - a.owed);
+  if (debtors.length) {
+    total += debtors.length;
+    const sum = debtors.reduce((t, x) => t + x.owed, 0);
+    sections.push(`<div class="ib-sec">
+      <div class="ib-label">פתוח לגבייה · ${formatCurrency(sum)} <button class="ib-link" onclick="showPage('payments')">לכל התשלומים</button></div>
+      ${debtors.slice(0, 3).map(({ s, owed }) => `<div class="ib-row">
+        <span class="ib-dot" style="background:${s.color || '#2563eb'}"></span>
+        <div class="ib-main" onclick="openStudentActions('${s.id}')"><div class="ib-title">${escapeHtml(s.name)}</div></div>
+        <span class="ib-amount">${formatCurrency(owed)}</span>
+        <button class="ib-pill" onclick="openDebtReport('${s.id}')">דוח</button>
+      </div>`).join('')}
+      ${debtors.length > 3 ? `<button class="ib-more" onclick="showPage('payments')">ועוד ${debtors.length - 3} תלמידים ←</button>` : ''}
+    </div>`);
+  }
+
+  const lowCards = getStudents().filter(s => s.isActive !== false).map(s => {
+    const pk = getStudentPackages(s.id);
+    if (!pk.length) return null;
+    const live = pk.filter(p => { const st = packageStatus(p); return !st.expired && st.remaining > 0; });
+    const rem = live.reduce((t, p) => t + packageStatus(p).remaining, 0);
+    return rem <= 1 ? { s, rem } : null;
+  }).filter(Boolean);
+  if (lowCards.length) {
+    total += lowCards.length;
+    sections.push(`<div class="ib-sec">
+      <div class="ib-label">כרטיסיות לחידוש</div>
+      ${lowCards.map(({ s, rem }) => `<div class="ib-row">
+        <span class="ib-emoji">🎟</span>
+        <div class="ib-main"><div class="ib-title">${escapeHtml(s.name)}</div><div class="ib-sub">${rem ? 'נותר שיעור אחד' : 'הכרטיסייה נוצלה'}</div></div>
+        <button class="ib-pill" onclick="openPackagesModal('${s.id}')">חידוש</button>
+      </div>`).join('')}
+    </div>`);
+  }
+
+  el.innerHTML = `
+    <div class="dx-card-head">
+      <h3 class="dx-title"><span class="dx-ic dx-ic-amber">✋</span>דורש טיפול</h3>
+      ${total ? `<span class="dx-count dx-count-warn">${total}</span>` : ''}
+    </div>
+    ${sections.length ? sections.join('') : `<div class="dx-empty dx-empty-sm"><div class="dx-empty-ic">✨</div><div class="dx-empty-title">הכול מטופל</div><div class="dx-empty-sub">אין בקשות, חובות או מבחנים שמחכים לך</div></div>`}`;
+}
+
+function renderMonthStats() {
+  populateDashMonthFilter();
+  const lessons = getLessons();
+  const now = new Date();
+  const sel = document.getElementById('dash-month');
+  let y = now.getFullYear(), m = now.getMonth();
+  if (sel && sel.value) { const [sy, sm] = sel.value.split('-'); y = +sy; m = +sm - 1; }
+  const inMonth = (l, yy, mm) => { const d = new Date(l.date); return d.getFullYear() === yy && d.getMonth() === mm; };
+  const monthLessons = lessons.filter(l => inMonth(l, y, m));
+  const income = monthLessons.reduce((t, l) => t + (l.amount || 0), 0);
+  const active = getStudents().filter(s => s.isActive !== false);
+  const debt = active.reduce((t, s) => { const b = getStudentBalance(s.id); return b < 0 ? t - b : t; }, 0);
+  document.getElementById('stat-income').textContent = formatCurrency(income);
+  document.getElementById('stat-lessons').textContent = monthLessons.length;
+  document.getElementById('stat-debt').textContent = formatCurrency(debt);
+  document.getElementById('stat-active').textContent = active.length;
+  const [py, pm] = m === 0 ? [y - 1, 11] : [y, m - 1];
+  const prev = lessons.filter(l => inMonth(l, py, pm)).reduce((t, l) => t + (l.amount || 0), 0);
+  const deltaEl = document.getElementById('stat-income-delta');
+  if (prev > 0) {
+    const pct = Math.round((income - prev) / prev * 100);
+    deltaEl.className = `stat-delta ${pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat'}`;
+    deltaEl.textContent = `${pct > 0 ? '↑' : pct < 0 ? '↓' : '–'}${Math.abs(pct)}% מהחודש הקודם`;
+  } else deltaEl.textContent = '';
+  renderIncomeChart(lessons);
+}
+
+// 6-month income bars — current month highlighted, value on top, light/dark aware.
+function renderIncomeChart(lessons) {
+  const el = document.getElementById('income-chart');
+  if (!el) return;
+  const now = new Date();
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const inc = lessons.filter(l => { const ld = new Date(l.date); return ld.getFullYear() === d.getFullYear() && ld.getMonth() === d.getMonth(); })
+      .reduce((t, l) => t + (l.amount || 0), 0);
+    months.push({ label: HE_MONTHS[d.getMonth()].slice(0, 3), inc, current: i === 0 });
+  }
+  const max = Math.max(...months.map(x => x.inc), 1);
+  const fmtK = v => v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k` : String(Math.round(v));
+  el.innerHTML = `<div class="dx-bars">${months.map(x => `
+    <div class="dx-bar-col" title="${x.label}: ${formatCurrency(x.inc)}">
+      <div class="dx-bar-val">${x.inc ? '₪' + fmtK(x.inc) : ''}</div>
+      <div class="dx-bar ${x.current ? 'is-current' : ''}" style="height:${Math.max(4, Math.round(x.inc / max * 100))}%"></div>
+      <div class="dx-bar-label">${x.label}</div>
+    </div>`).join('')}</div>`;
+}
+
+function renderDashboard() {
+  renderDashGreeting();
+  renderToday();
+  renderInbox();
+  renderMonthStats();
+  renderCalendar();
+}
+
+// ===== ADMIN =====
+let _adminPendingCount = 0;
+async function loadAdminStats() {
+  try {
+    const r = await fetch('/api/admin/stats');
+    if (!r.ok) return;
+    const s = await r.json();
+    document.getElementById('admin-stat-users').textContent = s.activeUsers;
+    document.getElementById('admin-stat-pending').textContent = s.pendingUsers;
+    document.getElementById('admin-stat-students').textContent = s.activeStudents;
+    document.getElementById('admin-stat-lessons-month').textContent = s.lessonsThisMonth;
+    document.getElementById('admin-kpi-pending').classList.toggle('is-hot', s.pendingUsers > 0);
+  } catch (e) { /* stats just stay at – */ }
+}
+async function loadAdminPending() {
+  const el = document.getElementById('admin-pending-list');
+  try {
+    const r = await fetch('/api/admin/pending-users');
+    if (!r.ok) { el.innerHTML = ''; return; }
+    const pending = await r.json();
+    _adminPendingCount = pending.length;
+    if (!pending.length) { el.innerHTML = ''; return; }
+    el.innerHTML = `<section class="card dx-card adm-pending">
+      <div class="dx-card-head"><h3 class="dx-title"><span class="dx-ic dx-ic-amber">⏳</span>מחכים לאישור שלך</h3><span class="dx-count dx-count-warn">${pending.length}</span></div>
+      ${pending.map(u => `<div class="adm-prow">
+        <span class="adm-avatar" style="background:${avatarColorFor(u.email)}">${escapeHtml((u.name || u.email || '?')[0].toUpperCase())}</span>
+        <div class="adm-main"><div class="adm-name">${escapeHtml(u.name) || '(ללא שם)'}</div>
+          <div class="adm-email">${escapeHtml(u.email)}</div><div class="adm-meta">ביקש/ה להצטרף ${relativeTime(u.created_at)}</div></div>
+        <div class="adm-actions">
+          <button class="btn btn-success btn-sm" onclick="adminApproveUser('${u.id}')">✓ אישור</button>
+          <button class="btn btn-ghost btn-sm text-danger" onclick="adminRejectUser('${u.id}')">דחייה</button>
+        </div>
+      </div>`).join('')}
+    </section>`;
+  } catch (e) { el.innerHTML = ''; }
+}
+function filterAdminUsers(query) {
+  const q = (query || '').trim().toLowerCase();
+  let list = !q ? [..._adminUsers] : _adminUsers.filter(u =>
+    (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
+  const sort = document.getElementById('admin-user-sort')?.value || 'recent';
+  if (sort === 'active') list.sort((a, b) => (b.lessonsThisMonth || 0) - (a.lessonsThisMonth || 0));
+  if (sort === 'name') list.sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email, 'he'));
+  renderAdminUsersList(list, !!q);
+}
+function renderAdminUsersList(users, isFiltered) {
+  const el = document.getElementById('admin-users-list');
+  const cnt = document.getElementById('admin-users-count');
+  if (cnt) cnt.textContent = _adminUsers.length ? `(${_adminUsers.length})` : '';
+  if (!_adminUsers.length) { el.innerHTML = '<div class="dx-empty dx-empty-sm"><div class="dx-empty-title">אין משתמשים עדיין</div></div>'; return; }
+  if (!users.length) { el.innerHTML = `<div class="dx-empty dx-empty-sm"><div class="dx-empty-title">${isFiltered ? 'אין תוצאות לחיפוש' : 'אין משתמשים'}</div></div>`; return; }
+  const today = isoDate(new Date());
+  el.innerHTML = users.map(u => {
+    const activeNow = (u.lessonsThisMonth || 0) > 0;
+    const last = u.lastLessonDate ? (u.lastLessonDate === today ? 'היום' : relativeTime(u.lastLessonDate + 'T12:00:00')) : 'אין עדיין';
+    return `<div class="adm-user">
+      <span class="adm-avatar" style="background:${avatarColorFor(u.email)}">${escapeHtml((u.name || u.email || '?')[0].toUpperCase())}
+        <i class="adm-status ${activeNow ? 'on' : ''}" title="${activeNow ? 'פעיל/ה החודש' : 'לא פעיל/ה החודש'}"></i></span>
+      <div class="adm-main">
+        <div class="adm-name">${escapeHtml(u.name) || '(ללא שם)'} ${u.isAdmin ? '<span class="adm-pill">מנהלת</span>' : ''}</div>
+        <div class="adm-email">${escapeHtml(u.email)}</div>
+        <div class="adm-stats">
+          <span><b>${u.activeStudentCount}</b> תלמידים${u.studentCount !== u.activeStudentCount ? ` <small>(${u.studentCount} סה״כ)</small>` : ''}</span>
+          <span><b>${u.lessonsThisMonth || 0}</b> שיעורים החודש</span>
+          <span><b>${u.lessonCount}</b> סה״כ</span>
+        </div>
+        <div class="adm-meta">הצטרפ/ה ${relativeTime(u.created_at)} · שיעור אחרון: ${last}</div>
+        <div id="admin-user-students-${u.id}" class="adm-students" style="display:none"></div>
+      </div>
+      <div class="adm-actions">
+        <button class="btn btn-ghost btn-xs" onclick="toggleAdminUserStudents('${u.id}', this)">תלמידים ▾</button>
+        ${!u.isAdmin ? `<button class="btn btn-ghost btn-xs text-danger" onclick="adminSuspendUser('${u.id}', '${escapeHtml(u.name || u.email).replace(/'/g, '&#39;')}')">השבתה</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+async function toggleAdminUserStudents(userId, btn) {
+  const box = document.getElementById(`admin-user-students-${userId}`);
+  if (box.style.display !== 'none') { box.style.display = 'none'; btn.textContent = 'תלמידים ▾'; return; }
+  box.style.display = 'flex';
+  btn.textContent = 'תלמידים ▴';
+  box.innerHTML = '<span class="text-muted">טוען...</span>';
+  try {
+    const r = await fetch(`/api/admin/users/${userId}/students`);
+    const students = await r.json();
+    if (!r.ok || !students.length) { box.innerHTML = '<span class="text-muted">אין תלמידים</span>'; return; }
+    box.innerHTML = students.map(s => `<span class="adm-chip ${s.isActive ? '' : 'off'}">${escapeHtml(s.name) || '(ללא שם)'}</span>`).join('');
+  } catch (e) { box.innerHTML = '<span class="text-muted">שגיאה בטעינה</span>'; }
+}
+async function loadAdminAnnouncementIntoForm() {
+  try {
+    const r = await fetch('/api/admin/announcement');
+    if (!r.ok) return;
+    const ann = await r.json();
+    document.getElementById('admin-ann-text').value = ann?.message || '';
+    setAdminAnnStatus(!!ann?.message);
+    adminAnnPreview();
+  } catch (e) { /* leave form empty */ }
+}
+function setAdminAnnStatus(live) {
+  const el = document.getElementById('admin-ann-status');
+  if (!el) return;
+  el.textContent = live ? '● מוצג עכשיו' : 'לא פעיל';
+  el.classList.toggle('adm-pill-live', live);
+}
+function adminAnnPreview() {
+  const v = document.getElementById('admin-ann-text').value;
+  document.querySelector('#admin-ann-preview span').textContent = v.trim() || 'הטקסט יופיע כאן';
+  document.getElementById('admin-ann-count').textContent = v.length;
+}
+function adminPushPreview() {
+  document.getElementById('admin-push-preview-title').textContent = document.getElementById('admin-push-title').value.trim() || '📢 עדכון חדש';
+  document.getElementById('admin-push-preview-body').textContent = document.getElementById('admin-push-body').value.trim() || 'מה חדש...';
+}
+
 // ===== MODAL =====
 function openModal(title, bodyHTML, onSave) {
   document.getElementById('modal-title').textContent = title;
@@ -3411,221 +3976,7 @@ function populateDashMonthFilter() {
   }
 }
 
-function renderDashGreeting() {
-  const el = document.getElementById('dash-greeting');
-  if (!el) return;
-  const userEl = document.getElementById('user-display');
-  const rawName = userEl && userEl.textContent ? userEl.textContent.replace('👤', '').trim() : '';
-  const firstName = rawName ? rawName.split(' ')[0] : '';
-  const hour = new Date().getHours();
-  const greeting = hour < 5 ? 'לילה טוב' : hour < 12 ? 'בוקר טוב' : hour < 18 ? 'צהריים טובים' : 'ערב טוב';
-  const title = firstName ? `${greeting}, ${firstName} 👋` : `${greeting} 👋`;
-  const dateStr = new Date().toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
-  el.innerHTML = `<div class="dash-greeting-title">${title}</div><div class="dash-greeting-date">${dateStr}</div>`;
-}
 
-function renderDashboard() {
-  renderDashGreeting();
-  renderBookingRequests();
-  renderExamsToday();
-  populateDashMonthFilter();
-  const students = getStudents();
-  const lessons  = getLessons();
-  const now = new Date();
-
-  // Get selected month from filter
-  const dashMonthSel = document.getElementById('dash-month');
-  let selYear = now.getFullYear(), selMonth = now.getMonth();
-  if (dashMonthSel && dashMonthSel.value) {
-    const [sy, sm] = dashMonthSel.value.split('-');
-    selYear = parseInt(sy); selMonth = parseInt(sm) - 1;
-  }
-  const thisMonth = selMonth;
-  const thisYear  = selYear;
-
-  const monthLessons = lessons.filter(l => {
-    const d = new Date(l.date);
-    return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-  });
-
-  const activeStudents = students.filter(s => s.isActive !== false);
-  const monthIncome   = monthLessons.reduce((s,l) => s + (l.amount||0), 0);
-  const activeThisMonth = new Set(monthLessons.map(l => l.studentId)).size;
-  const totalDebt     = activeStudents.reduce((s, st) => {
-    const b = getStudentBalance(st.id);
-    return b < 0 ? s + Math.abs(b) : s;
-  }, 0);
-
-  document.getElementById('stat-income').textContent  = formatCurrency(monthIncome);
-  document.getElementById('stat-active').textContent  = activeStudents.length;
-  document.getElementById('stat-lessons').textContent = monthLessons.length;
-  document.getElementById('stat-debt').textContent    = formatCurrency(totalDebt);
-
-  // Monthly comparison
-  const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
-  const lastYear  = thisMonth === 0 ? thisYear - 1 : thisYear;
-  const lastMonthIncome = lessons
-    .filter(l => { const d = new Date(l.date); return d.getMonth() === lastMonth && d.getFullYear() === lastYear; })
-    .reduce((s,l) => s + (l.amount||0), 0);
-  const deltaEl = document.getElementById('stat-income-delta');
-  if (deltaEl) {
-    if (lastMonthIncome > 0) {
-      const pct = Math.round((monthIncome - lastMonthIncome) / lastMonthIncome * 100);
-      const cls = pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat';
-      deltaEl.className = `stat-delta ${cls}`;
-      deltaEl.textContent = `${pct > 0 ? '↑' : pct < 0 ? '↓' : '–'}${Math.abs(pct)}% מחודש שעבר`;
-    } else {
-      deltaEl.textContent = '';
-    }
-  }
-
-  renderCalendar();
-
-  // Next lesson widget
-  const today = isoDate(new Date());
-  const upcoming = [...lessons]
-    .filter(l => l.date >= today)
-    .sort((a,b) => a.date.localeCompare(b.date) || (a.time||'').localeCompare(b.time||''));
-  const nlEl = document.getElementById('next-lesson-widget');
-  if (nlEl) {
-    if (upcoming.length > 0) {
-      const nl = upcoming[0];
-      const ns = getStudentById(nl.studentId);
-      const tomorrow = isoDate(new Date(Date.now() + 86400000));
-      const dayLabel = nl.date === today ? 'היום' : nl.date === tomorrow ? 'מחר' : formatDate(nl.date);
-      nlEl.innerHTML = `<div class="next-lesson-widget">
-        <div class="next-lesson-icon">📅</div>
-        <div style="flex:1;min-width:0">
-          <div class="next-lesson-label">השיעור הבא</div>
-          <div class="next-lesson-main">${ns?.name||'?'} — ${dayLabel}</div>
-          <div class="next-lesson-sub">${nl.time||''} · ${nl.durationHours} שיעור${nl.durationHours>1?'ים':''} · ${formatCurrency(nl.amount)}</div>
-        </div>
-        <button class="next-lesson-btn" onclick="calGoDay('${nl.date}')">→ לוח שנה</button>
-      </div>`;
-    } else {
-      nlEl.innerHTML = '';
-    }
-  }
-
-  // Debt banner
-  const debtStudents = activeStudents.filter(st => getStudentBalance(st.id) < 0);
-  const debtBanner = document.getElementById('debt-banner');
-  if (debtBanner) {
-    if (debtStudents.length > 0) {
-      const debtChips = debtStudents.map(st => `<span class="debt-chip" onclick="openDebtReport('${st.id}')">${escapeHtml(st.name)} · ${formatCurrency(Math.abs(getStudentBalance(st.id)))}</span>`).join('');
-      debtBanner.innerHTML = `
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-          <span style="font-size:17px">⚠️</span>
-          <strong>${debtStudents.length} תלמיד${debtStudents.length>1?'ים':''} עם חוב פתוח</strong>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">${debtChips}</div>`;
-      debtBanner.classList.add('show');
-    } else {
-      debtBanner.classList.remove('show');
-    }
-  }
-
-  // Income chart — last 6 months (canvas)
-  const chartEl = document.getElementById('income-chart');
-  if (chartEl) {
-    const months = [];
-    const nowReal = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(nowReal.getFullYear(), nowReal.getMonth() - i, 1);
-      const y = d.getFullYear(), m = d.getMonth();
-      const inc = lessons.filter(l => { const ld = new Date(l.date); return ld.getFullYear()===y && ld.getMonth()===m; }).reduce((s,l) => s+(l.amount||0), 0);
-      months.push({ label: HE_MONTHS[m].slice(0,3), inc, current: i===0 });
-    }
-    // Try canvas, fallback to bars
-    chartEl.innerHTML = '<div id="income-canvas-wrap"><canvas id="income-canvas" height="120"></canvas></div>';
-    const canvas = document.getElementById('income-canvas');
-    if (canvas && canvas.getContext) {
-      canvas.width = chartEl.clientWidth || 400;
-      const ctx = canvas.getContext('2d');
-      const W = canvas.width, H = 120;
-      const maxInc = Math.max(...months.map(x => x.inc), 1);
-      const pad = { top: 14, bottom: 28, left: 10, right: 10 };
-      const chartW = W - pad.left - pad.right;
-      const chartH = H - pad.top - pad.bottom;
-      const step = chartW / (months.length - 1);
-      const pts = months.map((m, i) => ({ x: pad.left + i * step, y: pad.top + chartH - (m.inc / maxInc) * chartH }));
-      // Gradient fill
-      const grad = ctx.createLinearGradient(0, pad.top, 0, H);
-      grad.addColorStop(0, 'rgba(37,99,235,0.25)');
-      grad.addColorStop(1, 'rgba(37,99,235,0)');
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, H - pad.bottom);
-      pts.forEach(p => ctx.lineTo(p.x, p.y));
-      ctx.lineTo(pts[pts.length-1].x, H - pad.bottom);
-      ctx.closePath();
-      ctx.fillStyle = grad;
-      ctx.fill();
-      // Line
-      ctx.beginPath();
-      ctx.strokeStyle = '#2563eb';
-      ctx.lineWidth = 2.5;
-      ctx.lineJoin = 'round';
-      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-      ctx.stroke();
-      // Dots + labels
-      pts.forEach((p, i) => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = months[i].current ? '#2563eb' : '#93c5fd';
-        ctx.fill();
-        // month label
-        ctx.fillStyle = '#64748b';
-        ctx.font = '10px system-ui';
-        ctx.textAlign = 'center';
-        ctx.fillText(months[i].label, p.x, H - 8);
-        // value
-        if (months[i].inc > 0) {
-          ctx.fillStyle = '#2563eb';
-          ctx.font = '9px system-ui';
-          ctx.fillText('₪'+(months[i].inc/1000).toFixed(1)+'k', p.x, p.y - 7);
-        }
-      });
-    }
-  }
-
-  // Student summary table — active only
-  const tbody = document.getElementById('student-summary-tbody');
-  if (activeStudents.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-cell">אין תלמידים פעילים עדיין</td></tr>';
-  } else {
-    tbody.innerHTML = activeStudents.map(s => {
-      const sMonthLessons = monthLessons.filter(l => l.studentId === s.id);
-      const balance = getStudentBalance(s.id);
-      const lastLesson = lessons.filter(l => l.studentId === s.id).sort((a,b) => b.date.localeCompare(a.date))[0];
-      return `<tr>
-        <td data-label="תלמיד"><span class="student-dot" style="background:${s.color}"></span>${escapeHtml(s.name)}</td>
-        <td data-label="שיעורים החודש">${sMonthLessons.length}</td>
-        <td data-label="יתרה" class="${balance < 0 ? 'text-danger' : balance > 0 ? 'text-success' : 'text-muted'}">
-          ${balance < 0 ? `לתשלום ${formatCurrency(Math.abs(balance))}` : balance > 0 ? `זכות ${formatCurrency(balance)}` : 'מאוזן'}
-        </td>
-        <td data-label="שיעור אחרון">${lastLesson ? formatDate(lastLesson.date) : '—'}</td>
-      </tr>`;
-    }).join('');
-  }
-
-  // Recent lessons
-  const recentLessons = [...lessons].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 6);
-  const recentEl = document.getElementById('recent-lessons');
-  if (recentLessons.length === 0) {
-    recentEl.innerHTML = '<p class="empty-cell">אין שיעורים עדיין</p>';
-  } else {
-    recentEl.innerHTML = recentLessons.map(l => {
-      const s = getStudentById(l.studentId);
-      return `<div class="recent-item">
-        <span class="badge" style="background:${s?.color||'#2563eb'}">${s?.name||'?'}</span>
-        <span>${formatDate(l.date)}</span>
-        <span class="text-muted">${l.durationHours} שיעור${l.durationHours>1?'ים':''}</span>
-        <span>${formatCurrency(l.amount)}</span>
-        ${lessonBadge(l)}
-      </div>`;
-    }).join('');
-  }
-}
 
 // ===== STUDENTS =====
 function toggleInactiveStudents() {
@@ -4243,6 +4594,7 @@ async function toggleLessonPaid(id) {
     await apiCall('PUT', `/api/lessons/${id}`, updated);
     _lessons = _lessons.map(l => l.id === id ? updated : l);
     if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
+    if (document.getElementById('page-dashboard')?.style.display !== 'none') renderDashboard();
     return Promise.resolve();
   }
   const s = getStudentById(lesson.studentId);
@@ -4267,7 +4619,7 @@ async function setLessonFullPaid(id) {
   _lessons = _lessons.map(l => l.id === id ? updated : l);
   closeModal();
   if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
-  if (document.getElementById('page-dashboard')?.style.display !== 'none') renderCalendar();
+  if (document.getElementById('page-dashboard')?.style.display !== 'none') renderDashboard();
   showToast('שולם במלואו ✓');
 }
 
@@ -4281,7 +4633,7 @@ async function setLessonPartialPaid(id) {
   _lessons = _lessons.map(l => l.id === id ? updated : l);
   closeModal();
   if (document.getElementById('page-lessons').style.display !== 'none') renderLessonsTable();
-  if (document.getElementById('page-dashboard')?.style.display !== 'none') renderCalendar();
+  if (document.getElementById('page-dashboard')?.style.display !== 'none') renderDashboard();
   showToast(isPaid ? 'שולם במלואו ✓' : `שולם חלקית: ${formatCurrency(amount)}`);
 }
 
@@ -4961,119 +5313,13 @@ async function loadAdminUsers() {
   }
 }
 
-function filterAdminUsers(query) {
-  const q = query.trim().toLowerCase();
-  const filtered = !q ? _adminUsers : _adminUsers.filter(u =>
-    (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
-  renderAdminUsersList(filtered, !!q);
-}
 
-function renderAdminUsersList(users, isFiltered) {
-  const el = document.getElementById('admin-users-list');
-  if (_adminUsers.length === 0) {
-    el.innerHTML = '<p class="text-muted" style="font-size:13px">אין משתמשים עדיין</p>';
-    return;
-  }
-  if (users.length === 0) {
-    el.innerHTML = `<p class="text-muted" style="font-size:13px">${isFiltered ? 'אין תוצאות לחיפוש' : 'אין משתמשים עדיין'}</p>`;
-    return;
-  }
-  el.innerHTML = users.map(u => `
-    <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
-      <div class="student-avatar" style="width:38px;height:38px;font-size:15px;background:${avatarColorFor(u.email)}">${(u.name || u.email || '?')[0].toUpperCase()}</div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
-          <div style="min-width:0">
-            <div style="font-weight:600;font-size:14px">${escapeHtml(u.name) || '(ללא שם)'} ${u.isAdmin ? '<span class="badge badge-muted" style="font-size:10px">מנהל</span>' : ''}</div>
-            <div style="font-size:12.5px;color:var(--text-muted);direction:ltr;text-align:right">${escapeHtml(u.email)}</div>
-          </div>
-          <div style="text-align:center;flex-shrink:0;font-size:11.5px;color:var(--text-muted)">
-            <div style="font-size:16px;font-weight:700;color:var(--success)">${u.activeStudentCount}</div>
-            תלמידים פעילים
-            ${u.studentCount !== u.activeStudentCount ? `<div style="font-size:10.5px">(${u.studentCount} סה"כ)</div>` : ''}
-          </div>
-        </div>
-        <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">הצטרף/ה ${formatDate(u.created_at.split('T')[0])} · ${u.lessonCount} שיעורים</div>
-        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-xs" onclick="toggleAdminUserStudents('${u.id}', this)">הצג רשימת תלמידים</button>
-          ${!u.isAdmin ? `<button class="btn btn-ghost btn-xs text-danger" onclick="adminSuspendUser('${u.id}', '${escapeHtml(u.name || u.email)}')">⛔ השבת גישה</button>` : ''}
-        </div>
-        <div id="admin-user-students-${u.id}" style="display:none;margin-top:8px;font-size:12.5px"></div>
-      </div>
-    </div>`).join('');
-}
 
 async function adminSuspendUser(id, label) {
   if (!confirm(`להשבית את הגישה של ${label}? אפשר יהיה להפעיל אותה מחדש מתוך "בקשות ממתינות".`)) return;
   const r = await fetch(`/api/admin/users/${id}/suspend`, {method: 'POST'});
   if (r.ok) { showToast('הגישה הושבתה'); loadAdminStats(); loadAdminPending(); loadAdminUsers(); document.getElementById('admin-user-search').value = ''; }
   else showToast('שגיאה בהשבתת הגישה', 'danger');
-}
-async function toggleAdminUserStudents(userId, btn) {
-  const box = document.getElementById(`admin-user-students-${userId}`);
-  if (box.style.display !== 'none') { box.style.display = 'none'; btn.textContent = 'הצג רשימת תלמידים'; return; }
-  box.style.display = 'block';
-  btn.textContent = 'הסתר רשימת תלמידים';
-  box.innerHTML = 'טוען...';
-  try {
-    const r = await fetch(`/api/admin/users/${userId}/students`);
-    const students = await r.json();
-    if (!r.ok || students.length === 0) { box.innerHTML = '<span class="text-muted">אין תלמידים</span>'; return; }
-    box.innerHTML = students.map(s => `
-      <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)">
-        <span>${escapeHtml(s.name) || '(ללא שם)'}</span>
-        <span class="badge ${s.isActive ? 'badge-success' : 'badge-muted'}" style="font-size:10px">${s.isActive ? 'פעיל' : 'לא פעיל'}</span>
-      </div>`).join('');
-  } catch (e) {
-    box.innerHTML = '<span class="text-muted">שגיאה בטעינה</span>';
-  }
-}
-async function loadAdminStats() {
-  try {
-    const r = await fetch('/api/admin/stats');
-    if (!r.ok) return;
-    const s = await r.json();
-    document.getElementById('admin-stat-users').textContent = s.activeUsers;
-    document.getElementById('admin-stat-pending').textContent = s.pendingUsers;
-    document.getElementById('admin-stat-students').textContent = s.activeStudents;
-    document.getElementById('admin-stat-lessons-month').textContent = s.lessonsThisMonth;
-  } catch (e) { /* stats just stay at – */ }
-}
-async function loadAdminAnnouncementIntoForm() {
-  try {
-    const r = await fetch('/api/admin/announcement');
-    if (!r.ok) return;
-    const ann = await r.json();
-    const ta = document.getElementById('admin-ann-text');
-    if (ta) ta.value = ann?.message || '';
-  } catch (e) { /* leave form empty */ }
-}
-async function loadAdminPending() {
-  const el = document.getElementById('admin-pending-list');
-  try {
-    const r = await fetch('/api/admin/pending-users');
-    if (!r.ok) { el.innerHTML = '<p class="text-muted" style="font-size:13px">שגיאה בטעינה</p>'; return; }
-    const pending = await r.json();
-    if (pending.length === 0) {
-      el.innerHTML = '<p class="text-muted" style="font-size:13px">אין בקשות ממתינות 👍</p>';
-      return;
-    }
-    el.innerHTML = pending.map(u => `
-      <div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div class="student-avatar" style="width:38px;height:38px;font-size:15px;background:${avatarColorFor(u.email)};flex-shrink:0">${(u.name || u.email || '?')[0].toUpperCase()}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:14px">${escapeHtml(u.name) || '(ללא שם)'}</div>
-          <div style="font-size:12.5px;color:var(--text-muted);direction:ltr;text-align:right">${escapeHtml(u.email)}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:1px">ביקש/ה להצטרף ${relativeTime(u.created_at)}</div>
-        </div>
-        <div style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn btn-success btn-xs" onclick="adminApproveUser('${u.id}')">✓ אשר</button>
-          <button class="btn btn-ghost btn-xs text-danger" onclick="adminRejectUser('${u.id}')">✕ דחה</button>
-        </div>
-      </div>`).join('');
-  } catch (e) {
-    el.innerHTML = '<p class="text-muted" style="font-size:13px">שגיאה בטעינה</p>';
-  }
 }
 async function adminApproveUser(id) {
   const r = await fetch(`/api/admin/users/${id}/approve`, {method: 'POST'});
@@ -5094,7 +5340,7 @@ async function adminPublishAnnouncement() {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({message}),
   });
-  if (r.ok) showToast('הבאנר פורסם ✓');
+  if (r.ok) { showToast('הבאנר פורסם ✓'); setAdminAnnStatus(true); checkAnnouncement(); }
   else showToast('שגיאה בפרסום', 'danger');
 }
 async function adminClearAnnouncement() {
@@ -5102,7 +5348,7 @@ async function adminClearAnnouncement() {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({message: ''}),
   });
-  if (r.ok) { showToast('הבאנר נוקה ✓'); document.getElementById('admin-ann-text').value = ''; }
+  if (r.ok) { showToast('הבאנר הוסר ✓'); document.getElementById('admin-ann-text').value = ''; setAdminAnnStatus(false); adminAnnPreview(); checkAnnouncement(); }
   else showToast('שגיאה', 'danger');
 }
 async function adminSendPushBroadcast() {
@@ -5121,7 +5367,7 @@ async function adminSendPushBroadcast() {
     else if (data.manual_fallback) showToast('לא מוגדר טוקן GitHub — שלחי ידנית דרך ה-Actions tab', 'warning');
     else showToast(data.error || 'שגיאה בשליחה', 'danger');
   } finally {
-    btn.disabled = false; btn.textContent = 'שלח לכולם';
+    btn.disabled = false; btn.textContent = 'שליחה לכולם';
   }
 }
 
