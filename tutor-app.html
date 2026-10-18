@@ -1367,6 +1367,18 @@
     .exam-item-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
     .exam-form { border: 1px dashed var(--border); border-radius: 12px; padding: 12px; margin-top: 12px; }
     .goodluck-hero { font-size: 52px; text-align: center; margin-bottom: 6px; }
+    /* exams on the calendar: amber, dashed, with the student's color as a side stripe */
+    .cal-exam { background: #fef3c7 !important; color: #92400e !important; border: 1px dashed #f59e0b; border-inline-start: 3px solid var(--stu); font-weight: 600; }
+    [data-theme="dark"] .cal-exam { background: #3a2a0c !important; color: #fcd34d !important; }
+    .cal-day-exam { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; border: 1px dashed #f59e0b;
+      background: var(--warning-light); margin-bottom: 8px; flex-wrap: wrap; }
+    [data-theme="dark"] .cal-day-exam { background: #3a2a0c; }
+    .cal-day-exam-icon { font-size: 22px; }
+    .cal-add-day-row { display: flex; gap: 8px; }
+    .cal-add-day-row .cal-add-day-btn { flex: 1; width: auto; }
+    .cal-add-day-row .cal-add-exam-btn { flex: 0 0 auto; padding-inline: 16px; border-color: #f59e0b; color: #b45309; }
+    .cal-add-day-row .cal-add-exam-btn:hover { background: var(--warning-light); color: #92400e; border-color: #f59e0b; }
+    @media (max-width: 768px) { .cal-week-event.cal-exam { text-align: center; padding-inline: 0; } }
 
     /* ===== PUNCH CARDS & BOOKING REQUESTS ===== */
     .badge-card { background: #7c3aed; color: white; }
@@ -3300,7 +3312,7 @@ function openStudentActions(studentId) {
 
 // Add an exam from the top-level "+ מבחן" buttons (calendar / lessons page),
 // picking the student here — openExamsModal is the per-student view.
-function openAddExamModal(defaultStudentId) {
+function openAddExamModal(defaultStudentId, defaultDate) {
   const students = getStudents().filter(s => s.isActive !== false);
   const today = isoDate(new Date());
   const html = `
@@ -3310,7 +3322,7 @@ function openAddExamModal(defaultStudentId) {
         ${students.map(s => `<option value="${s.id}" ${s.id === defaultStudentId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
       </select></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group"><label>תאריך המבחן</label><input type="date" id="f-exam-date" min="${today}"></div>
+      <div class="form-group"><label>תאריך המבחן</label><input type="date" id="f-exam-date" min="${today}" value="${defaultDate || ''}"></div>
       <div class="form-group"><label>מקצוע / נושא</label><input type="text" id="f-exam-subject" placeholder="למשל: מתמטיקה"></div>
     </div>
     <div class="form-group"><label>הערות (לא חובה)</label><input type="text" id="f-exam-notes" placeholder="למשל: פרקים 3–5"></div>
@@ -4596,6 +4608,18 @@ function lessonsForDate(dateStr) {
     .sort((a,b) => (a.time||'00:00').localeCompare(b.time||'00:00'));
 }
 
+function examsForDate(dateStr) {
+  return getExams().filter(e => e.date === dateStr && getStudentById(e.studentId) &&
+    (!calStudentFilter || e.studentId === calStudentFilter));
+}
+// All-day exam marker on the calendar (month/week chips); click opens its popup.
+function calExamChip(e, cls) {
+  const s = getStudentById(e.studentId);
+  const label = `${escapeHtml(s.name)}${e.subject ? ` · ${escapeHtml(e.subject)}` : ''}`;
+  return `<div class="${cls} cal-exam" style="--stu:${s.color || '#2563eb'}" onclick="showExamPopup('${e.id}',event)" title="מבחן: ${label}">
+    📝 <span class="cal-event-name">${label}</span></div>`;
+}
+
 function renderCalendar() {
   const today = isoDate(new Date());
   const titleEl = document.getElementById('cal-title');
@@ -4639,6 +4663,7 @@ function renderCalendar() {
         const maxShow = 2;
         html += `<td class="cal-day-cell${isToday?' today':''}${otherMonth?' other-month':''}" onclick="calGoDay('${ds}')">`;
         html += `<div class="cal-day-num"><span>${d.getDate()}</span></div>`;
+        examsForDate(ds).forEach(e => { html += calExamChip(e, 'cal-event'); });
         lessons.slice(0, maxShow).forEach(l => {
           const s = getStudentById(l.studentId);
           const tip = escapeHtml(`${s?.name||'?'} | ${l.time||'--:--'} | ${l.durationHours} שיעור${l.durationHours>1?'ים':''}${l.notes?' | '+l.notes:''}`);
@@ -4678,6 +4703,7 @@ function renderCalendar() {
           <div class="cal-week-day-num${isToday?' today-num':''}">${d.getDate()}</div>
         </div>
         <div class="cal-week-events" onclick="openAddLessonModal(null)">`;
+      examsForDate(ds).forEach(e => { html += calExamChip(e, 'cal-week-event'); });
       lessons.forEach(l => {
         const s = getStudentById(l.studentId);
         html += `<div class="cal-week-event" style="background:${s?.color||'#2563eb'}" onclick="showCalPopup('${l.id}',event)">
@@ -4696,6 +4722,22 @@ function renderCalendar() {
     titleEl.textContent = `${HE_DAYS_SHORT[d.getDay()]} ${d.getDate()} ${HE_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
     const lessons = lessonsForDate(ds);
     let html = '<div class="cal-day-detail">';
+    examsForDate(ds).forEach(e => {
+      const s = getStudentById(e.studentId);
+      html += `<div class="cal-day-exam">
+        <div class="cal-day-exam-icon">📝</div>
+        <div class="cal-day-lesson-info">
+          <strong>מבחן${e.subject ? ` ב${escapeHtml(e.subject)}` : ''}</strong>
+          <span class="badge" style="background:${s.color || '#2563eb'}">${escapeHtml(s.name)}</span>
+          ${e.notes ? `<span class="text-muted">${escapeHtml(e.notes)}</span>` : ''}
+          ${e.wishedAt ? '<span class="text-success">✓ נשלח בהצלחה</span>' : ''}
+        </div>
+        <div class="cal-day-lesson-actions">
+          <button class="btn btn-success btn-xs" onclick="openGoodLuck('${e.id}')">🍀 בהצלחה</button>
+          <button class="btn btn-ghost btn-xs" onclick="openExamsModal('${e.studentId}')">מבחנים</button>
+        </div>
+      </div>`;
+    });
     if (lessons.length === 0) {
       html += `<p class="text-muted" style="padding:16px 0;text-align:center">אין שיעורים ביום זה</p>`;
     } else {
@@ -4718,7 +4760,10 @@ function renderCalendar() {
         </div>`;
       });
     }
-    html += `<button class="cal-add-day-btn" onclick="openAddLessonModal(null,'${ds}')">+ הוסף שיעור ל-${d.getDate()} ${HE_MONTHS[d.getMonth()]}</button>`;
+    html += `<div class="cal-add-day-row">
+      <button class="cal-add-day-btn" onclick="openAddLessonModal(null,'${ds}')">+ הוסף שיעור ל-${d.getDate()} ${HE_MONTHS[d.getMonth()]}</button>
+      ${ds >= today ? `<button class="cal-add-day-btn cal-add-exam-btn" onclick="openAddExamModal(null,'${ds}')">📝 הוסף מבחן</button>` : ''}
+    </div>`;
     html += '</div>';
     body.innerHTML = html;
   }
@@ -4756,6 +4801,32 @@ function showCalPopup(lessonId, e) {
   p.style.top = y + 'px';
 }
 function hideCalPopup() { document.getElementById('cal-popup').style.display = 'none'; }
+function showExamPopup(examId, e) {
+  e.stopPropagation();
+  const ex = getExams().find(x => x.id === examId);
+  if (!ex) return;
+  const s = getStudentById(ex.studentId);
+  const p = document.getElementById('cal-popup');
+  p.innerHTML = `
+    <div class="cal-popup-name">📝 מבחן${ex.subject ? ` ב${escapeHtml(ex.subject)}` : ''}</div>
+    <div class="cal-popup-detail"><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${escapeHtml(s?.name)||'?'} · ${getDayName(new Date(ex.date + 'T00:00:00').getDay())} ${formatDate(ex.date).slice(0, 5)} · ${examDayLabel(ex.date)}</div>
+    ${ex.notes ? `<div class="cal-popup-detail" style="font-style:italic">${escapeHtml(ex.notes)}</div>` : ''}
+    ${ex.wishedAt ? '<div class="cal-popup-detail text-success">✓ נשלחה הודעת בהצלחה</div>' : ''}
+    <div class="cal-popup-btns">
+      <button class="btn btn-success btn-xs" onclick="hideCalPopup();openGoodLuck('${ex.id}')">🍀 בהצלחה</button>
+      <button class="btn btn-primary btn-xs" onclick="hideCalPopup();openExamsModal('${ex.studentId}')">מבחנים</button>
+      <button class="btn btn-ghost btn-xs text-danger" onclick="hideCalPopup();deleteExam('${ex.id}')">מחק</button>
+    </div>`;
+  p.style.display = 'block';
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let x = e.clientX, y = e.clientY + 10;
+  const pw = p.offsetWidth || 210, ph = p.offsetHeight || 140;
+  if (x + pw > vw - 10) x = vw - pw - 10;
+  if (y + ph > vh - 10) y = e.clientY - ph - 10;
+  if (x < 4) x = 4;
+  p.style.left = x + 'px';
+  p.style.top = y + 'px';
+}
 
 // ===== SEARCH =====
 function highlight(text, q) {
