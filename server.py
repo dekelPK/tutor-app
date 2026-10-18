@@ -67,7 +67,7 @@ def user_data_file(uid):
     return os.path.join(BASE_DIR, f'data_{uid}.json')
 
 def empty_data():
-    return {'students': [], 'lessons': [], 'payments': [], 'packages': [], 'bookings': [], 'bookingSettings': None}
+    return {'students': [], 'lessons': [], 'payments': [], 'packages': [], 'bookings': [], 'exams': [], 'bookingSettings': None}
 
 def read_data(uid=None):
     uid = uid or session.get('user_id')
@@ -282,6 +282,7 @@ def delete_student(sid):
     data['payments'] = [p for p in data['payments'] if p['studentId'] != sid]
     data['packages'] = [p for p in data['packages'] if p['studentId'] != sid]
     data['bookings'] = [b for b in data['bookings'] if b['studentId'] != sid]
+    data['exams']    = [e for e in data['exams']    if e['studentId'] != sid]
     write_data(data)
     return '', 204
 
@@ -336,7 +337,7 @@ def student_portal(token):
     c.close()
     page = portal_core.render_portal(token, student, mine('lessons'), mine('payments'),
                                      mine('packages'), mine('bookings'), slots, booking_enabled,
-                                     teacher_name=(owner_row['name'] if owner_row else '') or '')
+                                     teacher_name=(owner_row['name'] if owner_row else '') or '', exams=mine('exams'))
     return page, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 @app.route('/portal/<token>/book', methods=['POST'])
@@ -454,6 +455,40 @@ def update_package(pid):
     data['packages'] = [request.json if p['id'] == pid else p for p in data['packages']]
     write_data(data)
     return jsonify(request.json)
+
+# ── Exams (מבחנים) — the 8:00 push is production-only (flask_app.py) ────────────
+@app.route('/api/exams', methods=['GET'])
+def get_exams():
+    err = require_auth()
+    if err: return err
+    return jsonify(read_data()['exams'])
+
+@app.route('/api/exams', methods=['POST'])
+def add_exam():
+    err = require_auth()
+    if err: return err
+    data = read_data()
+    data['exams'].append(request.json)
+    write_data(data)
+    return jsonify(request.json), 201
+
+@app.route('/api/exams/<eid>', methods=['PUT'])
+def update_exam(eid):
+    err = require_auth()
+    if err: return err
+    data = read_data()
+    data['exams'] = [request.json if e['id'] == eid else e for e in data['exams']]
+    write_data(data)
+    return jsonify(request.json)
+
+@app.route('/api/exams/<eid>', methods=['DELETE'])
+def delete_exam(eid):
+    err = require_auth()
+    if err: return err
+    data = read_data()
+    data['exams'] = [e for e in data['exams'] if e['id'] != eid]
+    write_data(data)
+    return '', 204
 
 @app.route('/api/packages/<pid>', methods=['DELETE'])
 def delete_package(pid):

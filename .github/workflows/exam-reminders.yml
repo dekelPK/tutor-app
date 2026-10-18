@@ -1,0 +1,31 @@
+name: Exam-day reminders
+
+on:
+  schedule:
+    # 08:00 Israel time is 05:00 UTC in summer (IDT) and 06:00 UTC in winter
+    # (IST). Run at both; the server only answers from 08:00 local and sends
+    # each exam once, so exactly one of the two runs does the work.
+    - cron: '0 5 * * *'
+    - cron: '0 6 * * *'
+  workflow_dispatch: {}   # manual test run from the Actions tab
+
+jobs:
+  send-exam-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests pywebpush
+
+      - name: Send today's exam reminders
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_CONTACT_EMAIL: ${{ secrets.VAPID_CONTACT_EMAIL }}
+        run: python scripts/send_exam_reminders.py

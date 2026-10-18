@@ -154,6 +154,13 @@ def init_db():
                 date      TEXT NOT NULL,
                 data      TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS exams (
+                id        TEXT PRIMARY KEY,
+                user_id   TEXT,
+                studentId TEXT NOT NULL,
+                date      TEXT NOT NULL,
+                data      TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS bookings (
                 id        TEXT PRIMARY KEY,
                 user_id   TEXT,
@@ -528,6 +535,38 @@ def push_admin_subscriptions():
                            [admin_row['id']]).fetchall()
     return jsonify([dict(s) for s in subs])
 
+@app.route('/api/push/exams-due')
+def push_exams_due():
+    # Called by exam-reminders.yml, which runs at both 05:00 and 06:00 UTC so
+    # one of them lands on 08:00 Israel time whether it's summer or winter
+    # time. We answer only from 08:00 local, and hand out each exam once
+    # (notifiedAt) — so the earlier run in winter and the later run in summer
+    # are no-ops, and a late-running cron still sends.
+    if request.args.get('token') != CRON_SECRET:
+        return jsonify({'error': 'Unauthorized'}), 401
+    now = portal_core.now_local()
+    if now.hour < 8:
+        return jsonify([])
+    today = now.strftime('%Y-%m-%d')
+    out = []
+    with get_db() as db:
+        rows = db.execute('SELECT id, user_id, data FROM exams WHERE date=?', [today]).fetchall()
+        for r in rows:
+            e = json.loads(r['data'])
+            if e.get('notifiedAt'):
+                continue
+            srow = db.execute('SELECT data FROM students WHERE id=? AND user_id=?', [e['studentId'], r['user_id']]).fetchone()
+            name = json.loads(srow['data']).get('name', 'תלמיד/ה') if srow else 'תלמיד/ה'
+            subj = f" ב{e['subject']}" if e.get('subject') else ''
+            subs = db.execute('SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=?', [r['user_id']]).fetchall()
+            for sub in subs:
+                out.append({**dict(sub), 'title': f'📝 היום ל{name} יש מבחן{subj}',
+                            'body': 'לחצי כדי לשלוח הודעת בהצלחה בווצאפ 🍀',
+                            'url': f'/?exam={e["id"]}', 'tag': f'exam-{e["id"]}'})
+            e['notifiedAt'] = now.isoformat(timespec='seconds')
+            db.execute('UPDATE exams SET data=? WHERE id=?', [json.dumps(e, ensure_ascii=False), r['id']])
+    return jsonify(out)
+
 @app.route('/api/push/booking-notice')
 def push_booking_notice():
     # Used by notify-booking-request.yml: given a booking id, returns the
@@ -769,6 +808,7 @@ def delete_student(sid):
         db.execute('DELETE FROM payments WHERE studentId=? AND user_id=?', [sid, uid()])
         db.execute('DELETE FROM packages WHERE studentId=? AND user_id=?', [sid, uid()])
         db.execute('DELETE FROM bookings WHERE studentId=? AND user_id=?', [sid, uid()])
+        db.execute('DELETE FROM exams    WHERE studentId=? AND user_id=?', [sid, uid()])
     return '', 204
 
 @app.route('/api/students/<sid>/share-link', methods=['GET'])
@@ -831,12 +871,14 @@ def student_portal(token):
             'SELECT data FROM packages WHERE user_id=? AND studentId=?', [owner_id, sid_]).fetchall())
         bookings = rows_to_list(db.execute(
             'SELECT data FROM bookings WHERE user_id=? AND studentId=?', [owner_id, sid_]).fetchall())
+        exams = rows_to_list(db.execute(
+            'SELECT data FROM exams WHERE user_id=? AND studentId=?', [owner_id, sid_]).fetchall())
         settings = load_booking_settings(db, owner_id)
         booking_enabled = settings['enabled'] and student.get('isActive') is not False
         slots = free_slots_for(db, owner_id, student, settings) if booking_enabled else []
         owner = db.execute('SELECT name FROM users WHERE id=?', [owner_id]).fetchone()
     page = portal_core.render_portal(token, student, lessons, payments, packages, bookings, slots, booking_enabled,
-                                     teacher_name=(owner['name'] if owner else '') or '')
+                                     teacher_name=(owner['name'] if owner else '') or '', exams=exams)
     return page, 200, {'Content-Type': 'text/html; charset=utf-8'}
 
 @app.route('/portal/<token>/book', methods=['POST'])
@@ -991,6 +1033,46 @@ def delete_package(pid):
     if err: return err
     with get_db() as db:
         db.execute('DELETE FROM packages WHERE id=? AND user_id=?', [pid, uid()])
+    return '', 204
+
+# ── Exams (מבחנים) ───────────────────────────────────────────────────────────────
+# {id, studentId, date, subject, notes, createdAt, notifiedAt, wishedAt}
+# notifiedAt: set when the 8:00 push for it was handed out (see push_exams_due).
+# wishedAt: set when the teacher opened the "good luck" WhatsApp for it.
+@app.route('/api/exams', methods=['GET'])
+def get_exams():
+    err = require_auth()
+    if err: return err
+    with get_db() as db:
+        rows = db.execute('SELECT data FROM exams WHERE user_id=? ORDER BY date', [uid()]).fetchall()
+    return jsonify(rows_to_list(rows))
+
+@app.route('/api/exams', methods=['POST'])
+def add_exam():
+    err = require_auth()
+    if err: return err
+    e = request.json
+    with get_db() as db:
+        db.execute('INSERT INTO exams(id,user_id,studentId,date,data) VALUES (?,?,?,?,?)',
+                   [e['id'], uid(), e.get('studentId', ''), e.get('date', ''), json.dumps(e, ensure_ascii=False)])
+    return jsonify(e), 201
+
+@app.route('/api/exams/<eid>', methods=['PUT'])
+def update_exam(eid):
+    err = require_auth()
+    if err: return err
+    e = request.json
+    with get_db() as db:
+        db.execute('UPDATE exams SET studentId=?, date=?, data=? WHERE id=? AND user_id=?',
+                   [e.get('studentId', ''), e.get('date', ''), json.dumps(e, ensure_ascii=False), eid, uid()])
+    return jsonify(e)
+
+@app.route('/api/exams/<eid>', methods=['DELETE'])
+def delete_exam(eid):
+    err = require_auth()
+    if err: return err
+    with get_db() as db:
+        db.execute('DELETE FROM exams WHERE id=? AND user_id=?', [eid, uid()])
     return '', 204
 
 # ── Lessons ───────────────────────────────────────────────────────────────────
