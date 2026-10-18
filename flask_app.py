@@ -296,14 +296,12 @@ def list_verticals():
 
 @app.route('/api/account', methods=['PUT'])
 def update_account():
-    # Change profession / gender later (account menu). Only terminology,
-    # feature flags and defaults follow — existing data is untouched.
+    # Account menu → "העסק שלי": gender and custom client fields. The
+    # profession is fixed at signup for now, so it isn't accepted here.
     err = require_auth()
     if err: return err
     body = request.json or {}
     with get_db() as db:
-        if 'profession' in body:
-            db.execute('UPDATE users SET profession=? WHERE id=?', [verticals.normalize(body['profession']), uid()])
         if 'gender' in body:
             db.execute('UPDATE users SET gender=? WHERE id=?', [verticals.normalize_gender(body['gender']), uid()])
         if 'customFields' in body:

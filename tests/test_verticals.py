@@ -178,7 +178,7 @@ class MigrationAndApiTests(unittest.TestCase):
         me = c.get('/api/auth/me').json
         self.assertEqual(me['profession'], 'tutor')
 
-    def test_register_with_profession_and_gender_then_change(self):
+    def test_register_with_profession_and_gender_profession_is_locked(self):
         c = self.app_mod.app.test_client()
         r = c.post('/api/auth/register', json={'email': 'barber@x.com', 'password': 'secret123', 'name': 'דני', 'profession': 'barber', 'gender': 'm'})
         if r.status_code == 202:  # needs admin approval — approve directly
@@ -191,9 +191,9 @@ class MigrationAndApiTests(unittest.TestCase):
         self.assertEqual(r.json['gender'], 'm')
         self.assertFalse(r.json['vertical']['features']['exams'])
         r = c.put('/api/account', json={'profession': 'tutor', 'gender': 'f'})
-        self.assertEqual((r.json['profession'], r.json['gender']), ('tutor', 'f'))
+        self.assertEqual((r.json['profession'], r.json['gender']), ('barber', 'f'))  # gender only
         r = c.put('/api/account', json={'profession': 'hacker', 'gender': '?'})
-        self.assertEqual((r.json['profession'], r.json['gender']), ('tutor', 'f'))
+        self.assertEqual((r.json['profession'], r.json['gender']), ('barber', 'f'))
 
     def test_custom_fields_default_then_saved(self):
         c = self.app_mod.app.test_client()
@@ -207,7 +207,7 @@ class MigrationAndApiTests(unittest.TestCase):
         self.assertEqual([f['key'] for f in r.json['customFields']], ['style'])
         r = c.put('/api/account', json={'customFields': [{'key': 'style', 'label': 'סגנון'}, {'label': 'אלרגיות'}]})
         self.assertEqual([f['label'] for f in r.json['customFields']], ['סגנון', 'אלרגיות'])
-        r = c.put('/api/account', json={'profession': 'tutor'})  # saved fields stay with the business
+        r = c.put('/api/account', json={'gender': 'm'})  # saved fields stay with the business
         self.assertEqual(len(r.json['customFields']), 2)
         self.assertEqual(c.get('/api/auth/me').json['customFields'][1]['label'], 'אלרגיות')
 

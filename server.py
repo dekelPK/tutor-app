@@ -164,8 +164,7 @@ def update_account():
     if err: return err
     body = request.json or {}
     c = get_db()
-    if 'profession' in body:
-        c.execute('UPDATE users SET profession=? WHERE id=?', [verticals.normalize(body['profession']), session['user_id']])
+    # The profession is fixed at signup for now (see flask_app.update_account).
     if 'gender' in body:
         c.execute('UPDATE users SET gender=? WHERE id=?', [verticals.normalize_gender(body['gender']), session['user_id']])
     if 'customFields' in body:
