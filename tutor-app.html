@@ -1661,6 +1661,9 @@
     .ib-pill-go { background: var(--success); border-color: var(--success); color: #fff; }
     .ib-pill-go:hover { color: #fff; background: #059669; }
     .ib-pill-done { color: var(--success); }
+    /* state label, not a button: has the "good luck" message gone out? */
+    .ib-state { flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    .ib-state.is-done { color: var(--success); }
     .ib-amount { font-weight: 700; color: var(--danger); font-size: 14px; flex-shrink: 0; }
     .ib-more { background: none; border: none; color: var(--text-muted); font: inherit; font-size: 12.5px; cursor: pointer; padding: 6px; }
     .ib-more:hover { color: var(--primary); }
@@ -4434,8 +4437,10 @@ function renderInbox() {
             <div class="ib-sub">${isToday ? 'היום!' : `${getDayName(new Date(e.date + 'T00:00:00').getDay())} ${formatDate(e.date).slice(0, 5)} · ${examDayLabel(e.date)}`}</div>
           </div>
           ${isToday ? (e.wishedAt
-            ? `<button class="ib-pill ib-pill-done" onclick="openGoodLuck('${e.id}')">✓ נשלח</button>`
-            : `<button class="ib-pill ib-pill-go" onclick="openGoodLuck('${e.id}')">${g('שלחי', 'שלח')} בהצלחה</button>`) : ''}
+            ? `<button class="ib-pill ib-pill-done" onclick="openGoodLuck('${e.id}')">✓ נשלחה הודעה</button>`
+            : `<button class="ib-pill ib-pill-go" onclick="openGoodLuck('${e.id}')">${g('שלחי', 'שלח')} בהצלחה</button>`)
+            // later this week: just the state of the "good luck" message (it goes out on the exam day)
+            : `<span class="ib-state ${e.wishedAt ? 'is-done' : ''}">${e.wishedAt ? '✓ נשלחה הודעה' : 'טרם נשלחה הודעה'}</span>`}
         </div>`;
       }).join('')}
     </div>`);
