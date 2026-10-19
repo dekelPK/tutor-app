@@ -37,5 +37,7 @@ def push_text(m):
     preview = (m.get('message') or '').replace('\n', ' ')
     if len(preview) > 90:
         preview = preview[:90] + '…'
+    if m.get('kind') == 'subscription':
+        return {'title': '💳 בקשה להמשך מנוי', 'body': f"{m['name']} · {m['contact']}\n{preview}"}
     return {'title': '📬 פנייה חדשה מדף הנחיתה',
             'body': f"{m['name']} · {m['contact']}" + (f'\n{preview}' if preview else '')}

@@ -37,8 +37,8 @@ def main():
     # Explicitly labeled as an admin-only notification so it reads differently
     # from the regular "you have a lesson today" pushes on the same device.
     payload = json.dumps({
-        'title': '🔔 התראת מנהל — בקשת הרשמה חדשה',
-        'body': f'{SIGNUP_NAME} ({SIGNUP_EMAIL}) ביקש/ה להירשם. לחצי לאישור בעמוד הניהול.',
+        'title': '🔔 התראת מנהל — נרשם/ה משתמש/ת חדש/ה',
+        'body': f'{SIGNUP_NAME} ({SIGNUP_EMAIL}) נרשם/ה — שבוע הניסיון התחיל.',
         'url': '/',
         'tag': 'admin-signup',
     })

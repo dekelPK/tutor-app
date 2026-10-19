@@ -1,0 +1,34 @@
+name: Send welcome email
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: 'New user email'
+        required: true
+      name:
+        description: 'New user name'
+        required: false
+      trial_ends:
+        description: 'Trial end date (YYYY-MM-DD)'
+        required: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Send welcome email
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
+          WELCOME_EMAIL: ${{ inputs.email }}
+          WELCOME_NAME: ${{ inputs.name }}
+          TRIAL_ENDS: ${{ inputs.trial_ends }}
+        run: python scripts/send_welcome_email.py

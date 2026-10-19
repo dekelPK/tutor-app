@@ -669,6 +669,36 @@
     }
     #announcement-banner .ann-close:hover { background: rgba(255,255,255,0.35); }
 
+    /* ===== FREE TRIAL / SUBSCRIPTION ===== */
+    #trial-banner { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+      background: #fffbeb; color: #92400e; border-bottom: 1px solid #fde68a; padding: 8px 16px; font-size: 13.5px; font-weight: 700; }
+    #trial-banner button { border: none; background: #f59e0b; color: #fff; font: inherit; font-size: 12.5px; padding: 5px 14px; border-radius: 999px; cursor: pointer; }
+    [data-theme="dark"] #trial-banner { background: #2a210d; color: #fcd34d; border-color: #6b4f12; }
+    .sub-wall { position: fixed; inset: 0; z-index: 3000; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 24px 16px;
+      background: radial-gradient(120% 90% at 30% 0%, #60a5fa 0%, #2563eb 45%, #1e3a8a 100%); }
+    .sub-card { margin: auto; width: 100%; max-width: 420px; background: var(--card); color: var(--text); border-radius: 24px; padding: 32px 26px 22px;
+      text-align: center; box-shadow: 0 30px 70px rgba(5,15,50,.35); }
+    .sub-logo { width: 64px; height: 64px; border-radius: 18px; background: var(--primary); color: #fff; font: 800 40px Rubik, sans-serif;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+    .sub-card h2 { margin: 0 0 8px; font-size: 24px; }
+    .sub-card p { margin: 0 0 16px; color: var(--text-muted); line-height: 1.6; }
+    .sub-plan { display: inline-block; background: var(--primary-light); color: var(--primary); font-weight: 800; border-radius: 999px; padding: 6px 16px; margin-bottom: 16px; }
+    .sub-card textarea { width: 100%; box-sizing: border-box; margin-bottom: 10px; font: inherit; font-size: 14px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); resize: none; text-align: right; }
+    .sub-cta { width: 100%; padding: 13px; font-size: 16px; }
+    .sub-sent { background: var(--success-light); color: #047857; border-radius: 14px; padding: 14px; font-weight: 700; margin-bottom: 10px; line-height: 1.6; }
+    .sub-sent small { font-weight: 500; }
+    .sub-logout { background: none; border: none; color: var(--text-muted); text-decoration: underline; margin-top: 16px; cursor: pointer; font: inherit; font-size: 13px; }
+    /* user rows now carry several actions (payment, WhatsApp request, suspend) — they sit on their own line */
+    .adm-user { flex-wrap: wrap; }
+    .adm-user .adm-main { flex: 1; min-width: 0; }
+    .adm-user .adm-actions { width: 100%; padding-inline-start: 56px; flex-wrap: wrap; }
+    .adm-pill-warn { background: #fef3c7; color: #b45309; }
+    .adm-pill-bad { background: #fee2e2; color: #b91c1c; }
+    [data-theme="dark"] .adm-pill-warn { background: #3a2a0c; color: #fcd34d; }
+    [data-theme="dark"] .adm-pill-bad { background: #450a0a; color: #fca5a5; }
+    .adm-pay-hist { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+    .adm-pay-hist td { padding: 6px 4px; border-bottom: 1px solid var(--border); }
+
     /* ===== INSTALL APP BANNER ===== */
     #install-banner {
       background: linear-gradient(135deg, #0891b2, #0e7490);
@@ -2029,6 +2059,13 @@
           </div>
         </div>
         <div class="auth-field">
+          <label>טלפון</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">📱</span>
+            <input type="tel" id="auth-phone-reg" placeholder="05X-XXXXXXX" autocomplete="tel" inputmode="tel" style="direction:ltr;text-align:right" onkeydown="if(event.key==='Enter')doRegister()">
+          </div>
+        </div>
+        <div class="auth-field">
           <label>אימייל</label>
           <div class="auth-input-wrap">
             <span class="auth-input-icon">✉️</span>
@@ -2044,7 +2081,7 @@
           </div>
         </div>
         <button class="btn-auth" id="register-btn" onclick="doRegister()">יצירת חשבון</button>
-        <div class="auth-note">ההרשמה דורשת אישור מנהל המערכת לפני שתוכל/י להתחבר</div>
+        <div class="auth-note">🎁 שבוע ניסיון חינם — בלי התחייבות ובלי כרטיס אשראי</div>
       </div>
 
       <div id="auth-error" class="auth-error">⚠️ <span id="auth-error-text"></span></div>
@@ -2068,6 +2105,10 @@
     </div>
   </header>
   <div class="acct-menu" id="acct-menu" role="menu"></div>
+
+  <!-- FREE TRIAL / SUBSCRIPTION: days-left strip, and the lock screen once it's over -->
+  <div id="trial-banner" style="display:none"></div>
+  <div id="sub-wall" class="sub-wall" style="display:none"></div>
 
   <!-- ANNOUNCEMENT (broadcast banner, shown once per announcement id) -->
   <div id="announcement-banner" style="display:none"></div>
@@ -2272,6 +2313,15 @@
         <aside class="adm-side">
           <section class="card dx-card">
             <div class="dx-card-head">
+              <h3 class="dx-title"><span class="dx-ic dx-ic-blue">💳</span>תשלומים בביט</h3>
+            </div>
+            <p class="adm-hint">נכנס להודעת "בקשת תשלום" שנשלחת בוואטסאפ. אם יש קישור לתשלום — הוא נשלח; אחרת, מספר הביט.</p>
+            <div class="form-group"><label>קישור לתשלום (לא חובה)</label><input type="text" inputmode="url" id="admin-bit-link" placeholder="https://..." style="direction:ltr"></div>
+            <div class="form-group"><label>מספר ביט</label><input type="tel" id="admin-bit-phone" placeholder="05X-XXXXXXX" style="direction:ltr;text-align:right"></div>
+            <button class="btn btn-primary btn-sm" onclick="saveAdminBillingSettings()">שמירה</button>
+          </section>
+          <section class="card dx-card">
+            <div class="dx-card-head">
               <h3 class="dx-title"><span class="dx-ic dx-ic-blue">🧪</span>חשבונות ניסיון</h3>
             </div>
             <p class="adm-hint">חשבון מוכן עם לקוחות ותורים לדוגמה — כדי לראות איך האפליקציה נראית לכל מקצוע. יצירה מחדש מאפסת את החשבון ונותנת סיסמה חדשה.</p>
@@ -2417,7 +2467,11 @@ async function loadData() {
     // older server) must never block the core app from loading.
     const optional = (url, fallback) => fetch(url).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
     const [s, l, p, pk, bk, bs, ex] = await Promise.all([
-      fetch('/api/students').then(r => { if (r.status === 401) { showAuthOverlay(); throw new Error('unauth'); } return r.json(); }),
+      fetch('/api/students').then(async r => {
+        if (r.status === 401) { showAuthOverlay(); throw new Error('unauth'); }
+        if (r.status === 402) { showSubWall((await r.json()).subscription); throw new Error('unauth'); }
+        return r.json();
+      }),
       fetch('/api/lessons').then(r => r.json()),
       fetch('/api/payments').then(r => r.json()),
       optional('/api/packages', []),
@@ -2474,6 +2528,7 @@ async function apiCall(method, url, body) {
   if (body !== undefined) opts.body = JSON.stringify(body);
   const r = await fetch(url, opts);
   if (r.status === 401) { showAuthOverlay(); throw new Error('Unauthorized'); }
+  if (r.status === 402) { showSubWall((await r.json()).subscription); throw new Error('subscription'); }
   if (!r.ok) throw new Error(`${method} ${url} → ${r.status}`);
   return r.status !== 204 ? r.json() : null;
 }
@@ -2751,6 +2806,7 @@ async function doLogin() {
     if (!r.ok) { showAuthError(data.error || 'שגיאה בהתחברות'); return; }
     applyAccount(data);
     hideAuthOverlay(data.name || data.email, data.isAdmin);
+    if (setSubscription(data.subscription)) { showSubWall(); return; }
     await loadData();
     showPage('dashboard');
   } finally {
@@ -2798,13 +2854,15 @@ async function doRegister() {
   const name     = document.getElementById('auth-name').value.trim();
   const email    = document.getElementById('auth-email-reg').value.trim();
   const password = document.getElementById('auth-password-reg').value;
+  const phone    = document.getElementById('auth-phone-reg').value.trim();
   if (!email || !password) { showAuthError('נא למלא אימייל וסיסמה'); return; }
+  if (phone.replace(/\D/g, '').length < 9) { showAuthError('נא להזין מספר טלפון'); return; }
   const btn = document.getElementById('register-btn');
   btn.disabled = true; btn.textContent = 'יוצר חשבון...';
   try {
     const r = await fetch('/api/auth/register', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({name, email, password, profession: _profPick.profession, gender: _profPick.gender,
+      body: JSON.stringify({name, email, password, phone, profession: _profPick.profession, gender: _profPick.gender,
         plan: _signup.plan, coupon: document.getElementById('auth-coupon').value.trim()})
     });
     const data = await r.json();
@@ -2816,15 +2874,91 @@ async function doRegister() {
     if (!r.ok) { showAuthError(data.error || 'שגיאה בהרשמה'); return; }
     applyAccount(data);
     hideAuthOverlay(data.name || data.email, data.isAdmin);
+    if (setSubscription(data.subscription)) { showSubWall(); return; }
     await loadData();
     showPage('dashboard');
   } finally {
     btn.disabled = false; btn.textContent = 'יצירת חשבון';
   }
 }
+// ===== SUBSCRIPTION (free trial → Bit payment that the admin records) =====
+// The server answers 402 once the trial / paid period is over; until then a
+// strip shows the days left. "אני רוצה להמשיך" lands in the admin's messages.
+let _sub = null;
+function setSubscription(s) {
+  _sub = s || null;
+  renderTrialBanner();
+  return _sub?.state === 'expired';
+}
+function subPlanLine() {
+  if (!_sub?.planName) return '';
+  return `מסלול ${escapeHtml(_sub.planName)}${_sub.price != null ? ` · ₪${_sub.price} לחודש` : ''}`;
+}
+function subFormHtml() {
+  return `<textarea id="sub-msg" rows="2" maxlength="500" placeholder="רוצה להוסיף משהו? (לא חובה — למשל: מעדיף/ה מנוי שנתי)"></textarea>
+    <button class="btn btn-primary sub-cta" id="sub-btn" onclick="sendSubRequest()">אני רוצה להמשיך 💙</button>`;
+}
+function subSentHtml(at) {
+  return `<div class="sub-sent">✓ הבקשה נשלחה ${relativeTime(at)}<br>
+      <small>נשלח לך בקשת תשלום בביט בוואטסאפ. מיד אחרי התשלום החשבון ממשיך לעבוד כרגיל.</small></div>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('sub-req').innerHTML=subFormHtml()">שליחה שוב</button>`;
+}
+function subRequestBlock() {
+  return `${subPlanLine() ? `<div class="sub-plan">${subPlanLine()}</div>` : ''}
+    <div id="sub-req">${_sub?.requestedAt ? subSentHtml(_sub.requestedAt) : subFormHtml()}</div>`;
+}
+function showSubWall(s) {
+  if (s) _sub = { ..._sub, ...s };
+  const trial = _sub?.reason !== 'subscription';
+  const el = document.getElementById('sub-wall');
+  el.innerHTML = `<div class="sub-card">
+    <div class="sub-logo">ל</div>
+    <h2>${trial ? 'שבוע הניסיון הסתיים' : 'תקופת המנוי הסתיימה'}</h2>
+    <p>${trial ? 'מקווים שנהנית מלוזי 💙 ' : ''}כל הנתונים שלך שמורים. כדי להמשיך, שלח/י לנו בקשה — ונשלח לך בקשת תשלום בביט.</p>
+    ${subRequestBlock()}
+    <button class="sub-logout" onclick="doLogout()">יציאה מהחשבון</button>
+  </div>`;
+  el.style.display = 'flex';
+  closeModal();
+  hideLoading();
+}
+function openSubRequestModal() {
+  openModal('המשך המנוי', `<p class="pkg-sub" style="margin:0 0 14px">רוצה להמשיך עם לוזי? שלח/י בקשה — נשלח לך בקשת תשלום בביט, ואחרי התשלום הכל ממשיך כרגיל.</p>
+    <div style="text-align:center">${subRequestBlock()}</div>`);
+}
+async function sendSubRequest() {
+  const btn = document.getElementById('sub-btn');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/subscription/request', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: document.getElementById('sub-msg')?.value || '' }) });
+    if (!r.ok) throw new Error(r.status);
+    _sub = { ..._sub, requestedAt: (await r.json()).requestedAt };
+    document.getElementById('sub-req').innerHTML = subSentHtml(_sub.requestedAt);
+    renderTrialBanner();
+  } catch (e) {
+    showToast('השליחה לא הצליחה — נסו שוב', 'error');
+    btn.disabled = false;
+  }
+}
+function renderTrialBanner() {
+  const el = document.getElementById('trial-banner');
+  if (!el) return;
+  const s = _sub, n = s?.daysLeft;
+  const days = n === 1 ? 'יום אחד' : `${n} ימים`;
+  let txt = '';
+  if (s?.state === 'trial') txt = n <= 0 ? '🎁 שבוע הניסיון מסתיים היום' : `🎁 שבוע ניסיון · ${n === 1 ? 'נשאר' : 'נשארו'} ${days}`;
+  else if (s?.state === 'active' && n <= 5) txt = n === 0 ? '⏳ המנוי מסתיים היום' : `⏳ המנוי מסתיים בעוד ${days}`;
+  if (!txt) { el.style.display = 'none'; return; }
+  el.innerHTML = `<span>${txt}</span><button onclick="openSubRequestModal()">${s.requestedAt ? '✓ הבקשה נשלחה' : 'להמשך המנוי'}</button>`;
+  el.style.display = 'flex';
+}
+
 async function doLogout() {
   await fetch('/api/auth/logout', {method: 'POST'});
   _students = []; _lessons = []; _payments = [];
+  setSubscription(null);
+  document.getElementById('sub-wall').style.display = 'none';
   showAuthOverlay();
   showAuthTab('login');
 }
@@ -4394,6 +4528,98 @@ function adminPlanPill(u) {
   if (!u.plan) return '<span class="adm-pill" title="הצטרפו לפני המסלולים בתשלום">🎉 חינם · מצטרפים ראשונים</span>';
   return `<span class="adm-pill" style="background:var(--primary-light);color:var(--primary)" title="${u.coupon ? 'קופון ' + escapeHtml(u.coupon) : ''}">💳 ${escapeHtml(_signup.pricing?.plans.find(p => p.id === u.plan)?.name || u.plan)} · ₪${u.monthlyPrice ?? '?'}${u.coupon ? ' 🎁' : ''}</span>`;
 }
+// Trial / paid status next to the plan pill.
+function adminSubPill(u) {
+  const s = u.subscription;
+  if (!s || u.isAdmin || s.state === 'free') return '';
+  const d = iso => iso ? formatDate(iso.slice(0, 10)).slice(0, 5) : '';
+  const req = s.requestedAt ? ' <span class="adm-pill adm-pill-warn">🙋 ביקש/ה להמשיך</span>' : '';
+  if (s.state === 'trial') return `<span class="adm-pill adm-pill-warn">🎁 ניסיון עד ${d(s.trialEnds)}</span>${req}`;
+  if (s.state === 'active') return `<span class="adm-pill adm-pill-live">✓ שולם עד ${formatDate(s.paidUntil.slice(0, 10))}</span>${req}`;
+  return `<span class="adm-pill adm-pill-bad">🔒 ${s.reason === 'trial' ? 'הניסיון' : 'המנוי'} הסתיים</span>${req}`;
+}
+function adminPhoneLine(u) {
+  if (!u.phone) return '';
+  const intl = phoneToIntl(u.phone);
+  return `<div class="adm-email"><a href="tel:${escapeHtml(u.phone)}" dir="ltr">${escapeHtml(u.phone)}</a>${intl ? ` · <a href="https://wa.me/${intl}" target="_blank" rel="noopener">💬 ווצאפ</a>` : ''}</div>`;
+}
+// "💬 בקשת תשלום": WhatsApp to the user with the amount + the Bit link/number.
+async function adminSendPaymentRequest(userId) {
+  const r = await fetch(`/api/admin/users/${userId}/payment-request`);
+  if (!r.ok) { showToast('שגיאה', 'error'); return; }
+  const d = await r.json();
+  if (!d.settings.payLink && !d.settings.bitPhone) {
+    showToast('קודם צריך למלא קישור ביט או מספר ביט בכרטיס "תשלומים בביט"', 'warning');
+    document.getElementById('admin-bit-link')?.focus();
+    return;
+  }
+  const intl = phoneToIntl(d.phone);
+  if (!intl) { showToast('אין מספר טלפון למשתמש/ת הזה/ו', 'warning'); return; }
+  window.open(`https://wa.me/${intl}?text=${encodeURIComponent(d.text)}`, '_blank');
+}
+function adminPaymentForm(u) {
+  const price = u.monthlyPrice ?? '';
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>סכום ששולם (₪)</label><input type="number" id="ap-amount" min="0" value="${price}"></div>
+      <div class="form-group"><label>תאריך התשלום</label><input type="date" id="ap-date" value="${isoDate(new Date())}"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>תקופה</label><select id="ap-period" onchange="adminPaymentPeriod(${price || 0})">
+        <option value="month">חודשי</option><option value="year">שנתי</option><option value="custom">מספר חודשים…</option></select></div>
+      <div class="form-group" id="ap-months-wrap" style="display:none"><label>כמה חודשים</label><input type="number" id="ap-months" min="1" max="36" value="3"></div>
+    </div>
+    <div class="form-group"><label>הערה (לא חובה)</label><input type="text" id="ap-note" maxlength="200" placeholder="למשל: ביט 19/10"></div>`;
+}
+function adminPaymentPeriod(monthly) {
+  const p = document.getElementById('ap-period').value;
+  document.getElementById('ap-months-wrap').style.display = p === 'custom' ? '' : 'none';
+  if (monthly) document.getElementById('ap-amount').value = p === 'year' ? monthly * 12 : p === 'custom' ? monthly * (+document.getElementById('ap-months').value || 1) : monthly;
+}
+function openAdminPaymentModal(userId) {
+  const u = _adminUsers.find(x => x.id === userId);
+  if (!u) return;
+  const hist = (u.billing || []).slice().reverse();
+  const periodLabel = b => b.period === 'year' ? 'שנתי' : b.period === 'month' ? 'חודשי' : `${b.months} חודשים`;
+  openModal(`💳 תשלום · ${u.name || u.email}`, `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">${adminPlanPill(u)} ${adminSubPill(u)}</div>
+    ${adminPaymentForm(u)}
+    ${hist.length ? `<div class="adm-preview-label" style="margin-top:6px">תשלומים קודמים</div>
+      <table class="adm-pay-hist">${hist.map(b => `<tr><td>${formatDate(b.paidAt)}</td><td><b>₪${b.amount}</b></td><td>${periodLabel(b)}</td>
+        <td>עד ${formatDate(b.until)}</td><td class="text-muted">${escapeHtml(b.note || '')}</td></tr>`).join('')}</table>` : ''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+      <button class="btn btn-ghost btn-xs" onclick="adminSetSubscription('${u.id}', {action:'trial', days:7})">🎁 עוד 7 ימי ניסיון</button>
+      <button class="btn btn-ghost btn-xs" onclick="adminSetSubscription('${u.id}', {action:'free'})">חשבון חינם (בלי חיוב)</button>
+    </div>`, async () => {
+      const period = document.getElementById('ap-period').value;
+      const ok = await adminSetSubscription(u.id, { action: 'payment', amount: document.getElementById('ap-amount').value, period,
+        months: document.getElementById('ap-months').value, paidAt: document.getElementById('ap-date').value, note: document.getElementById('ap-note').value });
+      if (ok) showToast(`התשלום נרשם — המנוי פעיל עד ${formatDate(ok.subscription.paidUntil)} ✓`, 'success');
+    });
+  document.getElementById('modal-save-btn').textContent = 'רישום התשלום ופתיחת המנוי';
+}
+async function adminSetSubscription(userId, body) {
+  const r = await fetch(`/api/admin/users/${userId}/subscription`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (!r.ok) { showToast(d.error || 'שגיאה', 'error'); return null; }
+  _adminUsers = _adminUsers.map(x => x.id === userId ? { ...x, subscription: d.subscription, billing: d.billing } : x);
+  closeModal();
+  filterAdminUsers(document.getElementById('admin-user-search')?.value);
+  if (body.action !== 'payment') showToast(body.action === 'free' ? 'החשבון הוגדר כחינם' : 'הניסיון הוארך ב-7 ימים', 'success');
+  return d;
+}
+async function loadAdminBillingSettings() {
+  try {
+    const s = await (await fetch('/api/admin/billing-settings')).json();
+    document.getElementById('admin-bit-link').value = s.payLink || '';
+    document.getElementById('admin-bit-phone').value = s.bitPhone || '';
+  } catch (e) { /* stays empty */ }
+}
+async function saveAdminBillingSettings() {
+  const r = await fetch('/api/admin/billing-settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payLink: document.getElementById('admin-bit-link').value, bitPhone: document.getElementById('admin-bit-phone').value }) });
+  if (r.ok) { const s = await r.json(); document.getElementById('admin-bit-link').value = s.payLink; showToast('נשמר ✓', 'success'); }
+  else showToast('שגיאה בשמירה', 'error');
+}
 // Messages from the contact form on /welcome — the admin also gets a push for each.
 async function loadAdminContacts() {
   const el = document.getElementById('admin-contact-list');
@@ -4409,11 +4635,11 @@ async function loadAdminContacts() {
       return `<a href="tel:${escapeHtml(digits)}" dir="ltr">${escapeHtml(c)}</a>${intl ? ` · <a href="https://wa.me/${intl}" target="_blank" rel="noopener">💬 ווצאפ</a>` : ''}`;
     };
     el.innerHTML = `<section class="card dx-card adm-pending">
-      <div class="dx-card-head"><h3 class="dx-title"><span class="dx-ic dx-ic-blue">📬</span>פניות מדף הנחיתה</h3>${open ? `<span class="dx-count dx-count-warn">${open}</span>` : ''}</div>
+      <div class="dx-card-head"><h3 class="dx-title"><span class="dx-ic dx-ic-blue">📬</span>פניות ובקשות</h3>${open ? `<span class="dx-count dx-count-warn">${open}</span>` : ''}</div>
       ${list.slice(0, 20).map(m => `<div class="adm-prow" style="${m.handled ? 'opacity:.55' : ''}">
         <span class="adm-avatar" style="background:${avatarColorFor(m.contact)}">${escapeHtml((m.name || '?')[0])}</span>
-        <div class="adm-main"><div class="adm-name">${escapeHtml(m.name)}</div>
-          <div class="adm-email">${link(m.contact || '')}</div>
+        <div class="adm-main"><div class="adm-name">${escapeHtml(m.name)} ${m.kind === 'subscription' ? '<span class="adm-pill adm-pill-warn">💳 בקשה להמשך מנוי</span>' : '<span class="adm-pill">דף הנחיתה</span>'}</div>
+          <div class="adm-email">${(m.contact || '').split(' · ').map(link).join(' · ')}</div>
           ${m.message ? `<div style="font-size:14px;margin-top:4px;white-space:pre-wrap">${escapeHtml(m.message)}</div>` : ''}
           <div class="adm-meta">${relativeTime(m.created_at)}</div></div>
         <div class="adm-actions"><button class="btn ${m.handled ? 'btn-ghost' : 'btn-success'} btn-sm" onclick="markContactHandled('${m.id}', ${m.handled ? 'false' : 'true'})">${m.handled ? '↩ פתוח' : '✓ טופל'}</button></div>
@@ -4486,8 +4712,9 @@ function renderAdminUsersList(users, isFiltered) {
       <div class="adm-main">
         <div class="adm-name">${escapeHtml(u.name) || '(ללא שם)'} ${u.isAdmin ? '<span class="adm-pill">מנהלת</span>' : ''}
           ${(() => { const v = (_profPick.list || []).find(x => x.id === u.profession); return v ? `<span class="adm-pill">${v.icon} ${escapeHtml(v.label[u.gender === 'm' ? 'm' : 'f'])}</span>` : ''; })()}
-          ${adminPlanPill(u)}</div>
+          ${adminPlanPill(u)} ${adminSubPill(u)}</div>
         <div class="adm-email">${escapeHtml(u.email)}</div>
+        ${adminPhoneLine(u)}
         <div class="adm-stats">
           <span><b>${u.activeStudentCount}</b> ${t('clients')}${u.studentCount !== u.activeStudentCount ? ` <small>(${u.studentCount} סה״כ)</small>` : ''}</span>
           <span><b>${u.lessonsThisMonth || 0}</b> ${t('appointments')} החודש</span>
@@ -4497,6 +4724,8 @@ function renderAdminUsersList(users, isFiltered) {
         <div id="admin-user-students-${u.id}" class="adm-students" style="display:none"></div>
       </div>
       <div class="adm-actions">
+        ${!u.isAdmin && (u.plan || u.subscription?.state !== 'free') ? `<button class="btn btn-ghost btn-xs" onclick="adminSendPaymentRequest('${u.id}')">💬 בקשת תשלום</button>
+          <button class="btn ${u.subscription?.state === 'expired' || u.subscription?.requestedAt ? 'btn-success' : 'btn-ghost'} btn-xs" onclick="openAdminPaymentModal('${u.id}')">💳 תשלום</button>` : ''}
         <button class="btn btn-ghost btn-xs" onclick="toggleAdminUserStudents('${u.id}', this)">${t('clients')} ▾</button>
         ${!u.isAdmin ? `<button class="btn btn-ghost btn-xs text-danger" onclick="adminSuspendUser('${u.id}', '${escapeHtml(u.name || u.email).replace(/'/g, '&#39;')}')">השבתה</button>` : ''}
       </div>
@@ -6244,7 +6473,7 @@ async function renderAdminPage() {
   await loadVerticalList(); // user rows show each profession's label
   if (!_signup.pricing) { try { _signup.pricing = await (await fetch('/api/pricing')).json(); } catch (e) { /* pills fall back to the plan id */ } }
   renderAdminDemoList();
-  await Promise.all([loadAdminStats(), loadAdminPending(), loadAdminContacts(), loadAdminUsers(), loadAdminAnnouncementIntoForm()]);
+  await Promise.all([loadAdminStats(), loadAdminPending(), loadAdminContacts(), loadAdminUsers(), loadAdminAnnouncementIntoForm(), loadAdminBillingSettings()]);
 }
 
 function avatarColorFor(key) {
@@ -6475,6 +6704,7 @@ async function initApp() {
       const user = await r.json();
       applyAccount(user);
       hideAuthOverlay(user.name || user.email, user.isAdmin);
+      if (setSubscription(user.subscription)) { showSubWall(); return; }
     } else {
       hideLoading();
       showAuthOverlay();

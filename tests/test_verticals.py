@@ -182,6 +182,34 @@ class PortalTests(unittest.TestCase):
             self.assertNotIn(text, page)
 
 
+class SubscriptionTests(unittest.TestCase):
+    def test_states(self):
+        import subscription as sub
+        from datetime import datetime
+        now = datetime(2026, 10, 19, 12, 0)
+        u = lambda **k: {'email': 'a@x.com', 'trial_ends': None, 'paid_until': None, **k}
+        self.assertEqual(sub.status(u(), now=now)['state'], 'free')
+        self.assertEqual(sub.status(u(trial_ends='2026-10-26T12:00:00'), now=now)['daysLeft'], 7)
+        self.assertEqual(sub.status(u(trial_ends='2026-10-19T11:00:00'), now=now)['state'], 'expired')
+        self.assertEqual(sub.status(u(trial_ends='2026-10-01T00:00:00', paid_until='2026-10-19'), now=now)['state'], 'active')
+        self.assertEqual(sub.status(u(paid_until='2026-10-18'), now=now)['reason'], 'subscription')
+        self.assertEqual(sub.status(u(email='demo.tutor@luzi.test', trial_ends='2020-01-01T00:00:00'), now=now)['state'], 'free')
+        self.assertEqual(sub.status(u(email='Boss@x.com', paid_until='2020-01-01'), 'boss@x.com', now)['state'], 'free')
+
+    def test_payments_stack_and_months_clamp(self):
+        import subscription as sub, json
+        from datetime import datetime
+        now = datetime(2026, 1, 31, 9, 0)
+        billing, until = sub.record_payment({'paid_until': None}, {'amount': 29, 'period': 'month'}, now)
+        self.assertEqual(until, '2026-02-27')  # Jan 31 + 1 month → Feb 28, minus a day
+        billing, until = sub.record_payment({'paid_until': until, 'billing': billing}, {'amount': 29, 'period': 'custom', 'months': 3}, now)
+        self.assertEqual(until, '2026-05-27')  # early renewal stacks on the current period
+        self.assertEqual(len(json.loads(billing)), 2)
+        self.assertRaises(ValueError, sub.record_payment, {}, {'amount': 29, 'period': 'custom', 'months': 0}, now)
+        self.assertEqual(sub.normalize_phone('054-123 4567'), '0541234567')
+        self.assertRaises(ValueError, sub.normalize_phone, '12345')
+
+
 class MigrationAndApiTests(unittest.TestCase):
     """An existing pre-migration database must come out as (female) tutors."""
 
@@ -220,13 +248,8 @@ class MigrationAndApiTests(unittest.TestCase):
 
     def test_register_with_profession_and_gender_profession_is_locked(self):
         c = self.app_mod.app.test_client()
-        r = c.post('/api/auth/register', json={'email': 'barber@x.com', 'password': 'secret123', 'name': 'דני', 'profession': 'barber', 'gender': 'm'})
-        if r.status_code == 202:  # needs admin approval — approve directly
-            db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))
-            db.execute("UPDATE users SET approved=1 WHERE email='barber@x.com'")
-            db.commit()
-            db.close()
-            r = c.post('/api/auth/login', json={'email': 'barber@x.com', 'password': 'secret123'})
+        r = c.post('/api/auth/register', json={'email': 'barber@x.com', 'password': 'secret123', 'name': 'דני', 'profession': 'barber', 'gender': 'm', 'phone': '050-1234567'})
+        self.assertEqual(r.status_code, 201)
         self.assertEqual(r.json['profession'], 'barber')
         self.assertEqual(r.json['gender'], 'm')
         self.assertFalse(r.json['vertical']['features']['exams'])
@@ -237,7 +260,7 @@ class MigrationAndApiTests(unittest.TestCase):
 
     def test_custom_fields_default_then_saved(self):
         c = self.app_mod.app.test_client()
-        r = c.post('/api/auth/register', json={'email': 'cf@x.com', 'password': 'secret123', 'name': 'רותם', 'profession': 'barber', 'gender': 'f'})
+        r = c.post('/api/auth/register', json={'email': 'cf@x.com', 'password': 'secret123', 'name': 'רותם', 'profession': 'barber', 'gender': 'f', 'phone': '0521234567'})
         if r.status_code == 202:
             db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))
             db.execute("UPDATE users SET approved=1 WHERE email='cf@x.com'")
@@ -307,10 +330,10 @@ class MigrationAndApiTests(unittest.TestCase):
         self.assertEqual(self.client.post('/api/coupon', json={'code': 'NOPE'}).status_code, 404)
         self.assertEqual(self.client.post('/api/coupon', json={'code': code, 'plan': 'basic'}).status_code, 404)
         c = self.app_mod.app.test_client()
-        bad = c.post('/api/auth/register', json={'email': 'p0@x.com', 'password': 'secret123', 'plan': 'pro', 'coupon': 'NOPE'})
+        bad = c.post('/api/auth/register', json={'email': 'p0@x.com', 'password': 'secret123', 'plan': 'pro', 'coupon': 'NOPE', 'phone': '0501111111'})
         self.assertEqual(bad.status_code, 400)
-        c.post('/api/auth/register', json={'email': 'p1@x.com', 'password': 'secret123', 'plan': 'pro', 'coupon': code})
-        c.post('/api/auth/register', json={'email': 'p2@x.com', 'password': 'secret123', 'plan': 'basic'})
+        c.post('/api/auth/register', json={'email': 'p1@x.com', 'password': 'secret123', 'plan': 'pro', 'coupon': code, 'phone': '0501111112'})
+        c.post('/api/auth/register', json={'email': 'p2@x.com', 'password': 'secret123', 'plan': 'basic', 'phone': '0501111113'})
         db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))
         rows = dict((e, (pl, cp)) for e, pl, cp in db.execute("SELECT email, plan, coupon FROM users WHERE email IN ('p1@x.com','p2@x.com','p0@x.com')"))
         db.close()
@@ -320,8 +343,65 @@ class MigrationAndApiTests(unittest.TestCase):
         admin = self.app_mod.app.test_client()
         with admin.session_transaction() as sess:
             sess['user_id'], sess['user_email'] = 'adm', self.app_mod.ADMIN_EMAIL
-        pending = {u['email']: u['monthlyPrice'] for u in admin.get('/api/admin/pending-users').json}
-        self.assertEqual((pending.get('p1@x.com'), pending.get('p2@x.com')), (29, 19))
+        users = {u['email']: u['monthlyPrice'] for u in admin.get('/api/admin/users').json}
+        self.assertEqual((users.get('p1@x.com'), users.get('p2@x.com')), (29, 19))
+
+    def admin_client(self):
+        admin = self.app_mod.app.test_client()
+        with admin.session_transaction() as sess:
+            sess['user_id'], sess['user_email'] = 'adm', self.app_mod.ADMIN_EMAIL
+        return admin
+
+    def test_signup_needs_a_phone_and_starts_a_week_trial(self):
+        c = self.app_mod.app.test_client()
+        r = c.post('/api/auth/register', json={'email': 'nophone@x.com', 'password': 'secret123', 'plan': 'pro'})
+        self.assertEqual(r.status_code, 400)
+        r = c.post('/api/auth/register', json={'email': 'trial@x.com', 'password': 'secret123', 'name': 'נועה לוי', 'plan': 'pro', 'phone': '+972 52-123-4567'})
+        self.assertEqual(r.status_code, 201)
+        sub = r.json['subscription']
+        self.assertEqual((sub['state'], sub['daysLeft'], sub['planName'], sub['price']), ('trial', 7, 'פרו', 39))
+        self.assertEqual(c.get('/api/students').status_code, 200)
+        db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))
+        self.assertEqual(db.execute("SELECT phone FROM users WHERE email='trial@x.com'").fetchone()[0], '0521234567')
+        db.close()
+        # the founding user (no trial, no payment) is never locked
+        old = self.app_mod.app.test_client()
+        self.assertEqual(old.post('/api/auth/login', json={'email': 'old@x.com', 'password': 'secret123'}).json['subscription']['state'], 'free')
+
+    def test_trial_end_locks_the_app_until_a_payment_is_recorded(self):
+        c = self.app_mod.app.test_client()
+        c.post('/api/auth/register', json={'email': 'late@x.com', 'password': 'secret123', 'name': 'דנה', 'plan': 'pro', 'phone': '0541234567'})
+        db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))
+        db.execute("UPDATE users SET trial_ends='2020-01-01T00:00:00' WHERE email='late@x.com'")
+        db.commit()
+        user_id = db.execute("SELECT id FROM users WHERE email='late@x.com'").fetchone()[0]
+        db.close()
+        r = c.get('/api/students')
+        self.assertEqual((r.status_code, r.json['subscription']['state']), (402, 'expired'))
+        self.assertEqual(c.post('/api/students', json={'id': 's1', 'name': 'x'}).status_code, 402)
+        self.assertEqual(c.get('/api/auth/me').json['subscription']['state'], 'expired')
+        # "I want to continue" → admin message (+ push text)
+        self.assertTrue(c.post('/api/subscription/request', json={'message': 'אשמח לשנתי'}).json['ok'])
+        admin = self.admin_client()
+        msg = next(m for m in admin.get('/api/admin/contact-messages').json if m['kind'] == 'subscription')
+        self.assertIn('0541234567', msg['contact'])
+        self.assertIn('אשמח לשנתי', msg['message'])
+        notice = c.get(f"/api/push/contact-notice?token={self.app_mod.CRON_SECRET}&message_id={msg['id']}").json
+        self.assertEqual(notice['title'], '💳 בקשה להמשך מנוי')
+        # Bit payment request text uses the admin's settings
+        admin.put('/api/admin/billing-settings', json={'payLink': 'bit.ly/luzi', 'bitPhone': '050-0000000'})
+        pr = admin.get(f'/api/admin/users/{user_id}/payment-request').json
+        self.assertEqual(pr['phone'], '0541234567')
+        self.assertIn('https://bit.ly/luzi', pr['text'])
+        self.assertIn('₪39', pr['text'])
+        # the admin records a yearly payment → unlocked for 12 months
+        self.assertEqual(admin.post(f'/api/admin/users/{user_id}/subscription', json={'action': 'payment', 'amount': ''}).status_code, 400)
+        r = admin.post(f'/api/admin/users/{user_id}/subscription', json={'action': 'payment', 'amount': 290, 'period': 'year', 'paidAt': '2026-10-19'})
+        self.assertEqual((r.json['subscription']['state'], r.json['subscription']['paidUntil']), ('active', '2027-10-18'))
+        self.assertEqual(r.json['billing'][0]['amount'], 290)
+        self.assertEqual(c.get('/api/students').status_code, 200)
+        self.assertEqual(c.post(f'/api/admin/users/{user_id}/subscription', json={'action': 'free'}).status_code, 403)
+        self.assertEqual(admin.post(f'/api/admin/users/{user_id}/subscription', json={'action': 'free'}).json['subscription']['state'], 'free')
 
     def test_contact_form_stores_and_notifies_admin(self):
         c = self.app_mod.app.test_client()

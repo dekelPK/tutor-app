@@ -7,6 +7,7 @@ import verticals
 import demo_accounts
 import pricing
 import landing_contact
+import subscription
 from datetime import datetime, timedelta
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -71,6 +72,11 @@ def init_db():
         c.execute('ALTER TABLE users ADD COLUMN plan TEXT')
     if 'coupon' not in cols:
         c.execute('ALTER TABLE users ADD COLUMN coupon TEXT')
+    for col in ('phone', 'trial_ends', 'paid_until', 'billing', 'sub_request_at'):  # see subscription.py
+        if col not in cols:
+            c.execute(f'ALTER TABLE users ADD COLUMN {col} TEXT')
+    if 'kind' not in [r[1] for r in c.execute('PRAGMA table_info(contact_messages)').fetchall()]:
+        c.execute("ALTER TABLE contact_messages ADD COLUMN kind TEXT DEFAULT 'landing'")
     c.commit()
     c.close()
 
@@ -115,6 +121,12 @@ def write_data(data, uid=None):
 def require_auth():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
+    # Same lock as flask_app.require_auth: trial over / subscription lapsed → 402
+    c = get_db()
+    u = c.execute('SELECT * FROM users WHERE id=?', [session['user_id']]).fetchone()
+    c.close()
+    if u and subscription.blocked(u, ADMIN_EMAIL):
+        return jsonify({'error': 'subscription', 'subscription': subscription.status(u, ADMIN_EMAIL)}), 402
     return None
 
 ADMIN_EMAIL = 'dekelkartel@gmail.com'
@@ -242,13 +254,19 @@ def auth_me():
 
 def account_info(user_id):
     c = get_db()
-    row = c.execute('SELECT profession, gender, custom_fields, services FROM users WHERE id=?', [user_id]).fetchone()
+    row = c.execute('SELECT * FROM users WHERE id=?', [user_id]).fetchone()
     c.close()
     prof = verticals.normalize(row['profession'] if row else None)
     gender = verticals.normalize_gender(row['gender'] if row else None)
     return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand(),
             'customFields': verticals.fields_for(prof, row['custom_fields'] if row else None),
-            'services': verticals.services_for(prof, row['services'] if row else None)}
+            'services': verticals.services_for(prof, row['services'] if row else None),
+            'subscription': {**subscription.status(row, ADMIN_EMAIL), **plan_info(row)} if row else None}
+
+def plan_info(u):
+    plan = u['plan']
+    return {'plan': plan, 'planName': (pricing.plan(plan) or {}).get('name') if plan else None,
+            'price': pricing.price_for(plan, u['coupon']) if plan else None}
 
 @app.route('/api/verticals')
 def list_verticals():
@@ -316,11 +334,12 @@ def auth_register():
         return jsonify({'error': 'נא למלא אימייל וסיסמה'}), 400
     if len(pw) < 6:
         return jsonify({'error': 'הסיסמה חייבת להכיל לפחות 6 תווים'}), 400
+    is_admin_account = email.lower() == ADMIN_EMAIL.lower()
     try:
         plan, coupon = signup_plan(body)
+        phone = subscription.normalize_phone(body.get('phone')) if not is_admin_account or body.get('phone') else None
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
-    is_admin_account = email.lower() == ADMIN_EMAIL.lower()
     c = get_db()
     if c.execute('SELECT 1 FROM users WHERE email=?', [email]).fetchone():
         c.close()
@@ -328,9 +347,9 @@ def auth_register():
     # First user gets the legacy data.json migrated automatically
     is_first = c.execute('SELECT COUNT(*) FROM users').fetchone()[0] == 0
     uid = uuid.uuid4().hex[:12]
-    approved = 1 if (is_first or is_admin_account) else 0
-    c.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved,profession,gender,plan,coupon) VALUES (?,?,?,?,?,?,?,?,?,?)',
-              [uid, email, hash_pw(pw), name, datetime.now().isoformat(), approved, profession, gender, plan, coupon])
+    trial_ends = None if (is_first or is_admin_account) else subscription.new_trial_end()
+    c.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved,profession,gender,plan,coupon,phone,trial_ends) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+              [uid, email, hash_pw(pw), name, datetime.now().isoformat(), 1, profession, gender, plan, coupon, phone, trial_ends])
     c.commit()
     c.close()
     if is_first and os.path.exists(DATA_FILE):
@@ -339,9 +358,8 @@ def auth_register():
         write_data(legacy, uid)
     else:
         write_data(empty_data(), uid)
-    if not approved:
-        return jsonify({'pending': True,
-                         'message': 'ההרשמה התקבלה! החשבון ימתין לאישור מנהל המערכת לפני שתוכל/י להתחבר.'}), 202
+    if trial_ends:
+        print(f"\n[local dev] would send the welcome email to {email} (trial until {trial_ends[:10]})\n")
     session['user_id']    = uid
     session['user_name']  = name
     session['user_email'] = email
@@ -792,7 +810,7 @@ def admin_pending_users():
     err = require_admin()
     if err: return err
     c = get_db()
-    rows = c.execute('SELECT id, name, email, created_at, profession, plan, coupon FROM users WHERE approved=0 ORDER BY created_at').fetchall()
+    rows = c.execute('SELECT id, name, email, created_at, profession, plan, coupon, phone FROM users WHERE approved=0 ORDER BY created_at').fetchall()
     c.close()
     return jsonify([{**dict(r), 'monthlyPrice': pricing.price_for(r['plan'], r['coupon']) if r['plan'] else None} for r in rows])
 
@@ -824,11 +842,13 @@ def admin_users():
     err = require_admin()
     if err: return err
     c = get_db()
-    rows = c.execute('SELECT id, name, email, created_at, profession, gender, plan, coupon FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
+    rows = c.execute('SELECT * FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
     c.close()
     out = []
     for u in rows:
-        d = dict(u)
+        d = {k: u[k] for k in ('id', 'name', 'email', 'created_at', 'profession', 'gender', 'plan', 'coupon', 'phone')}
+        d['subscription'] = subscription.status(u, ADMIN_EMAIL)
+        d['billing'] = json.loads(u['billing'] or '[]')
         data = read_data(u['id'])
         d['studentCount'] = len(data.get('students', []))
         d['activeStudentCount'] = sum(1 for s in data.get('students', []) if s.get('isActive') is not False)
@@ -855,8 +875,10 @@ def admin_approve_user(target_id):
     err = require_admin()
     if err: return err
     c = get_db()
-    user = c.execute('SELECT email, name FROM users WHERE id=?', [target_id]).fetchone()
+    user = c.execute('SELECT email, name, plan, trial_ends, paid_until FROM users WHERE id=?', [target_id]).fetchone()
     c.execute('UPDATE users SET approved=1 WHERE id=?', [target_id])
+    if user and user['plan'] and not (user['trial_ends'] or user['paid_until']):
+        c.execute('UPDATE users SET trial_ends=? WHERE id=?', [subscription.new_trial_end(), target_id])
     c.commit(); c.close()
     if user:
         # Local dev has no email sending — see forgot-password for the same pattern.
@@ -880,6 +902,87 @@ def admin_suspend_user(target_id):
     c.execute('UPDATE users SET approved=0 WHERE id=? AND email!=?', [target_id, ADMIN_EMAIL])
     c.commit(); c.close()
     return jsonify({'ok': True})
+
+# ── Subscription (same as flask_app.py; local: stored only, no push) ───────────
+BILLING_SETTINGS_PATH = os.path.join(BASE_DIR, 'billing_settings.json')
+
+def billing_settings():
+    if not os.path.exists(BILLING_SETTINGS_PATH):
+        return {'payLink': '', 'bitPhone': ''}
+    with open(BILLING_SETTINGS_PATH, encoding='utf-8') as f:
+        return json.load(f)
+
+@app.route('/api/subscription/request', methods=['POST'])
+def subscription_request():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    c = get_db()
+    u = c.execute('SELECT * FROM users WHERE id=?', [session['user_id']]).fetchone()
+    if not u:
+        c.close()
+        return jsonify({'error': 'Unauthorized'}), 401
+    info = plan_info(u)
+    m = subscription.request_text(dict(u), info['planName'], info['price'], (request.json or {}).get('message'))
+    now = datetime.now().isoformat(timespec='seconds')
+    c.execute("INSERT INTO contact_messages (id, created_at, name, contact, message, handled, kind) VALUES (?,?,?,?,?,0,'subscription')",
+              [uuid.uuid4().hex[:12], now, m['name'], m['contact'], m['message']])
+    c.execute('UPDATE users SET sub_request_at=? WHERE id=?', [now, u['id']])
+    c.commit(); c.close()
+    return jsonify({'ok': True, 'requestedAt': now})
+
+@app.route('/api/admin/billing-settings', methods=['GET', 'PUT'])
+def admin_billing_settings():
+    err = require_admin()
+    if err: return err
+    if request.method == 'PUT':
+        with open(BILLING_SETTINGS_PATH, 'w', encoding='utf-8') as f:
+            json.dump(subscription.clean_settings(request.json or {}), f, ensure_ascii=False)
+    return jsonify(billing_settings())
+
+@app.route('/api/admin/users/<target_id>/payment-request')
+def admin_payment_request(target_id):
+    err = require_admin()
+    if err: return err
+    c = get_db()
+    u = c.execute('SELECT * FROM users WHERE id=?', [target_id]).fetchone()
+    c.close()
+    if not u:
+        return jsonify({'error': 'not found'}), 404
+    info = plan_info(u)
+    return jsonify({'phone': u['phone'], 'settings': billing_settings(),
+                    'text': subscription.payment_request_message(u['name'], info['planName'], info['price'], billing_settings())})
+
+@app.route('/api/admin/users/<target_id>/subscription', methods=['POST'])
+def admin_set_subscription(target_id):
+    err = require_admin()
+    if err: return err
+    body = request.json or {}
+    c = get_db()
+    u = c.execute('SELECT * FROM users WHERE id=?', [target_id]).fetchone()
+    if not u:
+        c.close()
+        return jsonify({'error': 'not found'}), 404
+    action = body.get('action')
+    if action == 'payment':
+        try:
+            billing, until = subscription.record_payment(u, body)
+        except ValueError as e:
+            c.close()
+            return jsonify({'error': str(e)}), 400
+        c.execute('UPDATE users SET billing=?, paid_until=?, sub_request_at=NULL WHERE id=?', [billing, until, target_id])
+    elif action == 'free':
+        c.execute('UPDATE users SET trial_ends=NULL, paid_until=NULL WHERE id=?', [target_id])
+    elif action == 'trial':
+        days = max(1, min(60, int(body.get('days') or subscription.TRIAL_DAYS)))
+        c.execute('UPDATE users SET trial_ends=?, paid_until=NULL WHERE id=?',
+                  [(datetime.now() + timedelta(days=days)).isoformat(timespec='seconds'), target_id])
+    else:
+        c.close()
+        return jsonify({'error': 'bad action'}), 400
+    c.commit()
+    u = c.execute('SELECT * FROM users WHERE id=?', [target_id]).fetchone()
+    c.close()
+    return jsonify({'subscription': subscription.status(u, ADMIN_EMAIL), 'billing': json.loads(u['billing'] or '[]')})
 
 # ── Live ICS calendar feed ─────────────────────────────────────────────────────
 @app.route('/api/calendar-token')
