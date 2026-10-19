@@ -223,10 +223,12 @@
       position: fixed; inset: 0;
       background: linear-gradient(145deg, #0f172a 0%, #2563eb 55%, #60a5fa 100%);
       z-index: 9999;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       padding: 20px;
-      overflow: auto;
+      padding-top: max(20px, env(safe-area-inset-top));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .auth-overlay::before {
       content: '';
@@ -253,6 +255,7 @@
       padding: 40px 36px 36px;
       width: 100%;
       max-width: 420px;
+      margin: auto;  /* centers when it fits; when taller than the screen it starts at the top and scrolls */
       box-shadow: 0 30px 90px rgba(0,0,0,0.4);
       position: relative;
       z-index: 1;
@@ -1897,7 +1900,7 @@
           <label>קוד קופון <span style="font-weight:400;color:var(--text-muted)">(לא חובה)</span></label>
           <div class="auth-input-wrap">
             <span class="auth-input-icon">🎁</span>
-            <input type="text" id="auth-coupon" placeholder="אם קיבלת קוד" autocomplete="off" maxlength="24" style="text-transform:uppercase" oninput="renderPlanPicker()">
+            <input type="text" id="auth-coupon" placeholder="אם קיבלת קוד" autocomplete="off" maxlength="24" style="text-transform:uppercase" oninput="this.dataset.touched='1';renderPlanPicker()">
           </div>
           <div class="auth-note" id="reg-plan-summary" style="margin-top:6px"></div>
         </div>
@@ -2516,7 +2519,7 @@ async function renderProfessionPicker(profElId, genderElId, locked = false) {
 // ===== PLAN AT SIGNUP (pricing.json via /api/pricing) =====
 // The landing page links here as /?signup=<plan>[&coupon=CODE]. The coupon is
 // checked by the server on register; the summary line just previews the price.
-const _signup = { plan: 'pro', pricing: null, couponPrice: null, couponFor: '' };
+const _signup = { plan: 'pro', pricing: null, couponPrice: null, couponFor: '', coupon: '' };
 async function renderPlanPicker() {
   const el = document.getElementById('reg-plan-pick');
   if (!el) return;
@@ -2526,7 +2529,10 @@ async function renderPlanPicker() {
   const { plans, currency } = _signup.pricing;
   el.innerHTML = plans.map(p => `<button type="button" class="${p.id === _signup.plan ? 'on' : ''}"
     onclick="_signup.plan='${p.id}';renderPlanPicker()">${escapeHtml(p.name)} · ${currency}${p.price}</button>`).join('');
-  const code = document.getElementById('auth-coupon').value.trim().toUpperCase();
+  const input = document.getElementById('auth-coupon');
+  // A coupon from the landing link stays applied even if the browser clears the field
+  if (!input.value.trim() && _signup.coupon && !input.dataset.touched) input.value = _signup.coupon;
+  const code = input.value.trim().toUpperCase();
   const sum = document.getElementById('reg-plan-summary');
   const plan = plans.find(p => p.id === _signup.plan);
   if (code && code !== _signup.couponFor) {
@@ -2537,7 +2543,7 @@ async function renderPlanPicker() {
     } catch (e) { /* the server checks again on register */ }
   }
   const price = code && _signup.couponPrice != null && code === _signup.couponFor ? _signup.couponPrice : plan?.price;
-  sum.textContent = plan ? `מסלול ${plan.name} · ${currency}${price} לחודש${price !== plan.price ? ' (עם הקופון 🎁)' : ''}` : '';
+  sum.textContent = plan ? `מסלול ${plan.name} · ${currency}${price} לחודש${price !== plan.price ? ` (קופון ${code} 🎁)` : ''}` : '';
 }
 // Account menu → "העסק שלי": the profession (read-only for now), how the app
 // addresses you, and the business's custom client fields.
@@ -6063,8 +6069,11 @@ async function initApp() {
   const signupParams = new URLSearchParams(location.search);
   if (signupParams.get('signup')) {
     _signup.plan = signupParams.get('signup');
-    document.getElementById('auth-coupon').value = signupParams.get('coupon') || '';
+    _signup.coupon = (signupParams.get('coupon') || '').toUpperCase();
+    document.getElementById('auth-coupon').value = _signup.coupon;
     showAuthTab('register');
+    // Some mobile browsers restore/clear form fields right after load — re-apply once settled
+    window.addEventListener('pageshow', () => setTimeout(renderPlanPicker, 300));
   }
 
   // Restore dark mode
