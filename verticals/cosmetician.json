@@ -29,7 +29,8 @@
     "portal_history": "💅 הטיפולים הקודמים",
     "calendar_name": "טיפולים",
     "service": "סוג טיפול",
-    "services": "סוגי טיפולים"
+    "services": "סוגי טיפולים",
+    "trial": "טיפול היכרות"
   },
   "features": {
     "exams": false,
@@ -37,7 +38,8 @@
     "parentContact": false,
     "packages": true,
     "selfBooking": true,
-    "services": true
+    "services": true,
+    "trials": true
   },
   "defaults": {
     "price": 250,

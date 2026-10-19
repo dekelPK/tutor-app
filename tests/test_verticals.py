@@ -94,6 +94,12 @@ class TerminologyTests(unittest.TestCase):
         self.assertEqual((old.vertical, old.gender), ('tutor', 'f'))
         self.assertEqual(old.t('calendar_event', name='דן'), 'שיעור - דן')
 
+    def test_trial_lesson_term_and_flag(self):
+        self.assertEqual(verticals.t('tutor', 'trial'), 'שיעור ניסיון')
+        self.assertEqual(verticals.t('cosmetician', 'trial'), 'טיפול היכרות')
+        self.assertTrue(verticals.has('tutor', 'trials'))
+        self.assertFalse(verticals.has('barber', 'trials'))
+
     def test_feature_flags(self):
         self.assertTrue(verticals.has('tutor', 'exams'))
         self.assertFalse(verticals.has('barber', 'exams'))

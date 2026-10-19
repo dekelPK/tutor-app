@@ -29,7 +29,8 @@
     "portal_history": "📚 מה למדנו לאחרונה",
     "calendar_name": "שיעורים - הוראה",
     "service": "סוג שיעור",
-    "services": "סוגי שיעורים"
+    "services": "סוגי שיעורים",
+    "trial": "שיעור ניסיון"
   },
   "features": {
     "exams": true,
@@ -37,7 +38,8 @@
     "parentContact": true,
     "packages": true,
     "selfBooking": true,
-    "services": false
+    "services": false,
+    "trials": true
   },
   "defaults": {
     "price": 150,
