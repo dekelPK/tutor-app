@@ -46,3 +46,7 @@ def price_for(plan_id, coupon_code=None):
         return None
     c = check_coupon(coupon_code, plan_id) if coupon_code else None
     return c['price'] if c else plan['price']
+
+
+def plan(plan_id):
+    return next((p for p in load()['plans'] if p['id'] == plan_id), None)

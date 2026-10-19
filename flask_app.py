@@ -22,6 +22,7 @@ import verticals
 import demo_accounts
 import pricing
 import landing_contact
+import subscription
 DB_PATH  = os.path.join(BASE_DIR, 'tutor.db')
 
 app = Flask(__name__, static_folder=BASE_DIR)
@@ -227,6 +228,13 @@ CREATE TABLE IF NOT EXISTS contact_messages (
             db.execute('ALTER TABLE users ADD COLUMN plan TEXT')
         if 'coupon' not in user_cols:
             db.execute('ALTER TABLE users ADD COLUMN coupon TEXT')
+        # Free trial + manually recorded payments (subscription.py). NULL trial_ends
+        # and paid_until = never billed (founding users) → free, never blocked.
+        for col in ('phone', 'trial_ends', 'paid_until', 'billing', 'sub_request_at'):
+            if col not in user_cols:
+                db.execute(f'ALTER TABLE users ADD COLUMN {col} TEXT')
+        if 'kind' not in [r[1] for r in db.execute('PRAGMA table_info(contact_messages)').fetchall()]:
+            db.execute("ALTER TABLE contact_messages ADD COLUMN kind TEXT DEFAULT 'landing'")
 
     # One-time migration from data.json if it exists
     json_path = os.path.join(BASE_DIR, 'data.json')
@@ -271,6 +279,12 @@ def verify_pw(stored_hash, pw):
 def require_auth():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
+    # Trial over / subscription lapsed → the app is locked (402) until the admin
+    # records a payment. /api/auth/me and /api/subscription/request stay open.
+    with get_db() as db:
+        u = db.execute('SELECT * FROM users WHERE id=?', [session['user_id']]).fetchone()
+    if u and subscription.blocked(u, ADMIN_EMAIL):
+        return jsonify({'error': 'subscription', 'subscription': subscription.status(u, ADMIN_EMAIL)}), 402
     return None
 
 def uid():
@@ -382,12 +396,18 @@ def account_info(user_id):
     """The business's profession + owner gender, and the resolved vertical config
     the browser needs for terminology and feature flags (see vertical.js)."""
     with get_db() as db:
-        row = db.execute('SELECT profession, gender, custom_fields, services FROM users WHERE id=?', [user_id]).fetchone()
+        row = db.execute('SELECT * FROM users WHERE id=?', [user_id]).fetchone()
     prof = verticals.normalize(row['profession'] if row else None)
     gender = verticals.normalize_gender(row['gender'] if row else None)
     return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand(),
             'customFields': verticals.fields_for(prof, row['custom_fields'] if row else None),
-            'services': verticals.services_for(prof, row['services'] if row else None)}
+            'services': verticals.services_for(prof, row['services'] if row else None),
+            'subscription': {**subscription.status(row, ADMIN_EMAIL), **plan_info(row)} if row else None}
+
+def plan_info(u):
+    plan = u['plan']
+    return {'plan': plan, 'planName': (pricing.plan(plan) or {}).get('name') if plan else None,
+            'price': pricing.price_for(plan, u['coupon']) if plan else None}
 
 def owner_terms(db, user_id):
     """verticals.Terms for a business owner — server-side text in their wording."""
@@ -469,33 +489,35 @@ def auth_register():
         return jsonify({'error': 'נא למלא אימייל וסיסמה'}), 400
     if len(pw) < 6:
         return jsonify({'error': 'הסיסמה חייבת להכיל לפחות 6 תווים'}), 400
+    is_admin_account = email.lower() == ADMIN_EMAIL.lower()
     try:
         plan, coupon = signup_plan(body)
+        phone = subscription.normalize_phone(body.get('phone')) if not is_admin_account or body.get('phone') else None
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
-    is_admin_account = email.lower() == ADMIN_EMAIL.lower()
     with get_db() as db:
         if db.execute('SELECT 1 FROM users WHERE email=?', [email]).fetchone():
             return jsonify({'error': 'כתובת האימייל כבר רשומה במערכת'}), 409
         is_first = db.execute('SELECT COUNT(*) FROM users').fetchone()[0] == 0
         new_id   = uuid.uuid4().hex[:12]
-        approved = 1 if (is_first or is_admin_account) else 0
-        db.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved,profession,gender,plan,coupon) VALUES (?,?,?,?,?,?,?,?,?,?)',
-                   [new_id, email, hash_pw(pw), name, datetime.now().isoformat(), approved, profession, gender, plan, coupon])
+        # Everyone starts right away on a free trial (subscription.TRIAL_DAYS);
+        # the app locks itself when it ends unless the admin recorded a payment.
+        trial_ends = None if (is_first or is_admin_account) else subscription.new_trial_end()
+        db.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved,profession,gender,plan,coupon,phone,trial_ends) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
+                   [new_id, email, hash_pw(pw), name, datetime.now().isoformat(), 1, profession, gender, plan, coupon, phone, trial_ends])
         if is_first:
             # Associate all existing data (no user_id) with this first user
             for tbl in ('students', 'lessons', 'payments'):
                 db.execute(f'UPDATE {tbl} SET user_id=? WHERE user_id IS NULL', [new_id])
-    if not approved:
-        # Best-effort push to the admin's own device — a signup is never
-        # blocked by this failing (no PAT configured yet, GitHub hiccup, etc).
-        try:
-            trigger_github_workflow('notify-admin-signup.yml', {'name': name or '(ללא שם)', 'email': email})
-        except Exception:
-            pass
-        # No session — they can't use the app until the admin approves them.
-        return jsonify({'pending': True,
-                         'message': 'ההרשמה התקבלה! החשבון ימתין לאישור מנהל המערכת לפני שתוכל/י להתחבר.'}), 202
+    if trial_ends:
+        # Best-effort: a push to the admin's own device and the welcome email —
+        # a signup is never blocked by these failing (no PAT, GitHub hiccup, etc).
+        for wf, inputs in (('notify-admin-signup.yml', {'name': name or '(ללא שם)', 'email': email}),
+                           ('send-welcome-email.yml', {'email': email, 'name': name, 'trial_ends': trial_ends[:10]})):
+            try:
+                trigger_github_workflow(wf, inputs)
+            except Exception:
+                pass
     session.permanent = True
     session['user_id']    = new_id
     session['user_name']  = name
@@ -880,7 +902,7 @@ def admin_pending_users():
     err = require_admin()
     if err: return err
     with get_db() as db:
-        rows = db.execute('SELECT id, name, email, created_at, profession, plan, coupon FROM users WHERE approved=0 ORDER BY created_at').fetchall()
+        rows = db.execute('SELECT id, name, email, created_at, profession, plan, coupon, phone FROM users WHERE approved=0 ORDER BY created_at').fetchall()
     return jsonify([{**dict(r), 'monthlyPrice': pricing.price_for(r['plan'], r['coupon']) if r['plan'] else None} for r in rows])
 
 @app.route('/api/admin/demo-account', methods=['POST'])
@@ -922,7 +944,7 @@ def admin_users():
     err = require_admin()
     if err: return err
     with get_db() as db:
-        rows = db.execute('SELECT id, name, email, created_at, profession, gender, plan, coupon FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
+        rows = db.execute('SELECT * FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
         out = []
         for u in rows:
             students = rows_to_list(db.execute('SELECT data FROM students WHERE user_id=?', [u['id']]).fetchall())
@@ -930,7 +952,9 @@ def admin_users():
             today = portal_core.now_local().strftime('%Y-%m-%d')
             month_count = db.execute('SELECT COUNT(*) FROM lessons WHERE user_id=? AND date LIKE ?', [u['id'], today[:7] + '%']).fetchone()[0]
             last = db.execute('SELECT MAX(date) FROM lessons WHERE user_id=? AND date<=?', [u['id'], today]).fetchone()[0]
-            d = dict(u)
+            d = {k: u[k] for k in ('id', 'name', 'email', 'created_at', 'profession', 'gender', 'plan', 'coupon', 'phone')}
+            d['subscription'] = subscription.status(u, ADMIN_EMAIL)
+            d['billing'] = json.loads(u['billing'] or '[]')
             d['lessonsThisMonth'] = month_count
             d['lastLessonDate'] = last
             d['studentCount'] = len(students)
@@ -959,8 +983,11 @@ def admin_approve_user(target_id):
     err = require_admin()
     if err: return err
     with get_db() as db:
-        user = db.execute('SELECT email, name FROM users WHERE id=?', [target_id]).fetchone()
+        user = db.execute('SELECT email, name, plan, trial_ends, paid_until FROM users WHERE id=?', [target_id]).fetchone()
         db.execute('UPDATE users SET approved=1 WHERE id=?', [target_id])
+        if user and user['plan'] and not (user['trial_ends'] or user['paid_until']):
+            # Signed up for a paid plan before the trial existed — the trial starts now.
+            db.execute('UPDATE users SET trial_ends=? WHERE id=?', [subscription.new_trial_end(), target_id])
     if user:
         # Best-effort — approval always succeeds even if the notification fails.
         try:
@@ -990,6 +1017,88 @@ def admin_suspend_user(target_id):
     with get_db() as db:
         db.execute('UPDATE users SET approved=0 WHERE id=? AND email!=?', [target_id, ADMIN_EMAIL])
     return jsonify({'ok': True})
+
+# ── Subscription (trial → Bit payment recorded by the admin) ─────────────────
+BILLING_SETTINGS_PATH = os.path.join(BASE_DIR, 'billing_settings.json')
+
+def billing_settings():
+    if not os.path.exists(BILLING_SETTINGS_PATH):
+        return {'payLink': '', 'bitPhone': ''}
+    with open(BILLING_SETTINGS_PATH, encoding='utf-8') as f:
+        return json.load(f)
+
+@app.route('/api/subscription/request', methods=['POST'])
+def subscription_request():
+    # The locked screen's "I want to continue" — open even when the trial is
+    # over (no require_auth). Lands in the admin's messages + a push.
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    with get_db() as db:
+        u = db.execute('SELECT * FROM users WHERE id=?', [session['user_id']]).fetchone()
+        if not u:
+            return jsonify({'error': 'Unauthorized'}), 401
+        info = plan_info(u)
+        m = subscription.request_text(dict(u), info['planName'], info['price'], (request.json or {}).get('message'))
+        mid = uuid.uuid4().hex[:12]
+        now = datetime.now().isoformat(timespec='seconds')
+        db.execute("INSERT INTO contact_messages (id, created_at, name, contact, message, handled, kind) VALUES (?,?,?,?,?,0,'subscription')",
+                   [mid, now, m['name'], m['contact'], m['message']])
+        db.execute('UPDATE users SET sub_request_at=? WHERE id=?', [now, u['id']])
+    try:
+        trigger_github_workflow('notify-admin-contact.yml', {'message_id': mid})
+    except Exception:
+        pass
+    return jsonify({'ok': True, 'requestedAt': now})
+
+@app.route('/api/admin/billing-settings', methods=['GET', 'PUT'])
+def admin_billing_settings():
+    err = require_admin()
+    if err: return err
+    if request.method == 'PUT':
+        with open(BILLING_SETTINGS_PATH, 'w', encoding='utf-8') as f:
+            json.dump(subscription.clean_settings(request.json or {}), f, ensure_ascii=False)
+    return jsonify(billing_settings())
+
+@app.route('/api/admin/users/<target_id>/payment-request')
+def admin_payment_request(target_id):
+    # The WhatsApp text asking this user to pay by Bit (opened by the admin screen).
+    err = require_admin()
+    if err: return err
+    with get_db() as db:
+        u = db.execute('SELECT * FROM users WHERE id=?', [target_id]).fetchone()
+    if not u:
+        return jsonify({'error': 'not found'}), 404
+    info = plan_info(u)
+    return jsonify({'phone': u['phone'], 'settings': billing_settings(),
+                    'text': subscription.payment_request_message(u['name'], info['planName'], info['price'], billing_settings())})
+
+@app.route('/api/admin/users/<target_id>/subscription', methods=['POST'])
+def admin_set_subscription(target_id):
+    # action: payment (record a Bit payment → extends paid_until) | free | trial (restart N days)
+    err = require_admin()
+    if err: return err
+    body = request.json or {}
+    with get_db() as db:
+        u = db.execute('SELECT * FROM users WHERE id=?', [target_id]).fetchone()
+        if not u:
+            return jsonify({'error': 'not found'}), 404
+        action = body.get('action')
+        if action == 'payment':
+            try:
+                billing, until = subscription.record_payment(u, body)
+            except ValueError as e:
+                return jsonify({'error': str(e)}), 400
+            db.execute('UPDATE users SET billing=?, paid_until=?, sub_request_at=NULL WHERE id=?', [billing, until, target_id])
+        elif action == 'free':
+            db.execute('UPDATE users SET trial_ends=NULL, paid_until=NULL WHERE id=?', [target_id])
+        elif action == 'trial':
+            days = max(1, min(60, int(body.get('days') or subscription.TRIAL_DAYS)))
+            db.execute('UPDATE users SET trial_ends=?, paid_until=NULL WHERE id=?',
+                       [(datetime.now() + timedelta(days=days)).isoformat(timespec='seconds'), target_id])
+        else:
+            return jsonify({'error': 'bad action'}), 400
+        u = db.execute('SELECT * FROM users WHERE id=?', [target_id]).fetchone()
+    return jsonify({'subscription': subscription.status(u, ADMIN_EMAIL), 'billing': json.loads(u['billing'] or '[]')})
 
 # ── Students ──────────────────────────────────────────────────────────────────
 @app.route('/api/students', methods=['GET'])

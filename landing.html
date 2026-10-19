@@ -162,6 +162,7 @@
   .price .per { color: var(--muted); font-size: 16px; }
   .price .was { color: var(--muted); text-decoration: line-through; font-size: 22px; font-weight: 600; }
   .coupon-on { color: var(--green); font-weight: 600; font-size: 14.5px; min-height: 22px; }
+  .trial-on { display: inline-block; align-self: flex-start; background: #fef3c7; color: #92400e; font-weight: 700; font-size: 14px; border-radius: 999px; padding: 4px 12px; margin: 6px 0 2px; }
   .plan ul { list-style: none; padding: 0; margin: 18px 0 26px; display: grid; gap: 11px; flex: 1; }
   .plan li { display: flex; gap: 10px; font-size: 16px; }
   .plan li::before { content: '✓'; color: var(--green); font-weight: 800; flex: none; }
@@ -291,19 +292,19 @@
     <a href="#video">🎬 סרטון</a><a href="#features">✨ מה יש</a><a href="#how">⚡ איך זה עובד</a><a href="#pricing">💳 מחירים</a><a href="#faq">❓ שאלות</a><a href="#contact">✉️ צור קשר</a>
   </div>
 </nav>
-<a class="fab-cta" id="fab-cta" href="#pricing">💳 לבחירת מסלול</a>
+<a class="fab-cta" id="fab-cta" href="#pricing">🎁 שבוע ניסיון חינם</a>
 
 <header class="hero" id="top">
   <div class="wrap">
     <div>
-      <span class="launch"><b>חדש</b> מחירי השקה למצטרפים ראשונים</span>
+      <span class="launch"><b>🎁 שבוע ניסיון חינם</b> מחירי השקה למצטרפים ראשונים</span>
       <h1>הלו״ז של העסק שלך<br><em>במקום אחד.</em></h1>
       <p class="lead">יומן, לקוחות, תשלומים ותזכורות — מהטלפון. הלקוחות קובעים תור לבד, ואת מאשרת בלחיצה. בלי מחברות, בלי אקסלים ובלי בלגן בווטסאפ.</p>
       <div class="hero-ctas">
-        <a class="btn btn-primary" href="#pricing">מתחילים עכשיו ←</a>
+        <a class="btn btn-primary" href="#pricing">מתחילים שבוע ניסיון חינם ←</a>
         <a class="btn btn-ghost" href="#how">איך זה עובד</a>
       </div>
-      <div class="ticks"><span>בלי התקנה</span><span>עברית מלאה</span><span>עובד מהטלפון ומהמחשב</span></div>
+      <div class="ticks"><span>בלי כרטיס אשראי</span><span>בלי התקנה</span><span>עברית מלאה</span><span>עובד מהטלפון ומהמחשב</span></div>
     </div>
     <div class="phones" aria-hidden="true">
       <div class="phone p2"><img src="/landing/portal.jpg" alt="" loading="eager"></div>
@@ -398,15 +399,17 @@
 
 <section class="sec pricing" id="pricing">
   <div class="wrap">
-    <div class="sec-head"><span class="eyebrow">מחירים</span><h2>מחיר של קפה — בשביל שקט של חודש</h2><p>מנוי חודשי פשוט, בלי הפתעות.</p></div>
+    <div class="sec-head"><span class="eyebrow">מחירים</span><h2>מחיר של קפה — בשביל שקט של חודש</h2><p>מתחילים ב<b>שבוע ניסיון חינם</b> — בלי התחייבות ובלי כרטיס אשראי. אחר כך, מנוי חודשי פשוט.</p></div>
     <div class="launch-banner">🚀 מחירי השקה <b>למצטרפים הראשונים בלבד</b> — המחיר נשמר לך גם כשהוא יעלה</div>
     <div class="plans" id="plans">
       <!-- Rendered from /api/pricing; this static copy is the no-JS fallback -->
       <div class="plan"><h3>בסיס</h3><div class="tag">כל מה שצריך כדי לעבוד מסודר</div>
         <div class="price"><span class="cur">₪</span><span class="amt">19</span><span class="per">לחודש</span></div>
+        <div class="trial-on">🎁 7 ימים ראשונים חינם</div>
         <ul><li>לקוחות ללא הגבלה</li><li>יומן, תשלומים ותזכורות</li></ul><a class="btn btn-ghost" href="/?signup=basic">בוחרים בסיס</a></div>
       <div class="plan hi"><span class="badge">מחיר השקה למצטרפים ראשונים</span><h3>פרו</h3><div class="tag">העסק עובד בשבילך — גם כשאת עסוקה</div>
         <div class="price"><span class="cur">₪</span><span class="amt">39</span><span class="per">לחודש</span></div>
+        <div class="trial-on">🎁 7 ימים ראשונים חינם</div>
         <ul><li>כל מה שבבסיס</li><li>קביעת תורים לבד, כרטיסיות ומחירון</li></ul><a class="btn btn-primary" href="/?signup=pro">בוחרים פרו</a></div>
     </div>
     <div class="coupon">
@@ -417,7 +420,7 @@
       </form>
       <div class="msg" id="coupon-msg" role="status" aria-live="polite"></div>
     </div>
-    <p class="fine">אחרי ההרשמה נאשר את החשבון וניצור איתך קשר להסדרת התשלום החודשי.</p>
+    <p class="fine">שבוע הניסיון מתחיל מיד עם ההרשמה, עם כל האפשרויות של המסלול. רוצים להמשיך? שולחים בקשה מתוך האפליקציה ומשלמים בביט.</p>
   </div>
 </section>
 
@@ -427,7 +430,8 @@
     <div class="faq">
       <details><summary>צריך להוריד אפליקציה?</summary><p>לא. לוזי עובדת מהדפדפן בטלפון ובמחשב. אפשר להוסיף אותה למסך הבית בלחיצה, והיא מתנהגת כמו אפליקציה לכל דבר — כולל התראות.</p></details>
       <details><summary>הלקוחות שלי צריכים להירשם?</summary><p>ממש לא. כל לקוח מקבל קישור אישי — פותחים אותו ורואים את התורים, הכרטיסייה ואפשרות לקבוע לבד. בלי סיסמה ובלי התקנה.</p></details>
-      <details><summary>איך משלמים על המנוי?</summary><p>אחרי ההרשמה נאשר את החשבון וניצור איתך קשר להסדרת התשלום החודשי לפי המסלול שבחרת.</p></details>
+      <details><summary>יש תקופת ניסיון?</summary><p>כן — שבוע שלם חינם, עם כל האפשרויות של המסלול שבחרת. לא צריך כרטיס אשראי, ואין שום התחייבות.</p></details>
+      <details><summary>איך משלמים על המנוי?</summary><p>בסוף שבוע הניסיון לוחצים באפליקציה על "אני רוצה להמשיך", ואנחנו שולחים בקשת תשלום בביט. אפשר לשלם חודשי או שנתי.</p></details>
       <details><summary>מה ההבדל בין בסיס לפרו?</summary><p>בסיס נותן יומן, לקוחות, תשלומים ותזכורות. פרו מוסיף את כל מה שחוסך הודעות וזמן: קישור אישי שבו הלקוחות קובעים לבד, כרטיסיות, מחירון וסוגי טיפולים, ודוחות.</p></details>
       <details><summary>המחיר יעלה בהמשך?</summary><p>המחירים כאן הם מחירי השקה למצטרפים הראשונים. מי שמצטרף עכשיו — שומר על המחיר.</p></details>
       <details><summary>המידע שלי מאובטח?</summary><p>כל עסק רואה רק את הנתונים שלו, הגישה מוגנת בסיסמה, ומתבצע גיבוי יומי של המידע.</p></details>
@@ -460,8 +464,8 @@
 <section class="sec" style="padding-top:20px">
   <div class="final">
     <h2>פחות בלגן. יותר זמן לעבוד.</h2>
-    <p>מצטרפים היום, במחיר ההשקה.</p>
-    <a class="btn btn-white" href="#pricing">לבחירת מסלול ←</a>
+    <p>שבוע ניסיון חינם — ואחר כך במחיר ההשקה.</p>
+    <a class="btn btn-white" href="#pricing">מתחילים חינם ←</a>
   </div>
 </section>
 
@@ -487,7 +491,8 @@
         ${p.badge ? `<span class="badge">${esc(p.badge)}</span>` : ''}
         <h3>${esc(p.name)}</h3><div class="tag">${esc(p.tagline)}</div>
         <div class="price">${c ? `<span class="was">${cur}${esc(p.price)}</span>` : ''}<span class="cur">${cur}</span><span class="amt">${esc(c ? c.price : p.price)}</span><span class="per">לחודש</span></div>
-        <div class="coupon-on">${c ? `🎁 קופון ${esc(c.code)} הופעל` : ''}</div>
+        <div class="trial-on">🎁 7 ימים ראשונים חינם</div>
+        <div class="coupon-on">${c ? `✓ קופון ${esc(c.code)} הופעל` : ''}</div>
         <ul>${p.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
         <a class="btn ${p.highlight ? 'btn-primary' : 'btn-ghost'}" href="${signupHref(p)}">בוחרים ${esc(p.name)}</a>
       </div>`;
