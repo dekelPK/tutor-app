@@ -53,6 +53,27 @@
   .nav-cta { margin-inline-start: auto; display: flex; gap: 10px; align-items: center; }
   .nav-cta .btn { padding: 10px 18px; font-size: 15px; border-radius: 12px; }
 
+  /* quick nav + floating CTA */
+  .quicknav { display: none; gap: 8px; overflow-x: auto; padding: 0 16px 10px; scrollbar-width: none; scroll-snap-type: x proximity; }
+  .quicknav::-webkit-scrollbar { display: none; }
+  .quicknav a { flex: none; scroll-snap-align: start; background: var(--soft); color: var(--text); border-radius: 999px; padding: 7px 14px;
+    font-size: 14.5px; font-weight: 600; white-space: nowrap; transition: background .15s, color .15s; }
+  .quicknav a.on, .nav-links a.on { background: var(--blue); color: #fff; }
+  .nav-links a { border-radius: 999px; padding: 6px 12px; }
+  .nav-links a.on { color: #fff; }
+  section[id], header[id] { scroll-margin-top: 120px; }
+  .fab-cta { position: fixed; z-index: 9; bottom: calc(16px + env(safe-area-inset-bottom)); inset-inline: 16px; display: none; text-align: center;
+    background: var(--blue); color: #fff; font-weight: 700; border-radius: 16px; padding: 15px; box-shadow: 0 14px 30px rgba(37, 99, 235, .4);
+    transform: translateY(140%); transition: transform .3s; }
+  .fab-cta.visible { transform: none; }
+
+  /* video */
+  .video-sec { padding-top: 56px; }
+  .video-wrap { display: grid; grid-template-columns: auto 1fr; gap: 56px; align-items: center; max-width: 900px; margin: 0 auto; }
+  .video-wrap .video-phone { position: relative; inset: auto; transform: none; width: 300px; }
+  .video-phone video { display: block; width: 100%; aspect-ratio: 9 / 16; border-radius: 31px; background: #1e3a8a; object-fit: cover; }
+  .video-text p { color: var(--muted); font-size: 18px; margin: 14px 0 24px; }
+
   /* hero */
   .hero { position: relative; overflow: hidden; padding: 64px 0 40px;
     background: radial-gradient(900px 500px at 85% -10%, #dbeafe 0%, transparent 60%), radial-gradient(700px 400px at 0% 10%, #eef2ff 0%, transparent 60%); }
@@ -198,6 +219,9 @@
     .grid, .pains, .steps { grid-template-columns: 1fr 1fr; }
     .contact { grid-template-columns: 1fr; }
     .nav-links { display: none; }
+    .quicknav { display: flex; }
+    .fab-cta { display: block; }
+    .video-wrap { grid-template-columns: 1fr; gap: 28px; justify-items: center; text-align: center; }
   }
   @media (max-width: 640px) {
     body { font-size: 16px; }
@@ -214,8 +238,28 @@
     .float { font-size: 13px; padding: 10px 12px; }
     .float.f1 { bottom: 40px; inset-inline-start: 4px; }
     .float.f2 { inset-inline-end: 4px; top: 10px; }
-    .grid, .pains, .steps { grid-template-columns: 1fr; }
-    .steps { gap: 30px; }
+    .sec-head { margin-bottom: 28px; }
+    /* pains: one swipeable row instead of three stacked cards */
+    .pains { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; margin: 0 -16px; padding: 0 16px 6px; scrollbar-width: none; }
+    .pains::-webkit-scrollbar { display: none; }
+    .pain { flex: 0 0 78%; scroll-snap-align: center; padding: 20px; }
+    /* features: compact two-column tiles */
+    .grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .card { padding: 16px; }
+    .card .ic { width: 40px; height: 40px; font-size: 20px; margin-bottom: 10px; }
+    .card h3 { font-size: 16px; }
+    .card p { font-size: 13.5px; line-height: 1.5; }
+    .steps { grid-template-columns: 1fr; gap: 26px; }
+    .step { padding: 24px 20px 18px; }
+    .show { gap: 28px; margin-bottom: 48px; }
+    .video-wrap .video-phone { width: 230px; }
+    .show-img .phone { width: 190px; }
+    .show-img::before { inset: 6% 18%; }
+    .show h3 { font-size: 22px; }
+    .show p { font-size: 16px; margin-bottom: 12px; }
+    .video-text p { font-size: 16px; margin: 10px 0 18px; }
+    .profs { padding-top: 10px; }
+    footer { padding-bottom: 96px; }
     .plans { grid-template-columns: 1fr; }
     .nav-cta .login { display: none; }
     .final { margin: 0 12px; padding: 48px 20px; }
@@ -230,6 +274,7 @@
   <div class="wrap">
     <a class="logo" href="#top">🗓️ לוזי</a>
     <div class="nav-links">
+      <a href="#video">סרטון</a>
       <a href="#features">מה יש בפנים</a>
       <a href="#how">איך זה עובד</a>
       <a href="#pricing">מחירים</a>
@@ -241,7 +286,11 @@
       <a class="btn btn-primary" href="#pricing">מצטרפים</a>
     </div>
   </div>
+  <div class="quicknav" id="quicknav" aria-label="מעבר מהיר">
+    <a href="#video">🎬 סרטון</a><a href="#features">✨ מה יש</a><a href="#how">⚡ איך זה עובד</a><a href="#pricing">💳 מחירים</a><a href="#faq">❓ שאלות</a><a href="#contact">✉️ צור קשר</a>
+  </div>
 </nav>
+<a class="fab-cta" id="fab-cta" href="#pricing">💳 לבחירת מסלול</a>
 
 <header class="hero" id="top">
   <div class="wrap">
@@ -268,6 +317,22 @@
   <div class="wrap">
     <p>נבנה במיוחד בשביל</p>
     <span class="chip">📚 מורים פרטיים</span><span class="chip">🎵 מורים למוזיקה</span><span class="chip">💅 קוסמטיקאיות</span><span class="chip">✂️ ספרים וספריות</span>
+  </div>
+</section>
+
+<section class="sec video-sec" id="video">
+  <div class="wrap">
+    <div class="video-wrap">
+      <div class="phone video-phone">
+        <video src="/landing/ad.mp4" poster="/landing/ad-poster.jpg" controls playsinline preload="metadata"></video>
+      </div>
+      <div class="video-text">
+        <span class="eyebrow">🎬 30 שניות</span>
+        <h2>תראי בעצמך איך זה עובד</h2>
+        <p>משיעור שנרשם ביומן, דרך הודעת ״בהצלחה״ לפני מבחן, ועד תלמיד שקובע שיעור לבד ודוח תשלום להורים — הכל מתוך המערכת האמיתית.</p>
+        <a class="btn btn-primary" href="#pricing">אני רוצה את זה ←</a>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -460,6 +525,25 @@
     } catch (err) { cmsg.className = 'msg err'; cmsg.textContent = 'שגיאת תקשורת, נסו שוב'; }
     finally { btn.disabled = false; }
   });
+  // Quick nav: highlight the section in view (and keep its chip visible); floating CTA
+  // shows after the hero and hides while the pricing section is on screen.
+  const links = [...document.querySelectorAll('.quicknav a, .nav-links a')];
+  const fab = document.getElementById('fab-cta');
+  const seen = new Map();
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => seen.set(en.target.id, en.isIntersecting ? en.intersectionRatio : 0));
+    let best = null, ratio = 0;
+    seen.forEach((r, id) => { if (r > ratio) { ratio = r; best = id; } });
+    links.forEach(a => {
+      const on = best && a.getAttribute('href') === '#' + best;
+      a.classList.toggle('on', !!on);
+      if (on && a.parentElement.id === 'quicknav') a.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    });
+    const pricingInView = (seen.get('pricing') || 0) > 0;
+    fab.classList.toggle('visible', window.scrollY > 600 && !pricingInView);
+  }, { threshold: [0, .15, .3, .5] });
+  ['video', 'features', 'how', 'pricing', 'faq', 'contact'].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
+  window.addEventListener('scroll', () => fab.classList.toggle('visible', window.scrollY > 600 && !((seen.get('pricing') || 0) > 0) && !((seen.get('contact') || 0) > 0)), { passive: true });
   // ?coupon=CODE in the landing link applies it right away (for links you share)
   const fromUrl = new URLSearchParams(location.search).get('coupon');
   if (fromUrl) { input.value = fromUrl; form.requestSubmit(); }
