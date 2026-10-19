@@ -344,6 +344,12 @@
     .svc-num { position: relative; display: block; }
     .svc-num input { padding-inline-end: 30px; }
     .svc-num span { position: absolute; inset-inline-end: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text-muted); pointer-events: none; }
+    .trial-pill { font-size: 11px; font-weight: 700; color: #b45309; background: #fef3c7; padding: 2px 8px; border-radius: 10px; margin-inline-start: 6px; }
+    [data-theme="dark"] .trial-pill { background: #3a2a0c; color: #fcd34d; }
+    .trial-decide { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #fffbeb; border: 1px solid #fde68a;
+      border-radius: 10px; padding: 8px 10px; margin: 10px 0 0; font-size: 13.5px; font-weight: 600; }
+    .trial-decide span { flex: 1; min-width: 120px; }
+    [data-theme="dark"] .trial-decide { background: #2a210d; border-color: #6b4f12; }
     .cf-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
     .cf-row { display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 8px; padding: 6px 10px; }
     .cf-label { flex: 1; font-weight: 600; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2929,6 +2935,7 @@ function getService(id) { return services().find(sv => sv.id === id); }
 function lessonUnitMinutes(l, s) { return l?.unitMinutes || s?.lessonDurationMinutes || 50; }
 // "תספורת זקן" / "לק ג'ל ×2" for a service appointment, else "2 שיעורים" as before.
 function lessonKindLabel(l) {
+  if (l.isTrial) return `🎯 ${t('trial')}${l.serviceName ? ' · ' + escapeHtml(l.serviceName) : ''}`;
   if (l.serviceName) return escapeHtml(l.serviceName) + (l.durationHours > 1 ? ` ×${l.durationHours}` : '');
   return `${l.durationHours} ${l.durationHours > 1 ? t('appointments') : t('appointment')}`;
 }
@@ -2980,6 +2987,81 @@ function removeServiceRow(i) {
   readServiceRows();
   window._svcRows.splice(i, 1);
   renderServiceRows();
+}
+// ===== TRIAL LESSON =====
+// One step for a first meeting with someone who isn't a client yet: creates the
+// client (isTrial) and the trial appointment (isTrial; free by default). Once
+// the trial date has passed, "דורש טיפול" asks whether they're continuing.
+function openTrialLessonModal(defaultDate) {
+  const today = defaultDate || isoDate(new Date());
+  openModal(`🎯 ${t('trial')}`, `
+    <p class="pkg-sub" style="margin:0 0 12px">${t('client')} חדש/ה? יוצרים ${t('client')} ו${t('trial')} בצעד אחד. אחרי ה${t('appointment')} נשאל אם ממשיכים.</p>
+    <div class="form-group"><label>שם</label><input type="text" id="tr-name" placeholder="שם מלא"></div>
+    <div class="form-group"><label>טלפון</label><input type="tel" id="tr-phone" placeholder="05X-XXXXXXX" style="direction:ltr;text-align:right"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>תאריך</label><input type="date" id="tr-date" value="${today}"></div>
+      <div class="form-group"><label>שעה</label><input type="time" id="tr-time" value="16:00"></div>
+    </div>
+    ${services().length ? `<div class="form-group"><label>${t('service')}</label><select id="tr-service" onchange="trialServicePrice()">
+      <option value="">—</option>${lessonServiceOptions('')}</select></div>` : ''}
+    <div class="form-group"><label>מחיר (₪)</label><input type="number" id="tr-price" value="0" min="0">
+      <div class="pkg-sub" style="margin-top:4px">0 = חינם</div></div>
+    <div class="form-group"><label>הערות (לא חובה)</label><textarea id="tr-notes" rows="2" placeholder="למשל: כיתה ח׳, מתקשה בשברים"></textarea></div>`,
+    async () => {
+      const name = document.getElementById('tr-name').value.trim();
+      const date = document.getElementById('tr-date').value;
+      if (!name) { showToast('נא להזין שם', 'error'); return; }
+      if (!date) { showToast('נא לבחור תאריך', 'error'); return; }
+      const price = Math.max(0, parseFloat(document.getElementById('tr-price').value) || 0);
+      const sv = getService(document.getElementById('tr-service')?.value);
+      const used = new Set(getStudents().map(x => x.color));
+      const student = {
+        id: generateId(), name, phone: document.getElementById('tr-phone').value.trim(),
+        color: STUDENT_COLORS.find(c => !used.has(c)) || STUDENT_COLORS[getStudents().length % STUDENT_COLORS.length],
+        hourlyRate: verticalDefault('price', 150), lessonDurationMinutes: verticalDefault('durationMinutes', 50),
+        scheduledDays: [], notes: document.getElementById('tr-notes').value.trim(), isActive: true, isTrial: true,
+        createdAt: new Date().toISOString()
+      };
+      const lesson = {
+        id: generateId(), studentId: student.id, date, time: document.getElementById('tr-time').value || '16:00',
+        durationHours: 1, amount: price, isPaid: price === 0, paidAmount: 0, isTrial: true,
+        notes: '', topic: '', homework: ''
+      };
+      applyServiceToLesson(lesson, sv);
+      await apiCall('POST', '/api/students', student);
+      _students.push(student);
+      await apiCall('POST', '/api/lessons', lesson);
+      _lessons.push(lesson);
+      closeModal();
+      refreshAfterDataChange();
+      showToastWithCalendar(lesson);
+    });
+  const saveBtn = document.getElementById('modal-save-btn');
+  if (saveBtn) saveBtn.textContent = `קביעת ${t('trial')}`;
+}
+function trialServicePrice() {
+  const sv = getService(document.getElementById('tr-service')?.value);
+  if (sv) document.getElementById('tr-price').value = sv.price;
+}
+// Trial clients whose trial appointment has already happened — waiting for a decision.
+function trialFollowUps() {
+  if (!has('trials')) return [];
+  const now = new Date(), today = isoDate(now), hhmm = now.toTimeString().slice(0, 5);
+  return getStudents().filter(s => s.isTrial).map(s => {
+    const l = getLessons().filter(x => x.studentId === s.id && x.isTrial).sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time))[0];
+    return l && (l.date < today || (l.date === today && (l.time || '00:00') <= hhmm)) ? { s, l } : null;
+  }).filter(Boolean);
+}
+async function resolveTrial(studentId, joined) {
+  const s = getStudentById(studentId);
+  if (!s) return;
+  const updated = { ...s, isTrial: false, trialOutcome: joined ? 'joined' : 'left', trialResolvedAt: new Date().toISOString() };
+  if (!joined) updated.isActive = false;
+  await apiCall('PUT', `/api/students/${studentId}`, updated);
+  _students = _students.map(x => x.id === studentId ? updated : x);
+  closeModal();
+  refreshAfterDataChange();
+  showToast(joined ? `🎉 ${s.name} ממשיך/ה — ${t('client')} קבוע/ה` : `${s.name} סומן/ה כלא ממשיך/ה (הועבר/ה ללא פעילים)`);
 }
 function lessonServiceOptions(selectedId) {
   return services().map(sv => `<option value="${escapeHtml(sv.id)}" ${sv.id === selectedId ? 'selected' : ''}>${escapeHtml(sv.name)} · ${formatCurrency(sv.price)} · ${sv.durationMinutes} דק'</option>`).join('');
@@ -3938,6 +4020,7 @@ function renderDashGreeting() {
     </div>
     <div class="dx-actions">
       <button class="dx-act dx-act-primary" onclick="openAddLessonModal(null)"><span>＋</span> ${t('appointment')}</button>
+      ${has('trials') ? `<button class="dx-act" onclick="openTrialLessonModal()"><span>🎯</span> ${t('trial')}</button>` : ''}
       ${has('exams') ? `<button class="dx-act" onclick="openAddExamModal(null)"><span>📝</span> מבחן</button>` : ''}
     </div>`;
 }
@@ -4036,6 +4119,23 @@ function renderInbox() {
           </div>
         </div>`;
       }).join('')}
+    </div>`);
+  }
+
+  const trials = trialFollowUps();
+  if (trials.length) {
+    total += trials.length;
+    sections.push(`<div class="ib-sec">
+      <div class="ib-label">אחרי ${t('trial')} — ממשיכים?</div>
+      ${trials.map(({ s, l }) => `<div class="ib-row">
+        <span class="ib-emoji">🎯</span>
+        <div class="ib-main" onclick="openStudentActions('${s.id}')"><div class="ib-title">${escapeHtml(s.name)}</div>
+          <div class="ib-sub">${getDayName(new Date(l.date + 'T00:00:00').getDay())} ${formatDate(l.date).slice(0, 5)} · ${escapeHtml(l.time || '')}</div></div>
+        <div class="ib-btns">
+          <button class="ib-btn ib-ok" onclick="resolveTrial('${s.id}', true)" title="ממשיך/ה כ${t('client')} קבוע">✓</button>
+          <button class="ib-btn" onclick="resolveTrial('${s.id}', false)" title="לא ממשיך/ה">✕</button>
+        </div>
+      </div>`).join('')}
     </div>`);
   }
 
@@ -4474,7 +4574,7 @@ function renderStudents() {
       <div class="student-card-header">
         <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
           <div class="student-avatar" style="background:${s.color}">${avatarLetter}</div>
-          <h3 style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(s.name)} ${inactive ? '<span style="font-size:11px;font-weight:400;color:var(--text-muted);background:var(--border);padding:2px 7px;border-radius:10px;margin-right:4px">לא פעיל</span>' : ''}</h3>
+          <h3 style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(s.name)} ${inactive ? '<span style="font-size:11px;font-weight:400;color:var(--text-muted);background:var(--border);padding:2px 7px;border-radius:10px;margin-right:4px">לא פעיל</span>' : ''}${s.isTrial ? '<span class="trial-pill">🎯 בניסיון</span>' : ''}</h3>
         </div>
         <span class="badge ${balClass}" style="flex-shrink:0;${balance < 0 ? 'cursor:pointer' : ''}" ${balance < 0 ? `onclick="openStudentActions('${s.id}')"` : ''}>${balText}</span>
       </div>
@@ -4493,6 +4593,11 @@ function renderStudents() {
         </span>
       </div>
       ${s.notes ? `<p class="student-notes">${escapeHtml(s.notes)}</p>` : ''}
+      ${s.isTrial ? `<div class="trial-decide">
+        <span>${escapeHtml(s.name.split(' ')[0])} ממשיך/ה?</span>
+        <button class="btn btn-success btn-xs" onclick="resolveTrial('${s.id}', true)">✓ כן, ${t('client')} קבוע</button>
+        <button class="btn btn-ghost btn-xs" onclick="resolveTrial('${s.id}', false)">לא ממשיך/ה</button>
+      </div>` : ''}
       <div class="student-actions">
         ${!inactive ? `<button class="btn btn-primary btn-sm" onclick="openAddLessonModal('${s.id}')">+ ${t('appointment')}</button>` : ''}
         <button class="btn btn-ghost btn-sm" onclick="openEditStudentModal('${s.id}')"><svg class="icon icon-sm"><use href="#icon-pencil"/></svg> עריכה</button>
@@ -4878,6 +4983,8 @@ function buildLessonForm(l, defaultStudentId, defaultDate) {
         <input type="number" id="f-amount" value="${l?.amount || ''}" placeholder="אוטומטי" min="0">
       </div>
     </div>
+    ${has('trials') ? `<div class="form-group"><label class="checkbox-label">
+      <input type="checkbox" id="f-trial" ${l?.isTrial ? 'checked' : ''}> 🎯 ${t('trial')}</label></div>` : ''}
     <div class="form-group${has('lessonNotes') ? '' : ' feature-off'}" style="background:var(--primary-light);border-radius:10px;padding:12px">
       <div style="font-size:12.5px;font-weight:600;color:var(--primary);margin-bottom:8px">👀 גלוי להורה/${t('client')} בקישור המעקב</div>
       <label>מה עשינו היום</label>
@@ -4954,6 +5061,7 @@ function openAddLessonModal(defaultStudentId, defaultDate) {
       homework: document.getElementById('f-homework').value.trim()
     };
     applyServiceToLesson(lesson, getService(document.getElementById('f-service')?.value));
+    if (document.getElementById('f-trial')?.checked) lesson.isTrial = true;
     const isRecurring = document.getElementById('f-recurring')?.checked;
     const recurCount  = parseInt(document.getElementById('f-recurring-count')?.value || 1);
     const allLessons  = [lesson];
@@ -5015,6 +5123,8 @@ function openEditLessonModal(id) {
       topic: document.getElementById('f-topic').value.trim(),
       homework: document.getElementById('f-homework').value.trim() };
     // A service that's since been deleted stays on the record unless the owner picks another.
+    const trialBox = document.getElementById('f-trial');
+    if (trialBox) { if (trialBox.checked) updated.isTrial = true; else delete updated.isTrial; }
     const svSel = document.getElementById('f-service');
     if (svSel && (svSel.value || !l.serviceId || getService(l.serviceId))) applyServiceToLesson(updated, getService(svSel.value));
     const pkg = selectedLessonPackage();
@@ -5583,7 +5693,7 @@ function renderCalendar() {
           const s = getStudentById(l.studentId);
           const tip = escapeHtml(`${s?.name||'?'} | ${l.time||'--:--'} | ${l.durationHours} ${l.durationHours>1 ? t('appointments') : t('appointment')}${l.notes?' | '+l.notes:''}`);
           html += `<div class="cal-event" style="background:${s?.color||'#2563eb'}" onclick="showCalPopup('${l.id}',event)" title="${tip}">
-            ${l.time||''} <span class="cal-event-name">${escapeHtml(s?.name)||'?'}</span>
+            ${l.isTrial ? '🎯 ' : ''}${l.time||''} <span class="cal-event-name">${escapeHtml(s?.name)||'?'}</span>
           </div>`;
         });
         if (lessons.length > maxShow) html += `<div class="cal-more">+${lessons.length - maxShow} נוספים</div>`;
@@ -5623,7 +5733,7 @@ function renderCalendar() {
         const s = getStudentById(l.studentId);
         html += `<div class="cal-week-event" style="background:${s?.color||'#2563eb'}" onclick="showCalPopup('${l.id}',event)">
           <div class="cal-week-event-time">${l.time||''}</div>
-          <div class="cal-week-event-name">${s?.name||'?'}</div>
+          <div class="cal-week-event-name">${l.isTrial ? '🎯 ' : ''}${escapeHtml(s?.name)||'?'}</div>
         </div>`;
       });
       html += `</div></div>`;
@@ -5662,7 +5772,7 @@ function renderCalendar() {
           <div class="cal-day-lesson-time">${l.time||'--:--'}</div>
           <div class="cal-day-lesson-info">
             <span class="badge" style="background:${s?.color||'#2563eb'}">${escapeHtml(s?.name)||'?'}</span>
-            <span>${l.durationHours} ${l.durationHours>1 ? t('appointments') : t('appointment')}</span>
+            <span>${lessonKindLabel(l)}</span>
             <span>${formatCurrency(l.amount)}</span>
             ${lessonBadge(l)}
             ${l.notes ? `<span class="text-muted">${escapeHtml(l.notes)}</span>` : ''}

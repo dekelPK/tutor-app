@@ -29,7 +29,8 @@
     "portal_history": "🕓 התורים הקודמים",
     "calendar_name": "תורים",
     "service": "שירות",
-    "services": "שירותים"
+    "services": "שירותים",
+    "trial": "תור היכרות"
   },
   "features": {
     "exams": false,
@@ -37,7 +38,8 @@
     "parentContact": false,
     "packages": true,
     "selfBooking": true,
-    "services": true
+    "services": true,
+    "trials": false
   },
   "defaults": {
     "price": 70,
