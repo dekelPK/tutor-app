@@ -429,6 +429,55 @@
 
     /* ===== BULK TOOLBAR ===== */
 
+
+    /* ── Students page (search + chips + compact rows) and client sheet ── */
+    .sx-tools { display: flex; gap: 10px; margin-bottom: 10px; max-width: 900px; }
+    .sx-search { flex: 1; position: relative; min-width: 0; }
+    .sx-tools .lx-select { flex: none; min-width: 0; width: auto; }
+    .sx-search .icon { position: absolute; inset-inline-start: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    .sx-search input { width: 100%; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 10px;
+      padding: 9px 38px 9px 12px; font: inherit; font-size: 14px; }
+    .sx-search input:focus { outline: none; border-color: var(--primary); }
+    .sx-chips { display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; max-width: 900px; }
+    .sx-chips::-webkit-scrollbar { display: none; }
+    .sx-chips button { flex: none; border: 1px solid var(--border); background: var(--card); color: var(--text-muted); border-radius: 999px;
+      padding: 6px 14px; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+    .sx-chips button span { font-weight: 500; opacity: .8; margin-inline-start: 2px; }
+    .sx-chips button.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .sx-list { max-width: 900px; }
+    .sx-row { border-inline-start-width: 0; }
+    .sx-av { width: 40px; height: 40px; font-size: 16px; flex: none; }
+    .sx-inactive { opacity: .6; }
+    .sx-tag { font-size: 11px; font-weight: 500; color: var(--text-muted); background: var(--border); padding: 1px 7px; border-radius: 10px; }
+    .sx-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; overflow: hidden; }
+    .sx-chip { font-size: 11.5px; background: var(--bg); border-radius: 999px; padding: 1px 8px; color: var(--text-muted); white-space: nowrap;
+      max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+    .sx-chip .exam-line { white-space: nowrap; }
+    .sx-chip .exam-line { font-size: inherit; }
+    .sx-end { min-width: 64px; }
+    .sx-end small { font-size: 11px; color: var(--text-muted); }
+    .sx-bal { font-weight: 700; font-size: 14.5px; }
+    .sx-bal.due { color: #dc2626; }
+    .sx-bal.credit { color: #16a34a; }
+    .sx-bal.ok { color: #16a34a; }
+    .sx-quick { display: flex; gap: 6px; }
+    .sx-quick a.lx-quick { text-decoration: none; }
+    .lx-quick-add { color: var(--primary); font-weight: 700; font-size: 18px; }
+    .sp-head { display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }
+    .sp-av { width: 56px; height: 56px; font-size: 22px; flex: none; }
+    .sp-meta { min-width: 0; }
+    .sp-bal { font-weight: 800; font-size: 17px; color: #16a34a; }
+    .sp-bal.due { color: #dc2626; }
+    .sp-line { font-size: 13.5px; color: var(--text-muted); }
+    .sp-details { display: flex; flex-direction: column; gap: 6px; font-size: 14px; background: var(--bg); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; }
+    .sp-details a { color: var(--primary); text-decoration: none; }
+    .sp-notes { white-space: pre-wrap; }
+    .sp-quick { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .sp-quick .btn { flex: 1; text-decoration: none; justify-content: center; }
+    @media (max-width: 768px) {
+      .sx-row { gap: 10px; }
+      .sx-quick .lx-quick { width: 34px; height: 34px; }
+    }
     /* ── Lessons page (tabs + grouped rows) ── */
     .lx-head-actions { display: flex; gap: 8px; align-items: center; }
     .lx-tabs, .lx-toolbar, .lx-summary { max-width: 900px; }
@@ -2100,19 +2149,22 @@
     <div id="page-students" class="page">
       <div class="page-header">
         <h2 class="page-title" data-tf="{clients}">תלמידים</h2>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" id="toggle-inactive-btn" onclick="toggleInactiveStudents()">הצג לא פעילים</button>
+        <div class="lx-head-actions">
           <button class="btn btn-primary" onclick="openAddStudentModal()" data-tf="+ הוסף {client}">+ הוסף תלמיד</button>
         </div>
       </div>
-      <div id="inactive-notice" style="display:none;margin-bottom:12px;font-size:13px;color:var(--text-muted)"></div>
-      <div class="students-grid" id="students-grid">
-        <div class="empty-state-card">
-          <div class="empty-state-icon">👥</div>
-          <p data-tf="אין {clients} עדיין">אין תלמידים עדיין</p>
-          <p data-tf="לחץ &quot;הוסף {client}&quot; או ייבא מאקסל">לחץ "הוסף תלמיד" או ייבא מאקסל</p>
-        </div>
+      <div class="sx-tools">
+        <div class="sx-search"><svg class="icon icon-sm"><use href="#icon-search"/></svg>
+          <input type="search" id="stu-search" placeholder="חיפוש לפי שם או טלפון" oninput="renderStudents()" autocomplete="off"></div>
+        <select id="stu-sort" class="lx-select" onchange="renderStudents()" aria-label="מיון">
+          <option value="name">לפי שם</option>
+          <option value="debt">לפי חוב</option>
+          <option value="recent">פעילות אחרונה</option>
+        </select>
       </div>
+      <div class="sx-chips" id="stu-chips" role="tablist"></div>
+      <div class="lx-summary" id="stu-summary"></div>
+      <div class="sx-list" id="students-grid"></div>
     </div>
 
     <!-- PAGE: LESSONS -->
@@ -3881,7 +3933,32 @@ function openStudentActions(studentId) {
     ${group(`${t('client')}`, [
       item('#icon-pencil', 'עריכת פרטים', has('parentContact') ? 'שם, מחיר, טלפון, הורה, צבע' : 'שם, מחיר, טלפון, צבע', `openEditStudentModal('${s.id}')`),
     ])}`;
-  openModal(s.name, html, null);
+  // Profile header: who this is, at a glance — then the actions below.
+  const days = (s.scheduledDays || []).map(d => DAY_NAMES[d]).join(', ');
+  const info = studentLessonInfo(studentId, today);
+  const wa = phoneToIntl(s.phone);
+  const head = `<div class="sp-head">
+      <div class="student-avatar sp-av" style="background:${s.color || '#2563eb'}">${escapeHtml((s.name || '?')[0])}</div>
+      <div class="sp-meta">
+        <div class="sp-bal ${balance < 0 ? 'due' : ''}">${balance < 0 ? `לתשלום ${formatCurrency(-balance)}` : balance > 0 ? `זכות ${formatCurrency(balance)}` : '✓ מאוזן'}</div>
+        <div class="sp-line">${formatCurrency(s.hourlyRate)} ל${t('appointment')} · ${s.lessonDurationMinutes || 50} דק'${days ? ` · ${days}` : ''}</div>
+        <div class="sp-line">${info.count} ${t('appointments')}${info.next ? ` · הבא: ${lessonDayLabel(info.next.date, today)} ${escapeHtml(info.next.time || '')}` : ''}</div>
+      </div>
+    </div>
+    ${(s.phone || customFieldsCardHtml(s) || s.notes) ? `<div class="sp-details">
+      ${s.phone ? `<span>📞 <a href="tel:${escapeHtml(s.phone)}" dir="ltr">${escapeHtml(s.phone)}</a></span>` : ''}
+      ${customFieldsCardHtml(s)}
+      ${s.notes ? `<span class="sp-notes">🗒️ ${escapeHtml(s.notes)}</span>` : ''}
+    </div>` : ''}
+    <div class="sp-quick">
+      ${s.isActive !== false ? `<button class="btn btn-primary btn-sm" onclick="closeModal();openAddLessonModal('${s.id}')">+ ${t('appointment')}</button>` : ''}
+      ${wa ? `<a class="btn btn-ghost btn-sm" href="https://wa.me/${wa}" target="_blank" rel="noopener">💬 ווצאפ</a>` : ''}
+      ${s.phone ? `<a class="btn btn-ghost btn-sm" href="tel:${escapeHtml(s.phone)}">📞 חיוג</a>` : ''}
+    </div>
+    ${s.isTrial ? `<div class="trial-decide"><span>${escapeHtml((s.name || '').split(' ')[0])} ממשיך/ה?</span>
+      <button class="btn btn-success btn-xs" onclick="resolveTrial('${s.id}', true)">✓ כן, ${t('client')} קבוע</button>
+      <button class="btn btn-ghost btn-xs" onclick="resolveTrial('${s.id}', false)">לא ממשיך/ה</button></div>` : ''}`;
+  openModal(s.name, head + html, null);
 }
 
 // Add an exam from the top-level "+ מבחן" buttons (calendar / lessons page),
@@ -4555,89 +4632,95 @@ function populateDashMonthFilter() {
 
 
 // ===== STUDENTS =====
-function toggleInactiveStudents() {
-  showInactiveStudents = !showInactiveStudents;
-  const btn = document.getElementById('toggle-inactive-btn');
-  btn.textContent = showInactiveStudents ? 'הסתר לא פעילים' : 'הצג לא פעילים';
+// A searchable list instead of big cards: filter chips (active / owe money /
+// trial / inactive), sort, and one compact row per client. Tapping a row opens
+// the client's sheet (openStudentActions) with their details and every action.
+let studentFilter = 'active';
+function toggleInactiveStudents() {  // kept for old callers: jump to the inactive filter
+  studentFilter = studentFilter === 'inactive' ? 'active' : 'inactive';
   renderStudents();
+}
+function setStudentFilter(f) { studentFilter = f; renderStudents(); }
+
+// Next upcoming / last past lesson of a client (for the row's sub-line and sorting)
+function studentLessonInfo(id, today) {
+  const ls = getLessons().filter(l => l.studentId === id);
+  let next = null, last = null;
+  for (const l of ls) {
+    if (l.date >= today) { if (!next || (l.date + l.time) < (next.date + next.time)) next = l; }
+    else if (!last || (l.date + l.time) > (last.date + last.time)) last = l;
+  }
+  return { next, last, count: ls.length };
 }
 
 function renderStudents() {
-  const allStudents = getStudents();
-  const inactiveCount = allStudents.filter(s => s.isActive === false).length;
-  const notice = document.getElementById('inactive-notice');
-  const btn = document.getElementById('toggle-inactive-btn');
+  const today = isoDate(new Date());
+  const all = getStudents();
+  const q = (document.getElementById('stu-search')?.value || '').trim().toLowerCase();
+  const sortBy = document.getElementById('stu-sort')?.value || 'name';
+  const rows = all.map(s => ({ s, bal: getStudentBalance(s.id), ...studentLessonInfo(s.id, today) }));
+  const active = rows.filter(r => r.s.isActive !== false);
+  const groups = {
+    active: active,
+    debt: active.filter(r => r.bal < 0),
+    trial: rows.filter(r => r.s.isTrial && r.s.isActive !== false),
+    inactive: rows.filter(r => r.s.isActive === false),
+  };
+  if (!groups[studentFilter] || (studentFilter !== 'active' && !groups[studentFilter].length)) studentFilter = 'active';
 
-  if (inactiveCount > 0) {
-    btn.style.display = '';
-    notice.style.display = showInactiveStudents ? '' : '';
-    notice.textContent = showInactiveStudents
-      ? `מציג ${inactiveCount} ${inactiveCount > 1 ? t('clients') : t('client')} לא פעיל${inactiveCount > 1 ? 'ים' : ''}`
-      : `${inactiveCount} ${inactiveCount > 1 ? t('clients') : t('client')} לא פעיל${inactiveCount > 1 ? 'ים' : ''} מוסתר${inactiveCount > 1 ? 'ים' : ''}`;
-    notice.style.display = '';
-  } else {
-    btn.style.display = 'none';
-    notice.style.display = 'none';
-  }
+  document.getElementById('stu-chips').innerHTML = [
+    ['active', `פעילים`, groups.active.length],
+    ['debt', `💰 חייבים`, groups.debt.length],
+    has('trials') && ['trial', `🎯 בניסיון`, groups.trial.length],
+    ['inactive', `לא פעילים`, groups.inactive.length],
+  ].filter(Boolean).filter(([k, , n]) => k === 'active' || n > 0)
+    .map(([k, label, n]) => `<button role="tab" aria-selected="${studentFilter === k}" class="${studentFilter === k ? 'on' : ''}" onclick="setStudentFilter('${k}')">${label} <span>${n}</span></button>`).join('');
 
-  const students = showInactiveStudents ? allStudents : allStudents.filter(s => s.isActive !== false);
+  let list = groups[studentFilter];
+  if (q) list = list.filter(r => (r.s.name || '').toLowerCase().includes(q) || (r.s.phone || '').replace(/\D/g, '').includes(q.replace(/\D/g, '') || '\u0000'));
+  const lastKey = r => (r.last ? r.last.date : '') || (r.next ? r.next.date : '');
+  list = [...list].sort(sortBy === 'debt' ? (a, b) => a.bal - b.bal
+    : sortBy === 'recent' ? (a, b) => lastKey(b).localeCompare(lastKey(a))
+    : (a, b) => (a.s.name || '').localeCompare(b.s.name || '', 'he'));
+
+  const debtSum = groups.debt.reduce((acc, r) => acc - r.bal, 0);
+  document.getElementById('stu-summary').innerHTML = studentFilter === 'debt'
+    ? `<b>${formatCurrency(debtSum)}</b> פתוח לגבייה מ-<b>${groups.debt.length}</b> ${groups.debt.length === 1 ? t('client') : t('clients')}`
+    : studentFilter === 'active' ? `<b>${groups.active.length}</b> ${t('clients')} פעילים${debtSum > 0 ? ` · <span class="lx-due-txt">${formatCurrency(debtSum)} פתוח לגבייה</span>` : ''}` : '';
+
   const el = document.getElementById('students-grid');
-
-  if (students.length === 0) {
-    el.innerHTML = `<div class="empty-state-card">
-      <div class="empty-state-icon">🎓</div>
-      <p>עדיין אין ${t('clients')}</p>
-      <p style="margin-bottom:16px">לחץ "הוסף ${t('client')}" להתחיל</p>
-      <button class="btn btn-primary" onclick="openAddStudentModal()">+ הוסף ${t('client')}</button>
-    </div>`;
+  if (!all.length) {
+    el.innerHTML = `<div class="dx-empty"><div class="dx-empty-ic">🎓</div><div class="dx-empty-title">עדיין אין ${t('clients')}</div>
+      <div class="dx-empty-sub"><button class="btn btn-primary btn-sm" onclick="openAddStudentModal()">+ הוסף ${t('client')}</button></div></div>`;
     return;
   }
-  el.innerHTML = students.map(s => {
+  if (!list.length) { el.innerHTML = `<div class="dx-empty"><div class="dx-empty-ic">🔍</div><div class="dx-empty-title">לא נמצאו ${t('clients')}</div></div>`; return; }
+
+  el.innerHTML = `<div class="lx-card">${list.map(({ s, bal, next, last }) => {
     const inactive = s.isActive === false;
-    const balance = getStudentBalance(s.id);
-    const allLessons = getLessons().filter(l => l.studentId === s.id);
-    const lessonCount = allLessons.length;
-    const paidCount = allLessons.filter(l => getLessonPayStatus(l) === 'paid').length;
-    const pendingCount = allLessons.filter(l => getLessonPayStatus(l) !== 'paid').length;
-    const days = (s.scheduledDays || []).map(d => DAY_NAMES[d]).join(', ');
-    const balClass = balance < 0 ? 'badge-danger' : balance > 0 ? 'badge-success' : 'badge-muted';
-    const balText  = balance < 0 ? `לתשלום ${formatCurrency(Math.abs(balance))}` : balance > 0 ? `זכות ${formatCurrency(balance)}` : 'מאוזן';
-    const avatarLetter = (s.name || '?')[0];
-    return `<div class="student-card" style="border-top-color:${s.color};${inactive ? 'opacity:0.6' : ''}">
-      <div class="student-card-header">
-        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
-          <div class="student-avatar" style="background:${s.color}">${avatarLetter}</div>
-          <h3 style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(s.name)} ${inactive ? '<span style="font-size:11px;font-weight:400;color:var(--text-muted);background:var(--border);padding:2px 7px;border-radius:10px;margin-right:4px">לא פעיל</span>' : ''}${s.isTrial ? '<span class="trial-pill">🎯 בניסיון</span>' : ''}</h3>
-        </div>
-        <span class="badge ${balClass}" style="flex-shrink:0;${balance < 0 ? 'cursor:pointer' : ''}" ${balance < 0 ? `onclick="openStudentActions('${s.id}')"` : ''}>${balText}</span>
+    const pkg = has('packages') ? studentPackageLine(s.id) : '';
+    const exam = has('exams') ? studentExamLine(s.id) : '';
+    const soon = d => { const days = (new Date(d + 'T00:00:00') - new Date(today + 'T00:00:00')) / 864e5;
+      return days < 2 ? lessonDayLabel(d, today) : days < 7 ? `יום ${getDayName(new Date(d + 'T00:00:00').getDay())}` : formatDate(d).slice(0, 5); };
+    const when = next
+      ? `${t('appointment')} הבא: ${soon(next.date)} ב-${escapeHtml(next.time || '')}`
+      : last ? `${t('appointment')} אחרון: ${relativeTime(last.date + 'T12:00:00')}` : `אין עדיין ${t('appointments')}`;
+    const balHtml = bal < 0 ? `<span class="sx-bal due">${formatCurrency(-bal)}</span><small>לתשלום</small>`
+      : bal > 0 ? `<span class="sx-bal credit">${formatCurrency(bal)}</span><small>זכות</small>`
+      : `<span class="sx-bal ok">✓</span><small>מאוזן</small>`;
+    return `<div class="lx-row sx-row ${inactive ? 'sx-inactive' : ''}" style="--c:${s.color || '#2563eb'}" onclick="openStudentActions('${s.id}')">
+      <div class="student-avatar sx-av" style="background:${s.color || '#2563eb'}">${escapeHtml((s.name || '?')[0])}</div>
+      <div class="lx-main">
+        <div class="lx-name">${escapeHtml(s.name)}${s.isTrial ? '<span class="trial-pill">🎯 בניסיון</span>' : ''}${inactive ? '<span class="sx-tag">לא פעיל</span>' : ''}</div>
+        <div class="lx-sub">${when}</div>
+        ${pkg || exam ? `<div class="sx-tags">${pkg ? `<span class="sx-chip">${pkg}</span>` : ''}${exam ? `<span class="sx-chip">${exam}</span>` : ''}</div>` : ''}
       </div>
-      <div class="student-info">
-        <span>💰 ${formatCurrency(s.hourlyRate)}/${t('appointment')}</span>
-        <span>⏱ ${s.lessonDurationMinutes || 50} דק' ל${t('appointment')}</span>
-        <span>📅 ${days || 'ימים לא הוגדרו'}</span>
-        ${s.phone ? `<span>📞 <a href="tel:${escapeHtml(s.phone)}" style="color:var(--primary);text-decoration:none">${escapeHtml(s.phone)}</a></span>` : ''}
-        ${customFieldsCardHtml(s)}
-        ${studentPackageLine(s.id) ? `<span class="card-link" onclick="openPackagesModal('${s.id}')">${studentPackageLine(s.id)}</span>` : ''}
-        ${studentExamLine(s.id) ? `<span class="card-link" onclick="openExamsModal('${s.id}')">${studentExamLine(s.id)}</span>` : ''}
-        <span style="display:flex;gap:10px;flex-wrap:wrap">
-          <span>📊 ${lessonCount} ${t('appointments')}</span>
-          <span class="text-success">✅ ${paidCount} שולמו</span>
-          ${pendingCount > 0 ? `<span class="text-warning">⏳ ${pendingCount} ממתינים</span>` : ''}
-        </span>
-      </div>
-      ${s.notes ? `<p class="student-notes">${escapeHtml(s.notes)}</p>` : ''}
-      ${s.isTrial ? `<div class="trial-decide">
-        <span>${escapeHtml(s.name.split(' ')[0])} ממשיך/ה?</span>
-        <button class="btn btn-success btn-xs" onclick="resolveTrial('${s.id}', true)">✓ כן, ${t('client')} קבוע</button>
-        <button class="btn btn-ghost btn-xs" onclick="resolveTrial('${s.id}', false)">לא ממשיך/ה</button>
-      </div>` : ''}
-      <div class="student-actions">
-        ${!inactive ? `<button class="btn btn-primary btn-sm" onclick="openAddLessonModal('${s.id}')">+ ${t('appointment')}</button>` : ''}
-        <button class="btn btn-ghost btn-sm" onclick="openEditStudentModal('${s.id}')"><svg class="icon icon-sm"><use href="#icon-pencil"/></svg> עריכה</button>
-        <button class="btn btn-ghost btn-sm sa-more" onclick="openStudentActions('${s.id}')">עוד פעולות <span class="sa-dots">⋯</span></button>
+      <div class="lx-end sx-end">${balHtml}</div>
+      <div class="sx-quick">
+        ${!inactive ? `<button class="lx-quick lx-quick-add" onclick="event.stopPropagation();openAddLessonModal('${s.id}')" title="${t('appointment')} חדש" aria-label="${t('appointment')} חדש">＋</button>` : ''}
       </div>
     </div>`;
-  }).join('');
+  }).join('')}</div>`;
 }
 
 function buildStudentForm(s) {
@@ -5313,7 +5396,8 @@ function openEditLessonModal(id) {
 }
 
 async function markAllLessonsPaid(studentId) {
-  const pending = _lessons.filter(l => l.studentId === studentId && !l.isPaid);
+  const today = isoDate(new Date());
+  const pending = _lessons.filter(l => l.studentId === studentId && !l.isPaid && !l.packageId && lessonStarted(l, today));
   if (pending.length === 0) { showToast(`אין ${t('appointments')} ממתינים`); return; }
   confirmAction(`לסמן ${pending.length} ${t('appointments')} כשולמו?`, async () => {
     for (const l of pending) {
