@@ -2311,6 +2311,18 @@
         </section>
 
         <aside class="adm-side">
+          <section class="card dx-card" id="admin-instagram-card">
+            <div class="dx-card-head">
+              <h3 class="dx-title"><span class="dx-ic dx-ic-violet">📸</span>תוכן אינסטגרם שבועי</h3>
+              <span class="adm-pill" id="admin-ig-status">—</span>
+            </div>
+            <p class="adm-hint">כל יום ראשון בבוקר תגיע לכאן התראה. שולחים ל-Claude את ההודעה למטה, והוא מכין ומתזמן פוסט ורילס לכל יום (שלישי עד ראשון, עם קרוסלה אחת).</p>
+            <div class="adm-ann-preview" id="admin-ig-msg" style="white-space:pre-wrap;user-select:all"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+              <button class="btn btn-primary btn-sm" onclick="adminCopyInstagramMsg()">📋 העתקת ההודעה</button>
+              <button class="btn btn-success btn-sm" onclick="adminInstagramDone()">✓ הכנו את השבוע</button>
+            </div>
+          </section>
           <section class="card dx-card">
             <div class="dx-card-head">
               <h3 class="dx-title"><span class="dx-ic dx-ic-blue">💳</span>תשלומים בביט</h3>
@@ -4020,7 +4032,10 @@ function openGoodLuck(examId) {
 // /?exam=<id> — from the 08:00 push (cold start), or forwarded by the service
 // worker as a message when the app was already open.
 function handleExamLink(url) {
-  const id = new URL(url, location.origin).searchParams.get('exam');
+  const params = new URL(url, location.origin).searchParams;
+  // /?admin=instagram — the Sunday "make this week's Instagram content" push
+  if (params.get('admin') === 'instagram' && window._isAdmin) { showPage('admin'); return true; }
+  const id = params.get('exam');
   if (!id) return false;
   showPage('dashboard');
   openGoodLuck(id);
@@ -4606,6 +4621,34 @@ async function adminSetSubscription(userId, body) {
   filterAdminUsers(document.getElementById('admin-user-search')?.value);
   if (body.action !== 'payment') showToast(body.action === 'free' ? 'החשבון הוגדר כחינם' : 'הניסיון הוארך ב-7 ימים', 'success');
   return d;
+}
+// Weekly Instagram routine: copyable request for Claude + "done this week" (stops the Sunday push)
+function adminInstagramMessage() {
+  const d = new Date();
+  d.setDate(d.getDate() + ((2 - d.getDay() + 7) % 7 || 7));  // next Tuesday
+  return `תכיני את תוכן האינסטגרם לשבוע הקרוב, מיום שלישי ${formatDate(isoDate(d)).slice(0, 5)} עד יום ראשון: פוסט ורילס (Trial Reel) בכל יום, קרוסלה אחת, ותתזמני הכל במטריקול.`;
+}
+async function loadAdminInstagram() {
+  const msg = document.getElementById('admin-ig-msg');
+  if (!msg) return;
+  msg.textContent = adminInstagramMessage();
+  try {
+    const st = await (await fetch('/api/admin/instagram')).json();
+    const pill = document.getElementById('admin-ig-status');
+    // the server stores Israel-local time — compare calendar dates, not instants
+    const days = st.lastDone ? Math.max(0, Math.round((new Date(isoDate(new Date()) + 'T12:00') - new Date(st.lastDone.slice(0, 10) + 'T12:00')) / 86400000)) : null;
+    pill.textContent = days === null ? 'עוד לא הוכן' : days === 0 ? 'הוכן היום ✓' : `הוכן לפני ${days} ימים`;
+    pill.className = 'adm-pill ' + (days !== null && days < 5 ? 'adm-pill-live' : 'adm-pill-warn');
+  } catch (e) { /* pill stays */ }
+}
+async function adminCopyInstagramMsg() {
+  const text = document.getElementById('admin-ig-msg').textContent;
+  try { await navigator.clipboard.writeText(text); showToast('ההודעה הועתקה — אפשר להדביק ל-Claude 📋', 'success'); }
+  catch (e) { showToast('סמני את ההודעה והעתיקי ידנית', 'warning'); }
+}
+async function adminInstagramDone() {
+  const r = await fetch('/api/admin/instagram', { method: 'POST' });
+  if (r.ok) { showToast('מעולה! נסמן שהשבוע מוכן ✓', 'success'); loadAdminInstagram(); }
 }
 async function loadAdminBillingSettings() {
   try {
@@ -6473,7 +6516,7 @@ async function renderAdminPage() {
   await loadVerticalList(); // user rows show each profession's label
   if (!_signup.pricing) { try { _signup.pricing = await (await fetch('/api/pricing')).json(); } catch (e) { /* pills fall back to the plan id */ } }
   renderAdminDemoList();
-  await Promise.all([loadAdminStats(), loadAdminPending(), loadAdminContacts(), loadAdminUsers(), loadAdminAnnouncementIntoForm(), loadAdminBillingSettings()]);
+  await Promise.all([loadAdminStats(), loadAdminPending(), loadAdminContacts(), loadAdminUsers(), loadAdminAnnouncementIntoForm(), loadAdminBillingSettings(), loadAdminInstagram()]);
 }
 
 function avatarColorFor(key) {

@@ -210,6 +210,31 @@ class SubscriptionTests(unittest.TestCase):
         self.assertRaises(ValueError, sub.normalize_phone, '12345')
 
 
+class InstagramReminderTests(unittest.TestCase):
+    def test_due_only_on_sunday_morning_once_and_not_after_done(self):
+        import instagram_reminder as ig
+        from datetime import datetime
+        sun = lambda h: datetime(2026, 10, 25, h, 45)      # Sunday
+        self.assertTrue(ig.due({}, sun(8)))
+        self.assertFalse(ig.due({}, sun(7)))               # winter run at 07:45 local waits
+        self.assertFalse(ig.due({}, datetime(2026, 10, 26, 9, 0)))   # Monday
+        self.assertFalse(ig.due({'lastReminder': '2026-10-25'}, sun(9)))  # already sent today
+        self.assertFalse(ig.due({'lastDone': '2026-10-23T12:00:00'}, sun(8)))  # prepared two days ago
+        self.assertTrue(ig.due({'lastDone': '2026-10-12T12:00:00'}, sun(8)))
+
+    def test_claim_marks_sent_and_endpoints(self):
+        import instagram_reminder as ig
+        from datetime import datetime
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'ig.json')
+            now = datetime(2026, 10, 25, 8, 45)
+            self.assertTrue(ig.claim(path, now))
+            self.assertFalse(ig.claim(path, now))   # the second cron run sends nothing
+            self.assertEqual(ig.load(path)['lastReminder'], '2026-10-25')
+            self.assertIn('lastDone', ig.mark_done(path, now))
+        self.assertEqual(ig.PUSH['url'], '/?admin=instagram')
+
+
 class MigrationAndApiTests(unittest.TestCase):
     """An existing pre-migration database must come out as (female) tutors."""
 
@@ -351,6 +376,20 @@ class MigrationAndApiTests(unittest.TestCase):
         with admin.session_transaction() as sess:
             sess['user_id'], sess['user_email'] = 'adm', self.app_mod.ADMIN_EMAIL
         return admin
+
+    def test_admin_instagram_card_and_push_endpoint(self):
+        c = self.app_mod.app.test_client()
+        self.assertEqual(c.get('/api/admin/instagram').status_code, 401)
+        admin = self.admin_client()
+        self.assertEqual(admin.get('/api/admin/instagram').status_code, 200)
+        self.assertIn('lastDone', admin.post('/api/admin/instagram').json)
+        self.assertEqual(c.get('/api/push/instagram-reminder?token=bad').status_code, 401)
+        # right after "done" (and not Sunday morning anyway) there is nothing to send
+        self.assertEqual(c.get(f'/api/push/instagram-reminder?token={self.app_mod.CRON_SECRET}').json['subscriptions'], [])
+
+    def test_brand_has_a_contact_email(self):
+        import verticals
+        self.assertIn('@', verticals.brand()['contactEmail'])
 
     def test_signup_needs_a_phone_and_starts_a_week_trial(self):
         c = self.app_mod.app.test_client()

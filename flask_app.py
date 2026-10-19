@@ -23,6 +23,7 @@ import demo_accounts
 import pricing
 import landing_contact
 import subscription
+import instagram_reminder
 DB_PATH  = os.path.join(BASE_DIR, 'tutor.db')
 
 app = Flask(__name__, static_folder=BASE_DIR)
@@ -1017,6 +1018,30 @@ def admin_suspend_user(target_id):
     with get_db() as db:
         db.execute('UPDATE users SET approved=0 WHERE id=? AND email!=?', [target_id, ADMIN_EMAIL])
     return jsonify({'ok': True})
+
+# ── Weekly Instagram-content reminder (admin card + Sunday push) ──────────────
+INSTAGRAM_STATUS_PATH = os.path.join(BASE_DIR, 'instagram_status.json')
+
+@app.route('/api/admin/instagram', methods=['GET', 'POST'])
+def admin_instagram():
+    err = require_admin()
+    if err: return err
+    if request.method == 'POST':
+        instagram_reminder.mark_done(INSTAGRAM_STATUS_PATH, portal_core.now_local())
+    return jsonify(instagram_reminder.load(INSTAGRAM_STATUS_PATH))
+
+@app.route('/api/push/instagram-reminder')
+def push_instagram_reminder():
+    # Used by instagram-weekly-reminder.yml: the admin's devices + the text, only when a reminder is due.
+    if request.args.get('token') != CRON_SECRET:
+        return jsonify({'error': 'Unauthorized'}), 401
+    if not instagram_reminder.claim(INSTAGRAM_STATUS_PATH, portal_core.now_local()):
+        return jsonify({'subscriptions': []})
+    with get_db() as db:
+        admin_row = db.execute('SELECT id FROM users WHERE email=?', [ADMIN_EMAIL]).fetchone()
+        subs = db.execute('SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=?',
+                          [admin_row['id']]).fetchall() if admin_row else []
+    return jsonify({'subscriptions': [dict(s) for s in subs], **instagram_reminder.PUSH})
 
 # ── Subscription (trial → Bit payment recorded by the admin) ─────────────────
 BILLING_SETTINGS_PATH = os.path.join(BASE_DIR, 'billing_settings.json')
