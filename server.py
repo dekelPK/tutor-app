@@ -8,6 +8,7 @@ import demo_accounts
 import pricing
 import landing_contact
 import subscription
+import instagram_reminder
 from datetime import datetime, timedelta
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -902,6 +903,17 @@ def admin_suspend_user(target_id):
     c.execute('UPDATE users SET approved=0 WHERE id=? AND email!=?', [target_id, ADMIN_EMAIL])
     c.commit(); c.close()
     return jsonify({'ok': True})
+
+# ── Weekly Instagram-content reminder (card only locally; the push is production-only) ──
+INSTAGRAM_STATUS_PATH = os.path.join(BASE_DIR, 'instagram_status.json')
+
+@app.route('/api/admin/instagram', methods=['GET', 'POST'])
+def admin_instagram():
+    err = require_admin()
+    if err: return err
+    if request.method == 'POST':
+        instagram_reminder.mark_done(INSTAGRAM_STATUS_PATH, portal_core.now_local())
+    return jsonify(instagram_reminder.load(INSTAGRAM_STATUS_PATH))
 
 # ── Subscription (same as flask_app.py; local: stored only, no push) ───────────
 BILLING_SETTINGS_PATH = os.path.join(BASE_DIR, 'billing_settings.json')
