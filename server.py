@@ -6,6 +6,7 @@ import portal_core
 import verticals
 import demo_accounts
 import pricing
+import landing_contact
 from datetime import datetime, timedelta
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -58,6 +59,14 @@ def init_db():
         c.execute('ALTER TABLE users ADD COLUMN custom_fields TEXT')
     if 'services' not in cols:
         c.execute('ALTER TABLE users ADD COLUMN services TEXT')
+    c.execute('''CREATE TABLE IF NOT EXISTS contact_messages (
+        id         TEXT PRIMARY KEY,
+        created_at TEXT,
+        name       TEXT,
+        contact    TEXT,
+        message    TEXT,
+        handled    INTEGER DEFAULT 0
+    )''')
     if 'plan' not in cols:
         c.execute('ALTER TABLE users ADD COLUMN plan TEXT')
     if 'coupon' not in cols:
@@ -153,6 +162,46 @@ def signup_plan(body):
     if not c:
         raise ValueError('קוד הקופון לא תקין')
     return plan or c['plan'], c['code']
+
+# ── Contact form on the landing page (local backend: stored only, no push) ──
+_contact_hits = {}
+
+@app.route('/api/contact', methods=['POST'])
+def contact_submit():
+    body = request.json or {}
+    try:
+        msg = landing_contact.clean(body)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    if msg is None:
+        return jsonify({'ok': True})
+    if not landing_contact.allow(_contact_hits, request.remote_addr or ''):
+        return jsonify({'error': 'נשלחו יותר מדי פניות — נסו שוב מאוחר יותר'}), 429
+    c = get_db()
+    c.execute('INSERT INTO contact_messages (id, created_at, name, contact, message, handled) VALUES (?,?,?,?,?,0)',
+              [uuid.uuid4().hex[:12], datetime.now().isoformat(timespec='seconds'), msg['name'], msg['contact'], msg['message']])
+    c.commit()
+    c.close()
+    return jsonify({'ok': True})
+
+@app.route('/api/admin/contact-messages')
+def admin_contact_messages():
+    err = require_admin()
+    if err: return err
+    c = get_db()
+    rows = c.execute('SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 100').fetchall()
+    c.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/admin/contact-messages/<mid>', methods=['PUT'])
+def admin_contact_handled(mid):
+    err = require_admin()
+    if err: return err
+    c = get_db()
+    c.execute('UPDATE contact_messages SET handled=? WHERE id=?', [1 if (request.json or {}).get('handled') else 0, mid])
+    c.commit()
+    c.close()
+    return jsonify({'ok': True})
 
 # ── Serve HTML ─────────────────────────────────────────────────────────────────
 @app.route('/')

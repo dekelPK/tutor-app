@@ -2154,6 +2154,8 @@
 
       <!-- Only rendered when someone is waiting -->
       <div id="admin-pending-list"></div>
+      <!-- Landing-page contact form messages (only rendered when there are some) -->
+      <div id="admin-contact-list"></div>
 
       <div class="adm-grid">
         <section class="card dx-card adm-users">
@@ -4176,6 +4178,37 @@ function adminPlanPill(u) {
   if (!u.plan) return '<span class="adm-pill" title="הצטרפו לפני המסלולים בתשלום">🎉 חינם · מצטרפים ראשונים</span>';
   return `<span class="adm-pill" style="background:var(--primary-light);color:var(--primary)" title="${u.coupon ? 'קופון ' + escapeHtml(u.coupon) : ''}">💳 ${escapeHtml(_signup.pricing?.plans.find(p => p.id === u.plan)?.name || u.plan)} · ₪${u.monthlyPrice ?? '?'}${u.coupon ? ' 🎁' : ''}</span>`;
 }
+// Messages from the contact form on /welcome — the admin also gets a push for each.
+async function loadAdminContacts() {
+  const el = document.getElementById('admin-contact-list');
+  try {
+    const r = await fetch('/api/admin/contact-messages');
+    const list = r.ok ? await r.json() : [];
+    if (!list.length) { el.innerHTML = ''; return; }
+    const open = list.filter(m => !m.handled).length;
+    const link = c => {
+      const digits = c.replace(/[^\d+]/g, '');
+      if (c.includes('@')) return `<a href="mailto:${escapeHtml(c)}">${escapeHtml(c)}</a>`;
+      const intl = phoneToIntl(c);
+      return `<a href="tel:${escapeHtml(digits)}" dir="ltr">${escapeHtml(c)}</a>${intl ? ` · <a href="https://wa.me/${intl}" target="_blank" rel="noopener">💬 ווצאפ</a>` : ''}`;
+    };
+    el.innerHTML = `<section class="card dx-card adm-pending">
+      <div class="dx-card-head"><h3 class="dx-title"><span class="dx-ic dx-ic-blue">📬</span>פניות מדף הנחיתה</h3>${open ? `<span class="dx-count dx-count-warn">${open}</span>` : ''}</div>
+      ${list.slice(0, 20).map(m => `<div class="adm-prow" style="${m.handled ? 'opacity:.55' : ''}">
+        <span class="adm-avatar" style="background:${avatarColorFor(m.contact)}">${escapeHtml((m.name || '?')[0])}</span>
+        <div class="adm-main"><div class="adm-name">${escapeHtml(m.name)}</div>
+          <div class="adm-email">${link(m.contact || '')}</div>
+          ${m.message ? `<div style="font-size:14px;margin-top:4px;white-space:pre-wrap">${escapeHtml(m.message)}</div>` : ''}
+          <div class="adm-meta">${relativeTime(m.created_at)}</div></div>
+        <div class="adm-actions"><button class="btn ${m.handled ? 'btn-ghost' : 'btn-success'} btn-sm" onclick="markContactHandled('${m.id}', ${m.handled ? 'false' : 'true'})">${m.handled ? '↩ פתוח' : '✓ טופל'}</button></div>
+      </div>`).join('')}
+    </section>`;
+  } catch (e) { el.innerHTML = ''; }
+}
+async function markContactHandled(id, handled) {
+  await fetch(`/api/admin/contact-messages/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ handled }) });
+  loadAdminContacts();
+}
 async function loadAdminPending() {
   const el = document.getElementById('admin-pending-list');
   try {
@@ -5844,7 +5877,7 @@ async function renderAdminPage() {
   await loadVerticalList(); // user rows show each profession's label
   if (!_signup.pricing) { try { _signup.pricing = await (await fetch('/api/pricing')).json(); } catch (e) { /* pills fall back to the plan id */ } }
   renderAdminDemoList();
-  await Promise.all([loadAdminStats(), loadAdminPending(), loadAdminUsers(), loadAdminAnnouncementIntoForm()]);
+  await Promise.all([loadAdminStats(), loadAdminPending(), loadAdminContacts(), loadAdminUsers(), loadAdminAnnouncementIntoForm()]);
 }
 
 function avatarColorFor(key) {

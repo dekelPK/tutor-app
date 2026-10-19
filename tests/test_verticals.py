@@ -317,6 +317,32 @@ class MigrationAndApiTests(unittest.TestCase):
         pending = {u['email']: u['monthlyPrice'] for u in admin.get('/api/admin/pending-users').json}
         self.assertEqual((pending.get('p1@x.com'), pending.get('p2@x.com')), (29, 19))
 
+    def test_contact_form_stores_and_notifies_admin(self):
+        c = self.app_mod.app.test_client()
+        self.assertEqual(c.post('/api/contact', json={'name': '', 'contact': '0501234567'}).status_code, 400)
+        self.assertEqual(c.post('/api/contact', json={'name': 'רונית', 'contact': '12'}).status_code, 400)
+        self.assertEqual(c.post('/api/contact', json={'name': 'בוט', 'contact': 'spam@x.com', 'website': 'x'}).status_code, 200)
+        r = c.post('/api/contact', json={'name': 'רונית', 'contact': '050-1234567', 'message': 'כמה עולה?'})
+        self.assertEqual(r.status_code, 200)
+        admin = self.app_mod.app.test_client()
+        with admin.session_transaction() as sess:
+            sess['user_id'], sess['user_email'] = 'adm', self.app_mod.ADMIN_EMAIL
+        msgs = admin.get('/api/admin/contact-messages').json
+        self.assertEqual([m['name'] for m in msgs], ['רונית'])  # the honeypot one was dropped
+        self.assertEqual(c.get('/api/admin/contact-messages').status_code, 401)
+        notice = c.get(f"/api/push/contact-notice?token={self.app_mod.CRON_SECRET}&message_id={msgs[0]['id']}").json
+        self.assertIn('050-1234567', notice['body'])
+        self.assertEqual(c.get(f"/api/push/contact-notice?token=bad&message_id={msgs[0]['id']}").status_code, 401)
+        admin.put(f"/api/admin/contact-messages/{msgs[0]['id']}", json={'handled': True})
+        self.assertEqual(admin.get('/api/admin/contact-messages').json[0]['handled'], 1)
+
+    def test_contact_rate_limit(self):
+        import landing_contact
+        hits = {}
+        self.assertTrue(all(landing_contact.allow(hits, '1.2.3.4', now=100 + i) for i in range(landing_contact.RATE_LIMIT)))
+        self.assertFalse(landing_contact.allow(hits, '1.2.3.4', now=200))
+        self.assertTrue(landing_contact.allow(hits, '1.2.3.4', now=100 + landing_contact.RATE_WINDOW + 10))
+
     def test_landing_page_and_assets(self):
         r = self.client.get('/welcome')
         self.assertEqual(r.status_code, 200)
