@@ -428,6 +428,68 @@
     #confirm-btns { display: flex; gap: 10px; justify-content: center; }
 
     /* ===== BULK TOOLBAR ===== */
+
+    /* ── Lessons page (tabs + grouped rows) ── */
+    .lx-head-actions { display: flex; gap: 8px; align-items: center; }
+    .lx-tabs, .lx-toolbar, .lx-summary { max-width: 900px; }
+    .lx-tabs { display: flex; gap: 6px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 4px; margin-bottom: 12px; }
+    .lx-tabs button { flex: 1; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-weight: 600; font-size: 14.5px;
+      padding: 9px 6px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+    .lx-tabs button.on { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,.25); }
+    .lx-count { font-size: 12px; font-weight: 700; background: var(--bg); color: var(--text-muted); border-radius: 999px; padding: 1px 8px; }
+    .lx-tabs button.on .lx-count { background: rgba(255,255,255,.22); color: #fff; }
+    .lx-count.warn { background: #fef3c7; color: #b45309; }
+    .lx-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .lx-select { width: auto; min-width: 170px; border: 1px solid var(--border); background: var(--card); color: var(--text);
+      border-radius: 10px; padding: 8px 12px; font: inherit; font-size: 14px; font-weight: 600; }
+    .lx-month { display: flex; align-items: center; gap: 6px; font-weight: 700; margin-inline-start: auto; }
+    .lx-month:empty { display: none; }
+    .lx-mbtn { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 18px; cursor: pointer; }
+    .lx-mbtn:disabled { opacity: .35; cursor: default; }
+    .lx-summary { font-size: 14px; color: var(--text-muted); margin: 2px 2px 12px; }
+    .lx-summary:empty { display: none; }
+    .lx-summary b { color: var(--text); }
+    .lx-due-txt { color: #b45309; font-weight: 600; }
+    .lx-list { display: flex; flex-direction: column; gap: 14px; max-width: 900px; }
+    .lx-ghead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-weight: 700; font-size: 14.5px; margin: 0 4px 6px; }
+    .lx-ghead small { color: var(--text-muted); font-weight: 500; font-size: 12.5px; }
+    .lx-ghead.today span { color: var(--primary); }
+    .lx-ghead-client { align-items: center; flex-wrap: wrap; }
+    .lx-ghead-client .student-dot { margin-inline-end: 6px; }
+    .lx-gbtns { display: flex; gap: 6px; }
+    .lx-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .lx-row { display: flex; align-items: center; gap: 12px; padding: 11px 12px; cursor: pointer; position: relative;
+      border-inline-start: 4px solid var(--c); transition: background .12s; }
+    .lx-row + .lx-row { border-top: 1px solid var(--border); }
+    .lx-row:hover { background: var(--bg); }
+    .lx-time { display: flex; flex-direction: column; align-items: center; min-width: 52px; line-height: 1.2; direction: ltr; }
+    .lx-time b { font-size: 15px; }
+    .lx-time small { font-size: 11.5px; color: var(--text-muted); }
+    .lx-date { direction: rtl; font-size: 11px; font-weight: 600; color: var(--text-muted); white-space: nowrap; margin-bottom: 2px; }
+    .lx-main { flex: 1; min-width: 0; }
+    .lx-name { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .lx-name .student-dot { flex: none; }
+    .lx-sub { font-size: 12.5px; color: var(--text-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-top: 1px; }
+    .lx-end { text-align: end; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+    .lx-amt { font-weight: 700; font-size: 14.5px; }
+    .lx-amt.muted { color: var(--text-muted); font-weight: 600; }
+    .lx-ok { font-size: 12px; font-weight: 600; color: var(--success, #16a34a); }
+    .lx-due { font-size: 11.5px; font-weight: 700; color: #b45309; background: #fef3c7; border-radius: 999px; padding: 1px 8px; }
+    [data-theme="dark"] .lx-due, [data-theme="dark"] .lx-count.warn { background: #3a2a0c; color: #fcd34d; }
+    .lx-quick { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--card); font-size: 16px; cursor: pointer; display: grid; place-items: center; }
+    .lx-quick-pay { border-color: #86efac; color: #16a34a; font-weight: 800; background: #f0fdf4; }
+    [data-theme="dark"] .lx-quick-pay { background: #052e1a; border-color: #166534; }
+    .lx-quick-ph { flex: none; width: 36px; }
+    .lx-row .lesson-cb { flex: none; width: 20px; height: 20px; }
+    .ls-info { display: grid; gap: 10px; margin-bottom: 16px; }
+    .ls-row { display: flex; gap: 10px; align-items: baseline; font-size: 15px; }
+    .ls-row > span:first-child { width: 22px; text-align: center; flex: none; }
+    .ls-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    @media (max-width: 768px) {
+      .lx-select { flex: 1; min-width: 0; }
+      .lx-row { gap: 10px; padding: 10px; }
+      .lx-tabs button { font-size: 13.5px; }
+    }
     #bulk-toolbar {
       display: none;
       background: var(--primary);
@@ -2057,56 +2119,27 @@
     <div id="page-lessons" class="page">
       <div class="page-header">
         <h2 class="page-title" data-tf="{appointments}">שיעורים</h2>
-        <div style="display:flex; gap:8px; flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" data-feature="selfBooking" onclick="openAvailabilityModal()"><svg class="icon icon-sm"><use href="#icon-clock"/></svg> <span data-tf="זמינות ל{clients}">זמינות לתלמידים</span></button>
-          <button class="btn btn-ghost btn-sm" onclick="showCalSubscribeInfo()"><svg class="icon icon-sm"><use href="#icon-link"/></svg> מנוי לוח שנה</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportToICS()"><svg class="icon icon-sm"><use href="#icon-calendar"/></svg> ייצוא ללוח שנה</button>
-          <button class="btn btn-ghost" data-feature="exams" onclick="openAddExamModal(null)"><svg class="icon icon-sm"><use href="#icon-graduation"/></svg> הוסף מבחן</button>
+        <div class="lx-head-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openLessonsMoreMenu()" aria-label="פעולות נוספות">⋯ עוד</button>
           <button class="btn btn-primary" onclick="openAddLessonModal(null)" data-tf="+ הוסף {appointment}">+ הוסף שיעור</button>
         </div>
       </div>
-      <div class="filters-bar">
-        <select id="filter-student" onchange="applyLessonFilter()">
+      <div class="lx-tabs" id="lx-tabs" role="tablist"></div>
+      <div class="lx-toolbar">
+        <select id="filter-student" class="lx-select" onchange="applyLessonFilter()" aria-label="סינון לפי תלמיד">
           <option value="" data-tf="כל ה{clients}">כל התלמידים</option>
         </select>
-        <input type="month" id="filter-month" onchange="applyLessonFilter()" placeholder="חודש">
-        <select id="filter-paid" onchange="applyLessonFilter()">
-          <option value="">כל הסטטוסים</option>
-          <option value="paid">שולם</option>
-          <option value="partial">שולם חלקית</option>
-          <option value="unpaid">ממתין</option>
-        </select>
-        <button class="btn btn-ghost btn-sm" onclick="clearLessonFilters()">נקה סינון</button>
+        <div class="lx-month" id="lx-month"></div>
       </div>
-      <!-- Bulk Toolbar -->
+      <div class="lx-summary" id="lx-summary"></div>
+      <!-- Bulk Toolbar (multi-select mode from "⋯ עוד") -->
       <div id="bulk-toolbar">
         <span id="bulk-count" data-tf="0 {appointments} נבחרו">0 שיעורים נבחרו</span>
         <button class="btn-bulk" onclick="bulkMarkPaid()"><svg class="icon icon-sm"><use href="#icon-check"/></svg> סמן שולם</button>
         <button class="btn-bulk danger" onclick="bulkDelete()"><svg class="icon icon-sm"><use href="#icon-trash"/></svg> מחק</button>
-        <button class="btn-bulk" onclick="clearBulkSelection()"><svg class="icon icon-sm"><use href="#icon-x"/></svg> בטל בחירה</button>
+        <button class="btn-bulk" onclick="setLessonSelectMode(false)"><svg class="icon icon-sm"><use href="#icon-x"/></svg> סיום בחירה</button>
       </div>
-      <div class="card">
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th><input type="checkbox" id="select-all-cb" onclick="toggleSelectAll(this)" title="בחר הכל"></th>
-                <th>תאריך</th>
-                <th data-tf="{client}">תלמיד</th>
-                <th>משך</th>
-                <th>סכום</th>
-                <th>סטטוס</th>
-                <th>הערות</th>
-                <th>פעולות</th>
-              </tr>
-            </thead>
-            <tbody id="lessons-tbody">
-              <tr><td colspan="8" class="empty-cell" data-tf="אין {appointments} עדיין">אין שיעורים עדיין</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="lessons-summary" id="lessons-total"></div>
-      </div>
+      <div class="lx-list" id="lx-list"></div>
     </div>
 
     <!-- PAGE: PAYMENTS -->
@@ -4860,21 +4893,41 @@ function openDebtReport(id) {
 }
 
 // ===== LESSONS =====
+// Three views instead of one mixed table:
+//   upcoming — today and on, grouped by day (no payment status: nothing to pay yet)
+//   past     — one month at a time (‹ ›), with that month's income summary
+//   unpaid   — what's left to collect (date ≤ today), grouped by client
+// A row shows time, client, kind and amount; tapping it opens its actions.
+// lessonFilters stays the shared filter state (exportToICS reads it).
 let lessonFilters = { studentId: '', month: '', paid: '' };
+let lessonView = 'upcoming';
+let lessonPastMonth = '';  // YYYY-MM shown in "עברו" (remembered across tab switches)
+let lessonSelectMode = false;
 
 function applyLessonFilter() {
   lessonFilters.studentId = document.getElementById('filter-student').value;
-  lessonFilters.month     = document.getElementById('filter-month').value;
-  lessonFilters.paid      = document.getElementById('filter-paid').value;
   renderLessonsTable();
 }
-
 function clearLessonFilters() {
   lessonFilters = { studentId: '', month: '', paid: '' };
   document.getElementById('filter-student').value = '';
-  document.getElementById('filter-month').value   = '';
-  document.getElementById('filter-paid').value    = '';
   renderLessons();
+}
+function setLessonView(v) {
+  lessonView = v;
+  setLessonSelectMode(false);
+  renderLessonsTable();
+}
+function shiftLessonMonth(delta) {
+  const [y, m] = (lessonPastMonth || isoDate(new Date()).slice(0, 7)).split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  lessonPastMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  renderLessonsTable();
+}
+function setLessonSelectMode(on) {
+  lessonSelectMode = on;
+  if (!on) document.getElementById('bulk-toolbar')?.classList.remove('show');
+  renderLessonsTable();
 }
 
 function renderLessons() {
@@ -4890,55 +4943,175 @@ function renderLessons() {
   renderLessonsTable();
 }
 
+// Owes money: happened (date ≤ today), not from a card, not fully paid, has a price.
+function lessonIsOpen(l, today) {
+  return lessonStarted(l, today) && !l.packageId && (l.amount || 0) > 0 && getLessonPayStatus(l) !== 'paid';
+}
+// Already happened (a lesson later today hasn't — nothing to collect yet).
+function lessonStarted(l, today) {
+  if (l.date !== today) return l.date < today;
+  return (l.time || '00:00') <= new Date().toTimeString().slice(0, 5);
+}
+function lessonDayLabel(iso, today) {
+  const d = new Date(iso + 'T00:00:00');
+  const tm = new Date(today + 'T00:00:00'); tm.setDate(tm.getDate() + 1);
+  if (iso === today) return 'היום';
+  if (iso === isoDate(tm)) return 'מחר';
+  return `${getDayName(d.getDay())} · ${formatDate(iso).slice(0, 5)}`;
+}
+
+function lessonRowHtml(l, { showDate = false, today }) {
+  const s = getStudentById(l.studentId);
+  const upcoming = !lessonStarted(l, today) && getLessonPayStatus(l) !== 'paid' && !l.packageId;
+  const open = lessonIsOpen(l, today);
+  const [start, end] = lessonTimeRange(l, s).split('-');
+  const plain = !l.serviceName && !l.isTrial && (l.durationHours || 1) === 1;
+  const sub = [plain ? '' : lessonKindLabel(l), l.topic ? `📘 ${escapeHtml(l.topic)}` : '', l.notes ? escapeHtml(l.notes) : ''].filter(Boolean).join(' · ');
+  const status = l.packageId ? lessonBadge(l)
+    : upcoming ? ''
+    : getLessonPayStatus(l) === 'paid' ? '<span class="lx-ok">✓ שולם</span>'
+    : getLessonPayStatus(l) === 'partial' ? `<span class="badge badge-partial">חלקי ${formatCurrency(l.paidAmount)}</span>`
+    : '<span class="lx-due">לתשלום</span>';
+  const quick = lessonSelectMode
+    ? `<input type="checkbox" class="lesson-cb" data-id="${l.id}" onclick="event.stopPropagation()" onchange="updateBulkToolbar()" aria-label="בחירה">`
+    : open ? `<button class="lx-quick lx-quick-pay" onclick="event.stopPropagation();toggleLessonPaid('${l.id}')" title="סמן שולם" aria-label="סמן שולם">✓</button>`
+    : (l.date >= today && s?.phone) ? `<button class="lx-quick" onclick="event.stopPropagation();sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="תזכורת בווצאפ" aria-label="תזכורת בווצאפ">💬</button>`
+    : '<span class="lx-quick-ph"></span>';
+  return `<div class="lx-row" style="--c:${s?.color || '#2563eb'}" onclick="${lessonSelectMode ? `this.querySelector('.lesson-cb').click()` : `openLessonSheet('${l.id}')`}">
+    <div class="lx-time">${showDate ? `<span class="lx-date">${lessonDayLabel(l.date, today)}</span>` : ''}<b>${start}</b><small>${end}</small></div>
+    <div class="lx-main">
+      <div class="lx-name"><span class="student-dot" style="background:${s?.color || '#2563eb'}"></span>${escapeHtml(s?.name) || '?'}</div>
+      <div class="lx-sub">${sub}</div>
+    </div>
+    <div class="lx-end"><div class="lx-amt ${upcoming ? 'muted' : ''}">${formatCurrency(l.amount)}</div>${status}</div>
+    ${quick}
+  </div>`;
+}
+
 function renderLessonsTable() {
-  let lessons = getLessons();
-  if (lessonFilters.studentId) lessons = lessons.filter(l => l.studentId === lessonFilters.studentId);
-  if (lessonFilters.month) {
-    const [y, m] = lessonFilters.month.split('-');
-    lessons = lessons.filter(l => { const d = new Date(l.date); return d.getFullYear() == y && d.getMonth()+1 == m; });
-  }
-  if (lessonFilters.paid === 'paid')    lessons = lessons.filter(l => getLessonPayStatus(l) === 'paid');
-  if (lessonFilters.paid === 'partial') lessons = lessons.filter(l => getLessonPayStatus(l) === 'partial');
-  if (lessonFilters.paid === 'unpaid')  lessons = lessons.filter(l => getLessonPayStatus(l) === 'unpaid');
-  lessons.sort((a,b) => b.date.localeCompare(a.date));
+  const today = isoDate(new Date());
+  const sf = lessonFilters.studentId;
+  const all = getLessons().filter(l => !sf || l.studentId === sf);
+  const upcoming = all.filter(l => l.date >= today).sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+  const openList = all.filter(l => lessonIsOpen(l, today));
+  const month = lessonPastMonth || today.slice(0, 7);
+  const past = all.filter(l => l.date < today && l.date.startsWith(month)).sort((a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || '')));
+  const week = new Date(today + 'T00:00:00'); week.setDate(week.getDate() + 7);
+  const inWeek = upcoming.filter(l => l.date < isoDate(week)).length;
+  const openSum = openList.reduce((acc, l) => acc + (l.amount || 0) - (l.paidAmount || 0), 0);
 
-  const tbody = document.getElementById('lessons-tbody');
-  if (lessons.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8"><div style="text-align:center;padding:40px 20px;color:var(--text-muted)">
-      <div style="font-size:40px;margin-bottom:10px">📚</div>
-      <div style="font-size:16px;font-weight:600;margin-bottom:6px">אין ${t('appointments')} להצגה</div>
-      <div style="font-size:13px;margin-bottom:14px">הוסף ${t('appointment')} חדש או שנה את הסינון</div>
-      <button class="btn btn-primary btn-sm" onclick="openAddLessonModal(null)">+ הוסף ${t('appointment')}</button>
-    </div></td></tr>`;
-    document.getElementById('lessons-total').textContent = '';
-    document.getElementById('bulk-toolbar').classList.remove('show');
-    return;
-  }
-  tbody.innerHTML = lessons.map(l => {
-    const s = getStudentById(l.studentId);
-    return `<tr style="border-inline-start-color:${s?.color||'#2563eb'}">
-      <td class="cell-select" style="text-align:center"><input type="checkbox" class="lesson-cb" data-id="${l.id}" onchange="updateBulkToolbar()"></td>
-      <td data-label="תאריך">${formatDate(l.date)}</td>
-      <td data-label="תלמיד"><span class="student-dot" style="background:${s?.color||'#2563eb'}"></span>${s?.name||'?'}</td>
-      <td data-label="משך">${lessonKindLabel(l)}</td>
-      <td data-label="סכום">${formatCurrency(l.amount)}</td>
-      <td data-label="סטטוס">${lessonBadge(l)}</td>
-      <td data-label="הערות" class="text-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.notes)}</td>
-      <td class="cell-actions"><div class="actions-cell">
-        ${l.packageId ? '' : `<button class="btn btn-ghost btn-xs" onclick="toggleLessonPaid('${l.id}')" title="${getLessonPayStatus(l) === 'paid' ? 'בטל סימון' : 'סמן שולם'}">${toggleBtnLabel(l)}</button>`}
-        ${s?.phone ? `<button class="btn btn-ghost btn-xs" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))" title="שלח ווצאפ ל${t('client')}">💬 ווצאפ</button>` : ''}
-        <button class="btn btn-ghost btn-xs" onclick="openEditLessonModal('${l.id}')">ערוך</button>
-        <button class="btn btn-ghost btn-xs text-danger" onclick="deleteLesson('${l.id}')">מחק</button>
-      </div></td>
-    </tr>`;
-  }).join('');
+  document.getElementById('lx-tabs').innerHTML = [
+    ['upcoming', `📅 קרובים`, upcoming.length],
+    ['past', `🕓 עברו`, ''],
+    ['unpaid', `💰 לתשלום`, openList.length],
+  ].map(([v, label, n]) => `<button role="tab" aria-selected="${lessonView === v}" class="${lessonView === v ? 'on' : ''}" onclick="setLessonView('${v}')">
+    ${label}${n !== '' ? `<span class="lx-count ${v === 'unpaid' && n ? 'warn' : ''}">${n}</span>` : ''}</button>`).join('');
 
-  const total   = lessons.reduce((s,l) => s + (l.amount||0), 0);
-  const paid    = lessons.filter(l => getLessonPayStatus(l) === 'paid').reduce((s,l) => s + (l.amount||0), 0);
-  const partial = lessons.filter(l => getLessonPayStatus(l) === 'partial').reduce((s,l) => s + (l.paidAmount||0), 0);
-  const partialCount = lessons.filter(l => getLessonPayStatus(l) === 'partial').length;
-  document.getElementById('lessons-total').textContent =
-    `${lessons.length} ${t('appointments')} | סה"כ: ${formatCurrency(total)} | שולם: ${formatCurrency(paid)}${partialCount ? ` | חלקי: ${formatCurrency(partial)}` : ''} | ממתין: ${formatCurrency(total - paid - partial)}`;
+  const monthEl = document.getElementById('lx-month');
+  if (lessonView === 'past') {
+    const [y, m] = month.split('-').map(Number);
+    monthEl.innerHTML = `<button class="lx-mbtn" onclick="shiftLessonMonth(-1)" aria-label="חודש קודם">›</button>
+      <span>${HE_MONTHS[m - 1]} ${y}</span>
+      <button class="lx-mbtn" onclick="shiftLessonMonth(1)" aria-label="חודש הבא" ${month >= today.slice(0, 7) ? 'disabled' : ''}>‹</button>`;
+  } else monthEl.innerHTML = '';
+  // exportToICS exports what's in view: a month for "past", everything otherwise
+  lessonFilters.month = lessonView === 'past' ? month : '';
+
+  const summary = document.getElementById('lx-summary');
+  const list = document.getElementById('lx-list');
+  const empty = (ic, title, sub) => `<div class="dx-empty"><div class="dx-empty-ic">${ic}</div><div class="dx-empty-title">${title}</div>${sub ? `<div class="dx-empty-sub">${sub}</div>` : ''}</div>`;
+
+  if (lessonView === 'upcoming') {
+    summary.innerHTML = upcoming.length ? `<b>${inWeek}</b> ${inWeek === 1 ? t('appointment') : t('appointments')} ב-7 הימים הקרובים · <b>${upcoming.length}</b> ${t('appointments')} מתוכננים בסך הכל` : '';
+    if (!upcoming.length) { list.innerHTML = empty('📅', `אין ${t('appointments')} מתוכננים`, `<button class="btn btn-primary btn-sm" onclick="openAddLessonModal(null)">+ הוסף ${t('appointment')}</button>`); return updateBulkToolbar(); }
+    const groups = {};
+    upcoming.forEach(l => (groups[l.date] = groups[l.date] || []).push(l));
+    list.innerHTML = Object.entries(groups).map(([d, ls]) => `<div class="lx-group">
+      <div class="lx-ghead ${d === today ? 'today' : ''}"><span>${lessonDayLabel(d, today)}</span><small>${ls.length} ${ls.length === 1 ? t('appointment') : t('appointments')}</small></div>
+      <div class="lx-card">${ls.map(l => lessonRowHtml(l, { today })).join('')}</div></div>`).join('');
+  } else if (lessonView === 'past') {
+    const total = past.reduce((a, l) => a + (l.amount || 0), 0);
+    const got = past.reduce((a, l) => a + (getLessonPayStatus(l) === 'paid' || l.packageId ? (l.amount || 0) : (l.paidAmount || 0)), 0);
+    summary.innerHTML = past.length ? `<b>${past.length}</b> ${t('appointments')} · הכנסה <b>${formatCurrency(total)}</b> · נגבה <b>${formatCurrency(got)}</b>${total - got > 0 ? ` · <span class="lx-due-txt">פתוח ${formatCurrency(total - got)}</span>` : ''}` : '';
+    if (!past.length) { list.innerHTML = empty('🕓', `אין ${t('appointments')} בחודש הזה`, ''); return updateBulkToolbar(); }
+    const groups = {};
+    past.forEach(l => (groups[l.date] = groups[l.date] || []).push(l));
+    list.innerHTML = Object.entries(groups).map(([d, ls]) => `<div class="lx-group">
+      <div class="lx-ghead"><span>${lessonDayLabel(d, today)}</span><small>${ls.length} ${ls.length === 1 ? t('appointment') : t('appointments')}</small></div>
+      <div class="lx-card">${ls.map(l => lessonRowHtml(l, { today })).join('')}</div></div>`).join('');
+  } else {
+    summary.innerHTML = openList.length ? `<b>${formatCurrency(openSum)}</b> פתוח לגבייה מ${openList.length === 1 ? `${t('appointment')} אחד` : `-<b>${openList.length}</b> ${t('appointments')}`}` : '';
+    if (!openList.length) { list.innerHTML = empty('✨', 'הכול שולם', `אין ${t('appointments')} שממתינים לתשלום`); return updateBulkToolbar(); }
+    const byStudent = {};
+    openList.forEach(l => (byStudent[l.studentId] = byStudent[l.studentId] || []).push(l));
+    list.innerHTML = Object.entries(byStudent)
+      .map(([sid, ls]) => ({ sid, ls: ls.sort((a, b) => a.date.localeCompare(b.date)), sum: ls.reduce((a, l) => a + (l.amount || 0) - (l.paidAmount || 0), 0) }))
+      .sort((a, b) => b.sum - a.sum)
+      .map(({ sid, ls, sum }) => {
+        const st = getStudentById(sid);
+        return `<div class="lx-group">
+          <div class="lx-ghead lx-ghead-client"><span><span class="student-dot" style="background:${st?.color || '#2563eb'}"></span>${escapeHtml(st?.name) || '?'} · ${formatCurrency(sum)}</span>
+            <span class="lx-gbtns"><button class="btn btn-ghost btn-xs" onclick="openDebtReport('${sid}')">💬 דוח</button>
+            <button class="btn btn-success btn-xs" onclick="markLessonsPaid(${JSON.stringify(ls.map(l => l.id)).replace(/"/g, '&quot;')})">✓ הכל שולם</button></span></div>
+          <div class="lx-card">${ls.map(l => lessonRowHtml(l, { today, showDate: true })).join('')}</div></div>`;
+      }).join('');
+  }
+  updateBulkToolbar();
+}
+
+// Marks exactly these lessons as paid (the "לתשלום" group button).
+function markLessonsPaid(ids) {
+  const ls = ids.map(id => _lessons.find(l => l.id === id)).filter(l => l && !l.isPaid);
+  if (!ls.length) return;
+  const sum = ls.reduce((a, l) => a + (l.amount || 0) - (l.paidAmount || 0), 0);
+  confirmAction(`לסמן ${ls.length} ${ls.length === 1 ? t('appointment') : t('appointments')} כשולמו (${formatCurrency(sum)})?`, async () => {
+    for (const l of ls) {
+      const updated = { ...l, isPaid: true, paidAmount: l.amount };
+      await apiCall('PUT', `/api/lessons/${l.id}`, updated);
+      _lessons = _lessons.map(x => x.id === l.id ? updated : x);
+    }
+    refreshAfterDataChange();
+    showToast(`${ls.length} ${t('appointments')} סומנו כשולמו ✓`);
+  }, '✓', 'סמן שולם');
+}
+
+// Tap a lesson row → its details and actions in one sheet.
+function openLessonSheet(id) {
+  const l = getLessons().find(x => x.id === id);
+  if (!l) return;
+  const s = getStudentById(l.studentId);
+  const today = isoDate(new Date());
+  const st = getLessonPayStatus(l);
+  const d = new Date(l.date + 'T00:00:00');
+  const row = (ic, txt) => txt ? `<div class="ls-row"><span>${ic}</span><span>${txt}</span></div>` : '';
+  openModal(escapeHtml(s?.name || ''), `
+    <div class="ls-info">
+      ${row('📅', `${getDayName(d.getDay())} ${formatDate(l.date)} · <b dir="ltr">${lessonTimeRange(l, s)}</b>`)}
+      ${row('📚', lessonKindLabel(l))}
+      ${row('💰', `${formatCurrency(l.amount)} · ${l.packageId ? lessonBadge(l) : !lessonStarted(l, today) && st !== 'paid' ? `<span class="text-muted">עוד לא התקיים</span>` : lessonBadge(l)}`)}
+      ${row('📘', l.topic ? escapeHtml(l.topic) : '')}
+      ${row('📝', l.homework ? escapeHtml(l.homework) : '')}
+      ${row('🗒️', l.notes ? escapeHtml(l.notes) : '')}
+    </div>
+    <div class="ls-actions">
+      ${l.packageId ? '' : `<button class="btn ${st === 'paid' ? 'btn-ghost' : 'btn-success'}" onclick="closeModal();setTimeout(()=>toggleLessonPaid('${l.id}'),50)">${st === 'paid' ? '↩ ביטול תשלום' : '✓ סימון כשולם'}</button>`}
+      ${s?.phone ? `<button class="btn btn-ghost" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))">💬 ווצאפ</button>` : ''}
+      <button class="btn btn-ghost" onclick="closeModal();setTimeout(()=>openEditLessonModal('${l.id}'),50)">✏️ עריכה</button>
+      <button class="btn btn-ghost text-danger" onclick="closeModal();setTimeout(()=>deleteLesson('${l.id}'),50)">🗑 מחיקה</button>
+    </div>`, null);
+}
+
+// "⋯ עוד" on the lessons page: the less frequent actions, out of the header.
+function openLessonsMoreMenu() {
+  const item = (ic, title, sub, call) => `<button class="sa-item" onclick="closeModal();setTimeout(()=>{${call}},50)">
+      <span class="sa-ic">${ic}</span><span class="sa-text"><span class="sa-title">${title}</span>${sub ? `<span class="sa-sub">${sub}</span>` : ''}</span></button>`;
+  openModal(`${t('appointments')} — עוד`, `<div class="sa-group">
+    ${has('selfBooking') ? item('🕒', `זמינות ל${t('clients')}`, `מתי אפשר לקבוע ${t('appointment')} לבד`, 'openAvailabilityModal()') : ''}
+    ${has('exams') ? item('📝', 'הוספת מבחן', 'תזכורת והודעת בהצלחה ביום המבחן', 'openAddExamModal(null)') : ''}
+    ${item('☑️', 'בחירה מרובה', `סימון כמה ${t('appointments')} כשולמו או מחיקה`, 'setLessonSelectMode(true)')}
+    ${item('🔗', 'מנוי לוח שנה', 'סנכרון קבוע ליומן גוגל / אייפון', 'showCalSubscribeInfo()')}
+    ${item('📤', 'ייצוא ללוח שנה', lessonView === 'past' ? `ה${t('appointments')} של החודש המוצג` : `כל ה${t('appointments')}`, 'exportToICS()')}
+  </div>`, null);
 }
 
 function buildLessonForm(l, defaultStudentId, defaultDate) {
@@ -5236,10 +5409,6 @@ function updateBulkToolbar() {
     toolbar.classList.add('show');
     document.getElementById('bulk-count').textContent = `${cbs.length} ${t('appointments')} נבחרו`;
   }
-  const allCbs = document.querySelectorAll('.lesson-cb');
-  const selAll = document.getElementById('select-all-cb');
-  if (selAll) selAll.indeterminate = cbs.length > 0 && cbs.length < allCbs.length;
-  if (selAll) selAll.checked = allCbs.length > 0 && cbs.length === allCbs.length;
 }
 
 function toggleSelectAll(el) {
@@ -5249,8 +5418,6 @@ function toggleSelectAll(el) {
 
 function clearBulkSelection() {
   document.querySelectorAll('.lesson-cb').forEach(cb => cb.checked = false);
-  const sel = document.getElementById('select-all-cb');
-  if (sel) sel.checked = false;
   document.getElementById('bulk-toolbar').classList.remove('show');
 }
 
@@ -5879,7 +6046,7 @@ function onSearch(q) {
     if (searchAmount !== null) return (l.amount || 0) === searchAmount;
     if (searchDate) return l.date.slice(5,7) === searchDate.m && l.date.slice(8,10) === searchDate.d;
     return (s?.name||'').includes(trimQ) || l.date.includes(trimQ) || (l.notes||'').includes(trimQ);
-  }).slice(0, 7);
+  }).sort((a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || ''))).slice(0, 7);  // newest first
 
   const students = getStudents().filter(s => {
     if (searchAmount !== null) return false;
