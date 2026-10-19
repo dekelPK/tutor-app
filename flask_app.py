@@ -21,6 +21,7 @@ import portal_core
 import verticals
 import demo_accounts
 import pricing
+import landing_contact
 DB_PATH  = os.path.join(BASE_DIR, 'tutor.db')
 
 app = Flask(__name__, static_folder=BASE_DIR)
@@ -172,6 +173,14 @@ def init_db():
                 date      TEXT NOT NULL,
                 data      TEXT NOT NULL
             );
+CREATE TABLE IF NOT EXISTS contact_messages (
+                id         TEXT PRIMARY KEY,
+                created_at TEXT,
+                name       TEXT,
+                contact    TEXT,
+                message    TEXT,
+                handled    INTEGER DEFAULT 0
+            );
             CREATE TABLE IF NOT EXISTS push_subscriptions (
                 id         TEXT PRIMARY KEY,
                 user_id    TEXT NOT NULL,
@@ -304,6 +313,63 @@ def signup_plan(body):
     if not c:
         raise ValueError('קוד הקופון לא תקין')
     return plan or c['plan'], c['code']
+
+# ── Contact form on the landing page ─────────────────────────────────────────
+# Stored in contact_messages; the admin gets a push via notify-admin-contact.yml,
+# which is given only the message id (the visitor's details stay on the server).
+_contact_hits = {}
+
+@app.route('/api/contact', methods=['POST'])
+def contact_submit():
+    body = request.json or {}
+    try:
+        msg = landing_contact.clean(body)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    if msg is None:  # honeypot filled → pretend success
+        return jsonify({'ok': True})
+    ip = (request.headers.get('X-Forwarded-For') or request.remote_addr or '').split(',')[0].strip()
+    if not landing_contact.allow(_contact_hits, ip):
+        return jsonify({'error': 'נשלחו יותר מדי פניות — נסו שוב מאוחר יותר'}), 429
+    mid = uuid.uuid4().hex[:12]
+    with get_db() as db:
+        db.execute('INSERT INTO contact_messages (id, created_at, name, contact, message, handled) VALUES (?,?,?,?,?,0)',
+                   [mid, datetime.now().isoformat(timespec='seconds'), msg['name'], msg['contact'], msg['message']])
+    try:
+        trigger_github_workflow('notify-admin-contact.yml', {'message_id': mid})
+    except Exception:
+        pass  # the message is saved either way; the admin screen lists it
+    return jsonify({'ok': True})
+
+@app.route('/api/push/contact-notice')
+def push_contact_notice():
+    # Used by notify-admin-contact.yml: the admin's devices + the push text.
+    if request.args.get('token') != CRON_SECRET:
+        return jsonify({'error': 'Unauthorized'}), 401
+    with get_db() as db:
+        m = db.execute('SELECT * FROM contact_messages WHERE id=?', [request.args.get('message_id')]).fetchone()
+        admin_row = db.execute('SELECT id FROM users WHERE email=?', [ADMIN_EMAIL]).fetchone()
+        subs = db.execute('SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=?',
+                          [admin_row['id']]).fetchall() if admin_row else []
+    if not m:
+        return jsonify({'subscriptions': []})
+    return jsonify({'subscriptions': [dict(s) for s in subs], **landing_contact.push_text(dict(m))})
+
+@app.route('/api/admin/contact-messages')
+def admin_contact_messages():
+    err = require_admin()
+    if err: return err
+    with get_db() as db:
+        rows = db.execute('SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 100').fetchall()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/admin/contact-messages/<mid>', methods=['PUT'])
+def admin_contact_handled(mid):
+    err = require_admin()
+    if err: return err
+    with get_db() as db:
+        db.execute('UPDATE contact_messages SET handled=? WHERE id=?', [1 if (request.json or {}).get('handled') else 0, mid])
+    return jsonify({'ok': True})
 
 # ── Serve HTML ────────────────────────────────────────────────────────────────
 @app.route('/')
