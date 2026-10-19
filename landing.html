@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>לוזי — הלו״ז של העסק שלך, במקום אחד</title>
+<meta name="description" content="יומן, לקוחות, תשלומים ותזכורות במקום אחד — למורים פרטיים, קוסמטיקאיות וספרים. הלקוחות קובעים לבד, את מאשרת בלחיצה.">
+<meta name="theme-color" content="#2563eb">
+<meta property="og:title" content="לוזי — הלו״ז של העסק שלך, במקום אחד">
+<meta property="og:description" content="יומן, לקוחות, תשלומים ותזכורות — מהטלפון. מחירי השקה למצטרפים ראשונים.">
+<meta property="og:image" content="/landing/dashboard.jpg">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #2563eb; --blue-d: #1d4ed8; --navy: #1e3a8a; --ink: #0f172a; --text: #334155; --muted: #64748b;
+    --line: #e2e8f0; --bg: #ffffff; --soft: #f1f5f9; --soft2: #eff6ff; --green: #16a34a; --amber: #f59e0b;
+    --radius: 20px; --shadow: 0 18px 50px rgba(15, 23, 42, .12);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Rubik', -apple-system, 'Segoe UI', Arial, sans-serif;
+    font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; display: block; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+  h1, h2, h3 { color: var(--ink); line-height: 1.2; margin: 0; }
+  h2 { font-size: clamp(28px, 4vw, 40px); font-weight: 800; letter-spacing: -.5px; }
+  .eyebrow { display: inline-block; font-size: 14px; font-weight: 700; color: var(--blue); background: var(--soft2);
+    border-radius: 999px; padding: 6px 14px; margin-bottom: 14px; }
+  .sec { padding: 88px 0; }
+  .sec-head { text-align: center; max-width: 680px; margin: 0 auto 48px; }
+  .sec-head p { color: var(--muted); font-size: 18px; margin: 12px 0 0; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; cursor: pointer;
+    font: inherit; font-weight: 700; border-radius: 14px; padding: 15px 26px; transition: transform .15s, box-shadow .15s, background .15s; }
+  .btn:active { transform: scale(.98); }
+  .btn-primary { background: var(--blue); color: #fff; box-shadow: 0 10px 24px rgba(37, 99, 235, .35); }
+  .btn-primary:hover { background: var(--blue-d); }
+  .btn-ghost { background: #fff; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn-ghost:hover { border-color: #cbd5e1; }
+  .btn-white { background: #fff; color: var(--blue-d); box-shadow: 0 10px 30px rgba(0, 0, 0, .2); }
+  :focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+
+  /* nav */
+  .nav { position: sticky; top: 0; z-index: 10; background: rgba(255, 255, 255, .85); backdrop-filter: saturate(1.4) blur(12px);
+    border-bottom: 1px solid rgba(226, 232, 240, .7); }
+  .nav .wrap { display: flex; align-items: center; gap: 24px; height: 66px; }
+  .logo { font-weight: 800; font-size: 24px; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+  .nav-links { display: flex; gap: 22px; margin-inline-start: 12px; font-weight: 500; color: var(--muted); }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-cta { margin-inline-start: auto; display: flex; gap: 10px; align-items: center; }
+  .nav-cta .btn { padding: 10px 18px; font-size: 15px; border-radius: 12px; }
+
+  /* hero */
+  .hero { position: relative; overflow: hidden; padding: 64px 0 40px;
+    background: radial-gradient(900px 500px at 85% -10%, #dbeafe 0%, transparent 60%), radial-gradient(700px 400px at 0% 10%, #eef2ff 0%, transparent 60%); }
+  .hero .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; }
+  .launch { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #bfdbfe; color: var(--blue-d);
+    font-weight: 600; font-size: 14px; border-radius: 999px; padding: 6px 14px 6px 8px; box-shadow: 0 4px 14px rgba(37, 99, 235, .1); }
+  .launch b { background: var(--blue); color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 13px; }
+  .hero h1 { font-size: clamp(38px, 6vw, 62px); font-weight: 800; letter-spacing: -1.5px; margin: 18px 0 16px; }
+  .hero h1 em { font-style: normal; color: var(--blue); }
+  .hero .lead { font-size: 20px; color: var(--text); max-width: 520px; margin: 0 0 28px; }
+  .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+  .ticks { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 22px; color: var(--muted); font-size: 15px; }
+  .ticks span::before { content: '✓'; color: var(--green); font-weight: 800; margin-inline-end: 6px; }
+  .phones { position: relative; height: 600px; }
+  .phone { position: absolute; width: 270px; border-radius: 40px; background: #0f172a; padding: 10px; box-shadow: var(--shadow), 0 2px 0 #334155 inset; }
+  .phone img { border-radius: 31px; width: 100%; aspect-ratio: 1 / 2; object-fit: cover; object-position: top; }
+  .phone.p1 { top: 0; inset-inline-start: 6%; transform: rotate(-4deg); z-index: 2; }
+  .phone.p2 { top: 70px; inset-inline-end: 4%; transform: rotate(5deg); }
+  .float { position: absolute; z-index: 3; background: #fff; border-radius: 16px; box-shadow: var(--shadow); padding: 12px 16px;
+    font-size: 14px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+  .float small { display: block; color: var(--muted); font-weight: 500; font-size: 12.5px; }
+  .float .ic { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; font-size: 18px; }
+  .float.f1 { bottom: 70px; inset-inline-start: -10px; }
+  .float.f2 { top: 36px; inset-inline-end: -14px; }
+
+  /* professions */
+  .profs { padding: 26px 0 8px; }
+  .profs .wrap { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+  .chip { background: var(--soft); border-radius: 999px; padding: 10px 18px; font-weight: 600; color: var(--ink); font-size: 16px; }
+  .profs p { width: 100%; text-align: center; color: var(--muted); margin: 0 0 6px; font-size: 15px; }
+
+  /* pains */
+  .pains { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .pain { border-radius: var(--radius); padding: 26px; background: var(--soft); }
+  .pain .x { font-size: 28px; }
+  .pain h3 { font-size: 19px; margin: 10px 0 6px; }
+  .pain p { margin: 0; color: var(--muted); font-size: 16px; }
+
+  /* features */
+  .features { background: linear-gradient(180deg, #f8fafc, #fff); }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; transition: box-shadow .2s, transform .2s; }
+  .card:hover { box-shadow: 0 14px 34px rgba(15, 23, 42, .08); transform: translateY(-2px); }
+  .card .ic { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; font-size: 24px; background: var(--soft2); margin-bottom: 14px; }
+  .card h3 { font-size: 19px; margin-bottom: 6px; }
+  .card p { margin: 0; color: var(--muted); font-size: 16px; }
+
+  /* showcase */
+  .show { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; margin-bottom: 72px; }
+  .show:last-child { margin-bottom: 0; }
+  .show.rev .show-img { order: 2; }
+  .show-img { display: flex; justify-content: center; position: relative; }
+  .show-img::before { content: ''; position: absolute; inset: 8% 6%; border-radius: 40px; background: linear-gradient(135deg, #dbeafe, #eef2ff); transform: rotate(-3deg); }
+  .show-img .phone { position: relative; transform: none; }
+  .show h3 { font-size: clamp(24px, 3vw, 32px); font-weight: 800; margin-bottom: 14px; }
+  .show p { color: var(--muted); font-size: 18px; margin: 0 0 18px; }
+  .show ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .show li { display: flex; gap: 10px; align-items: flex-start; }
+  .show li::before { content: '✓'; flex: none; width: 24px; height: 24px; border-radius: 50%; background: #dcfce7; color: var(--green);
+    display: grid; place-items: center; font-weight: 800; font-size: 13px; margin-top: 2px; }
+
+  /* steps */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; counter-reset: step; }
+  .step { position: relative; padding: 30px 26px 26px; border-radius: var(--radius); border: 1px solid var(--line); background: #fff; }
+  .step::before { counter-increment: step; content: counter(step); position: absolute; top: -18px; inset-inline-start: 24px; width: 40px; height: 40px;
+    border-radius: 12px; background: var(--blue); color: #fff; font-weight: 800; display: grid; place-items: center; box-shadow: 0 8px 18px rgba(37, 99, 235, .3); }
+  .step h3 { font-size: 19px; margin: 8px 0 6px; }
+  .step p { margin: 0; color: var(--muted); font-size: 16px; }
+
+  /* pricing */
+  .pricing { background: radial-gradient(800px 400px at 50% 0%, #dbeafe 0%, transparent 70%), #f8fafc; }
+  .launch-banner { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; text-align: center;
+    background: linear-gradient(90deg, #1e3a8a, #2563eb); color: #fff; border-radius: 16px; padding: 14px 20px; font-weight: 600; margin: 0 auto 32px; max-width: 760px; }
+  .launch-banner b { background: rgba(255, 255, 255, .18); border-radius: 999px; padding: 2px 12px; }
+  .plans { display: grid; grid-template-columns: repeat(2, minmax(0, 380px)); justify-content: center; gap: 22px; align-items: stretch; }
+  .plan { position: relative; background: #fff; border: 1.5px solid var(--line); border-radius: 24px; padding: 30px 28px; display: flex; flex-direction: column; }
+  .plan.hi { border-color: var(--blue); box-shadow: 0 24px 60px rgba(37, 99, 235, .18); }
+  .plan .badge { position: absolute; top: -14px; inset-inline-start: 50%; transform: translateX(50%); white-space: nowrap; background: var(--amber); color: #fff;
+    font-size: 13.5px; font-weight: 700; border-radius: 999px; padding: 5px 14px; box-shadow: 0 6px 14px rgba(245, 158, 11, .35); }
+  [dir="rtl"] .plan .badge { transform: translateX(50%); }
+  .plan h3 { font-size: 22px; }
+  .plan .tag { color: var(--muted); font-size: 15px; margin: 4px 0 18px; min-height: 24px; }
+  .price { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .price .amt { font-size: 54px; font-weight: 800; color: var(--ink); letter-spacing: -1.5px; line-height: 1; }
+  .price .cur { font-size: 26px; font-weight: 700; color: var(--ink); }
+  .price .per { color: var(--muted); font-size: 16px; }
+  .price .was { color: var(--muted); text-decoration: line-through; font-size: 22px; font-weight: 600; }
+  .coupon-on { color: var(--green); font-weight: 600; font-size: 14.5px; min-height: 22px; }
+  .plan ul { list-style: none; padding: 0; margin: 18px 0 26px; display: grid; gap: 11px; flex: 1; }
+  .plan li { display: flex; gap: 10px; font-size: 16px; }
+  .plan li::before { content: '✓'; color: var(--green); font-weight: 800; flex: none; }
+  .plan .btn { width: 100%; }
+  .coupon { max-width: 520px; margin: 30px auto 0; background: #fff; border: 1.5px dashed #93c5fd; border-radius: 18px; padding: 18px 20px; text-align: center; }
+  .coupon label { font-weight: 700; color: var(--ink); display: block; margin-bottom: 10px; }
+  .coupon form { display: flex; gap: 8px; }
+  .coupon input { flex: 1; min-width: 0; border: 1.5px solid var(--line); border-radius: 12px; padding: 12px 14px; font: inherit; text-transform: uppercase;
+    direction: ltr; text-align: center; letter-spacing: 1px; }
+  .coupon input:focus { outline: none; border-color: var(--blue); }
+  .coupon .btn { padding: 12px 20px; }
+  .coupon .msg { margin-top: 10px; font-size: 15px; min-height: 22px; }
+  .coupon .msg.ok { color: var(--green); font-weight: 600; }
+  .coupon .msg.err { color: #dc2626; }
+  .fine { text-align: center; color: var(--muted); font-size: 14.5px; margin-top: 18px; }
+
+  /* faq */
+  .faq { max-width: 760px; margin: 0 auto; display: grid; gap: 12px; }
+  .faq details { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px; }
+  .faq summary { cursor: pointer; font-weight: 700; color: var(--ink); list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: '+'; color: var(--blue); font-size: 22px; line-height: 1; transition: transform .2s; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq p { margin: 10px 0 0; color: var(--muted); }
+
+  /* final cta */
+  .final { background: radial-gradient(120% 120% at 50% 0%, #3b82f6 0%, #2563eb 45%, #1e3a8a 100%); color: #fff; text-align: center; border-radius: 32px;
+    padding: 64px 24px; margin: 0 20px; }
+  .final h2 { color: #fff; }
+  .final p { opacity: .9; font-size: 19px; margin: 12px 0 28px; }
+  footer { text-align: center; color: var(--muted); font-size: 14px; padding: 36px 20px 44px; }
+  footer a { color: var(--blue); font-weight: 600; }
+
+  @media (max-width: 900px) {
+    .hero .wrap, .show { grid-template-columns: 1fr; }
+    .show.rev .show-img { order: 0; }
+    .phones { height: 540px; max-width: 460px; margin: 0 auto; width: 100%; }
+    .grid, .pains, .steps { grid-template-columns: 1fr 1fr; }
+    .nav-links { display: none; }
+  }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    .sec { padding: 64px 0; }
+    .wrap { padding: 0 16px; }
+    .hero { padding-top: 36px; }
+    .hero .lead { font-size: 18px; }
+    .hero-ctas .btn { flex: 1; }
+    .phones { height: 470px; }
+    .phone { width: 210px; border-radius: 32px; padding: 8px; }
+    .phone img { border-radius: 25px; }
+    .phone.p1 { inset-inline-start: 0; }
+    .phone.p2 { inset-inline-end: 0; top: 60px; }
+    .float { font-size: 13px; padding: 10px 12px; }
+    .float.f1 { bottom: 40px; inset-inline-start: 4px; }
+    .float.f2 { inset-inline-end: 4px; top: 10px; }
+    .grid, .pains, .steps { grid-template-columns: 1fr; }
+    .steps { gap: 30px; }
+    .plans { grid-template-columns: 1fr; }
+    .nav-cta .login { display: none; }
+    .final { margin: 0 12px; padding: 48px 20px; }
+    .coupon form { flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="ראשי">
+  <div class="wrap">
+    <a class="logo" href="#top">🗓️ לוזי</a>
+    <div class="nav-links">
+      <a href="#features">מה יש בפנים</a>
+      <a href="#how">איך זה עובד</a>
+      <a href="#pricing">מחירים</a>
+      <a href="#faq">שאלות</a>
+    </div>
+    <div class="nav-cta">
+      <a class="btn btn-ghost login" href="/">כניסה</a>
+      <a class="btn btn-primary" href="#pricing">מצטרפים</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <span class="launch"><b>חדש</b> מחירי השקה למצטרפים ראשונים</span>
+      <h1>הלו״ז של העסק שלך<br><em>במקום אחד.</em></h1>
+      <p class="lead">יומן, לקוחות, תשלומים ותזכורות — מהטלפון. הלקוחות קובעים תור לבד, ואת מאשרת בלחיצה. בלי מחברות, בלי אקסלים ובלי בלגן בווטסאפ.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="#pricing">מתחילים עכשיו ←</a>
+        <a class="btn btn-ghost" href="#how">איך זה עובד</a>
+      </div>
+      <div class="ticks"><span>בלי התקנה</span><span>עברית מלאה</span><span>עובד מהטלפון ומהמחשב</span></div>
+    </div>
+    <div class="phones" aria-hidden="true">
+      <div class="phone p2"><img src="/landing/portal.jpg" alt="" loading="eager"></div>
+      <div class="phone p1"><img src="/landing/dashboard.jpg" alt="" loading="eager"></div>
+      <div class="float f1"><span class="ic" style="background:#dcfce7">🔔</span><span>בקשה חדשה לשיעור<small>נועה · חמישי 16:00</small></span></div>
+      <div class="float f2"><span class="ic" style="background:#fef3c7">₪</span><span>שולם ✓<small>₪150 · דן לוי</small></span></div>
+    </div>
+  </div>
+</header>
+
+<section class="profs" aria-label="למי זה מתאים">
+  <div class="wrap">
+    <p>נבנה במיוחד בשביל</p>
+    <span class="chip">📚 מורים פרטיים</span><span class="chip">🎵 מורים למוזיקה</span><span class="chip">💅 קוסמטיקאיות</span><span class="chip">✂️ ספרים וספריות</span>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">נשמע מוכר?</span><h2>העסק רץ — אבל הניהול גומר אותך</h2></div>
+    <div class="pains">
+      <div class="pain"><div class="x">📒</div><h3>הכל במחברת ובראש</h3><p>מי מגיע מתי, מי שילם ומי עוד חייב — מפוזר בין מחברת, יומן ווטסאפ.</p></div>
+      <div class="pain"><div class="x">💬</div><h3>אינסוף הודעות "מתי פנוי?"</h3><p>כל קביעת תור היא עשר הודעות הלוך ושוב — באמצע עבודה.</p></div>
+      <div class="pain"><div class="x">💸</div><h3>כסף שנשכח בדרך</h3><p>שיעור שלא סומן, כרטיסייה שנגמרה, חוב שאף אחד לא זוכר.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec features" id="features">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">מה יש בפנים</span><h2>כל מה שעסק של אחד צריך</h2><p>פשוט מספיק כדי להתחיל בדקה, חכם מספיק כדי לחסוך לך שעות כל שבוע.</p></div>
+    <div class="grid">
+      <div class="card"><div class="ic">🗓️</div><h3>יומן חכם</h3><p>תצוגה חודשית, שבועית ויומית, כל לקוח בצבע משלו, ותורים קבועים בלחיצה.</p></div>
+      <div class="card"><div class="ic">💰</div><h3>תשלומים וחובות</h3><p>רואים מיד מי שילם ומי חייב, ושולחים דוח מסודר בווטסאפ — בלי מבוכה.</p></div>
+      <div class="card"><div class="ic">📲</div><h3>קישור אישי לכל לקוח</h3><p>הלקוח רואה את התורים שלו וקובע לבד מהזמנים שפתחת. את רק מאשרת.</p></div>
+      <div class="card"><div class="ic">🎟️</div><h3>כרטיסיות</h3><p>מוכרים חבילה מראש, וכל תור נוכה אוטומטית — כולם יודעים כמה נשאר.</p></div>
+      <div class="card"><div class="ic">🔔</div><h3>תזכורות והתראות</h3><p>התראה לטלפון על כל בקשה חדשה ותזכורת בבוקר — שום דבר לא נופל.</p></div>
+      <div class="card"><div class="ic">✨</div><h3>מותאם למקצוע שלך</h3><p>מורה? תקבלי מבחנים ושיעורי בית. קוסמטיקאית? מחירון וסוגי טיפולים.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="show">
+      <div class="show-img"><div class="phone"><img src="/landing/portal.jpg" alt="מסך הלקוח: התור הבא, מבחן קרוב וקביעת שיעור לבד" loading="eager"></div></div>
+      <div>
+        <span class="eyebrow">פחות הודעות, יותר תורים</span>
+        <h3>הלקוחות קובעים לבד — את מאשרת בלחיצה</h3>
+        <p>כל לקוח מקבל קישור אישי, בלי אפליקציה ובלי סיסמה. הוא רואה את התורים שלו ובוחר מועד מתוך הזמנים שפתחת.</p>
+        <ul><li>רק בזמנים שאת מגדירה — בלי הפתעות</li><li>כל בקשה מגיעה כהתראה לטלפון</li><li>אישור בלחיצה, והתור נכנס ליומן</li></ul>
+      </div>
+    </div>
+    <div class="show rev">
+      <div class="show-img"><div class="phone"><img src="/landing/services.jpg" alt="קביעת טיפול: בחירת סוג טיפול והמחיר מתמלא לבד" loading="eager"></div></div>
+      <div>
+        <span class="eyebrow">מחירון משלך</span>
+        <h3>בוחרים טיפול — המחיר והשעה מתמלאים לבד</h3>
+        <p>לק ג׳ל, תספורת זקן, שיעור כפול — מגדירים פעם אחת מחיר ומשך לכל סוג, ומשם הכל אוטומטי.</p>
+        <ul><li>מחיר ומשך לכל סוג טיפול</li><li>כרטיסיות שמתעדכנות לבד</li><li>דוח הכנסות חודשי ושנתי</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="how" style="background:#f8fafc">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">איך זה עובד</span><h2>מתחילים בשלוש דקות</h2></div>
+    <div class="steps">
+      <div class="step"><h3>נרשמים ובוחרים מקצוע</h3><p>מורה, קוסמטיקאית או ספר — המונחים, הפיצ׳רים והמחירון מתאימים את עצמם.</p></div>
+      <div class="step"><h3>מוסיפים לקוחות</h3><p>שם, טלפון ומחיר — וזהו. אפשר גם לייבא מאקסל.</p></div>
+      <div class="step"><h3>שולחים קישור ומתחילים</h3><p>הלקוחות קובעים, את מאשרת, והיומן והתשלומים מסתדרים לבד.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec pricing" id="pricing">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">מחירים</span><h2>מחיר של קפה — בשביל שקט של חודש</h2><p>מנוי חודשי פשוט, בלי הפתעות.</p></div>
+    <div class="launch-banner">🚀 מחירי השקה <b>למצטרפים הראשונים בלבד</b> — המחיר נשמר לך גם כשהוא יעלה</div>
+    <div class="plans" id="plans">
+      <!-- Rendered from /api/pricing; this static copy is the no-JS fallback -->
+      <div class="plan"><h3>בסיס</h3><div class="tag">כל מה שצריך כדי לעבוד מסודר</div>
+        <div class="price"><span class="cur">₪</span><span class="amt">19</span><span class="per">לחודש</span></div>
+        <ul><li>לקוחות ללא הגבלה</li><li>יומן, תשלומים ותזכורות</li></ul><a class="btn btn-ghost" href="/?signup=basic">בוחרים בסיס</a></div>
+      <div class="plan hi"><span class="badge">מחיר השקה למצטרפים ראשונים</span><h3>פרו</h3><div class="tag">העסק עובד בשבילך — גם כשאת עסוקה</div>
+        <div class="price"><span class="cur">₪</span><span class="amt">39</span><span class="per">לחודש</span></div>
+        <ul><li>כל מה שבבסיס</li><li>קביעת תורים לבד, כרטיסיות ומחירון</li></ul><a class="btn btn-primary" href="/?signup=pro">בוחרים פרו</a></div>
+    </div>
+    <div class="coupon">
+      <label for="coupon-in">🎁 קיבלת קוד קופון?</label>
+      <form id="coupon-form" autocomplete="off">
+        <input id="coupon-in" name="coupon" placeholder="הקוד שלך" maxlength="24" aria-describedby="coupon-msg">
+        <button class="btn btn-primary" type="submit">החלה</button>
+      </form>
+      <div class="msg" id="coupon-msg" role="status" aria-live="polite"></div>
+    </div>
+    <p class="fine">אחרי ההרשמה נאשר את החשבון וניצור איתך קשר להסדרת התשלום החודשי.</p>
+  </div>
+</section>
+
+<section class="sec" id="faq">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">שאלות</span><h2>שאלות נפוצות</h2></div>
+    <div class="faq">
+      <details><summary>צריך להוריד אפליקציה?</summary><p>לא. לוזי עובדת מהדפדפן בטלפון ובמחשב. אפשר להוסיף אותה למסך הבית בלחיצה, והיא מתנהגת כמו אפליקציה לכל דבר — כולל התראות.</p></details>
+      <details><summary>הלקוחות שלי צריכים להירשם?</summary><p>ממש לא. כל לקוח מקבל קישור אישי — פותחים אותו ורואים את התורים, הכרטיסייה ואפשרות לקבוע לבד. בלי סיסמה ובלי התקנה.</p></details>
+      <details><summary>איך משלמים על המנוי?</summary><p>אחרי ההרשמה נאשר את החשבון וניצור איתך קשר להסדרת התשלום החודשי לפי המסלול שבחרת.</p></details>
+      <details><summary>מה ההבדל בין בסיס לפרו?</summary><p>בסיס נותן יומן, לקוחות, תשלומים ותזכורות. פרו מוסיף את כל מה שחוסך הודעות וזמן: קישור אישי שבו הלקוחות קובעים לבד, כרטיסיות, מחירון וסוגי טיפולים, ודוחות.</p></details>
+      <details><summary>המחיר יעלה בהמשך?</summary><p>המחירים כאן הם מחירי השקה למצטרפים הראשונים. מי שמצטרף עכשיו — שומר על המחיר.</p></details>
+      <details><summary>המידע שלי מאובטח?</summary><p>כל עסק רואה רק את הנתונים שלו, הגישה מוגנת בסיסמה, ומתבצע גיבוי יומי של המידע.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:20px">
+  <div class="final">
+    <h2>פחות בלגן. יותר זמן לעבוד.</h2>
+    <p>מצטרפים היום, במחיר ההשקה.</p>
+    <a class="btn btn-white" href="#pricing">לבחירת מסלול ←</a>
+  </div>
+</section>
+
+<footer>© לוזי · הלו״ז של העסק שלך · <a href="/">כניסה למערכת</a></footer>
+
+<script>
+(function () {
+  'use strict';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let data = null, coupon = null; // coupon: {code, plan, price}
+
+  function signupHref(plan) {
+    const q = new URLSearchParams({ signup: plan.id });
+    if (coupon && coupon.plan === plan.id) q.set('coupon', coupon.code);
+    return '/?' + q.toString();
+  }
+  function render() {
+    if (!data) return;
+    const cur = esc(data.currency || '₪');
+    document.getElementById('plans').innerHTML = data.plans.map(p => {
+      const c = coupon && coupon.plan === p.id ? coupon : null;
+      return `<div class="plan ${p.highlight ? 'hi' : ''}">
+        ${p.badge ? `<span class="badge">${esc(p.badge)}</span>` : ''}
+        <h3>${esc(p.name)}</h3><div class="tag">${esc(p.tagline)}</div>
+        <div class="price">${c ? `<span class="was">${cur}${esc(p.price)}</span>` : ''}<span class="cur">${cur}</span><span class="amt">${esc(c ? c.price : p.price)}</span><span class="per">לחודש</span></div>
+        <div class="coupon-on">${c ? `🎁 קופון ${esc(c.code)} הופעל` : ''}</div>
+        <ul>${p.features.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+        <a class="btn ${p.highlight ? 'btn-primary' : 'btn-ghost'}" href="${signupHref(p)}">בוחרים ${esc(p.name)}</a>
+      </div>`;
+    }).join('');
+  }
+  fetch('/api/pricing').then(r => r.json()).then(d => { data = d; render(); }).catch(() => {});
+
+  const form = document.getElementById('coupon-form'), input = document.getElementById('coupon-in'), msg = document.getElementById('coupon-msg');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const code = input.value.trim();
+    if (!code) return;
+    msg.className = 'msg'; msg.textContent = 'בודקים...';
+    try {
+      const r = await fetch('/api/coupon', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+      const j = await r.json();
+      if (!r.ok || !j.valid) { coupon = null; msg.className = 'msg err'; msg.textContent = 'הקוד לא תקין — כדאי לבדוק שוב'; render(); return; }
+      coupon = { code: code.toUpperCase(), plan: j.plan, price: j.price };
+      const plan = data && data.plans.find(p => p.id === j.plan);
+      msg.className = 'msg ok';
+      msg.textContent = `מעולה! מסלול ${plan ? plan.name : ''} עולה לך ${(data && data.currency) || '₪'}${j.price} בחודש 🎉`;
+      render();
+    } catch (err) { msg.className = 'msg err'; msg.textContent = 'שגיאת תקשורת, נסו שוב'; }
+  });
+  // ?coupon=CODE in the landing link applies it right away (for links you share)
+  const fromUrl = new URLSearchParams(location.search).get('coupon');
+  if (fromUrl) { input.value = fromUrl; form.requestSubmit(); }
+})();
+</script>
+</body>
+</html>

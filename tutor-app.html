@@ -1890,6 +1890,18 @@
           <div class="gender-pick" id="reg-gender-pick"></div>
         </div>
         <div class="auth-field">
+          <label>מסלול</label>
+          <div class="gender-pick" id="reg-plan-pick"></div>
+        </div>
+        <div class="auth-field">
+          <label>קוד קופון <span style="font-weight:400;color:var(--text-muted)">(לא חובה)</span></label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">🎁</span>
+            <input type="text" id="auth-coupon" placeholder="אם קיבלת קוד" autocomplete="off" maxlength="24" style="text-transform:uppercase" oninput="renderPlanPicker()">
+          </div>
+          <div class="auth-note" id="reg-plan-summary" style="margin-top:6px"></div>
+        </div>
+        <div class="auth-field">
           <label>שם</label>
           <div class="auth-input-wrap">
             <span class="auth-input-icon">👤</span>
@@ -1911,7 +1923,7 @@
             <button class="auth-pw-toggle" type="button" onclick="togglePw('auth-password-reg',this)" tabindex="-1">👁</button>
           </div>
         </div>
-        <button class="btn-auth" id="register-btn" onclick="doRegister()">יצירת חשבון חינם</button>
+        <button class="btn-auth" id="register-btn" onclick="doRegister()">יצירת חשבון</button>
         <div class="auth-note">ההרשמה דורשת אישור מנהל המערכת לפני שתוכל/י להתחבר</div>
       </div>
 
@@ -2470,7 +2482,7 @@ function showAuthTab(tab) {
   document.getElementById('auth-tab-login').classList.toggle('active',    tab === 'login');
   document.getElementById('auth-tab-register').classList.toggle('active', tab === 'register');
   document.getElementById('auth-error').classList.remove('visible');
-  if (tab === 'register') renderProfessionPicker('reg-prof-pick', 'reg-gender-pick');
+  if (tab === 'register') { renderProfessionPicker('reg-prof-pick', 'reg-gender-pick'); renderPlanPicker(); }
 }
 
 // ===== PROFESSION & GENDER PICKER (signup + "העסק שלי") =====
@@ -2498,6 +2510,32 @@ async function renderProfessionPicker(profElId, genderElId, locked = false) {
     </button>`).join('');
   genEl.innerHTML = [['f', 'בלשון נקבה'], ['m', 'בלשון זכר']].map(([k, label]) =>
     `<button type="button" class="${k === gk ? 'on' : ''}" onclick="_profPick.gender='${k}';${rerender}">${label}</button>`).join('');
+}
+// ===== PLAN AT SIGNUP (pricing.json via /api/pricing) =====
+// The landing page links here as /?signup=<plan>[&coupon=CODE]. The coupon is
+// checked by the server on register; the summary line just previews the price.
+const _signup = { plan: 'pro', pricing: null, couponPrice: null, couponFor: '' };
+async function renderPlanPicker() {
+  const el = document.getElementById('reg-plan-pick');
+  if (!el) return;
+  if (!_signup.pricing) {
+    try { _signup.pricing = await (await fetch('/api/pricing')).json(); } catch (e) { return; }
+  }
+  const { plans, currency } = _signup.pricing;
+  el.innerHTML = plans.map(p => `<button type="button" class="${p.id === _signup.plan ? 'on' : ''}"
+    onclick="_signup.plan='${p.id}';renderPlanPicker()">${escapeHtml(p.name)} · ${currency}${p.price}</button>`).join('');
+  const code = document.getElementById('auth-coupon').value.trim().toUpperCase();
+  const sum = document.getElementById('reg-plan-summary');
+  const plan = plans.find(p => p.id === _signup.plan);
+  if (code && code !== _signup.couponFor) {
+    _signup.couponFor = code; _signup.couponPrice = null;
+    try {
+      const r = await fetch('/api/coupon', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, plan: _signup.plan }) });
+      if (r.ok) _signup.couponPrice = (await r.json()).price;
+    } catch (e) { /* the server checks again on register */ }
+  }
+  const price = code && _signup.couponPrice != null && code === _signup.couponFor ? _signup.couponPrice : plan?.price;
+  sum.textContent = plan ? `מסלול ${plan.name} · ${currency}${price} לחודש${price !== plan.price ? ' (עם הקופון 🎁)' : ''}` : '';
 }
 // Account menu → "העסק שלי": the profession (read-only for now), how the app
 // addresses you, and the business's custom client fields.
@@ -2667,7 +2705,8 @@ async function doRegister() {
   try {
     const r = await fetch('/api/auth/register', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({name, email, password, profession: _profPick.profession, gender: _profPick.gender})
+      body: JSON.stringify({name, email, password, profession: _profPick.profession, gender: _profPick.gender,
+        plan: _signup.plan, coupon: document.getElementById('auth-coupon').value.trim()})
     });
     const data = await r.json();
     if (data.pending) {
@@ -2681,7 +2720,7 @@ async function doRegister() {
     await loadData();
     showPage('dashboard');
   } finally {
-    btn.disabled = false; btn.textContent = 'יצירת חשבון חינם';
+    btn.disabled = false; btn.textContent = 'יצירת חשבון';
   }
 }
 async function doLogout() {
@@ -4131,6 +4170,12 @@ async function loadAdminStats() {
     document.getElementById('admin-kpi-pending').classList.toggle('is-hot', s.pendingUsers > 0);
   } catch (e) { /* stats just stay at – */ }
 }
+// The plan a user chose at signup: "פרו · ₪29 🎁" (coupon), or free for the founding users.
+function adminPlanPill(u) {
+  if (u.isAdmin) return '';
+  if (!u.plan) return '<span class="adm-pill" title="הצטרפו לפני המסלולים בתשלום">🎉 חינם · מצטרפים ראשונים</span>';
+  return `<span class="adm-pill" style="background:var(--primary-light);color:var(--primary)" title="${u.coupon ? 'קופון ' + escapeHtml(u.coupon) : ''}">💳 ${escapeHtml(_signup.pricing?.plans.find(p => p.id === u.plan)?.name || u.plan)} · ₪${u.monthlyPrice ?? '?'}${u.coupon ? ' 🎁' : ''}</span>`;
+}
 async function loadAdminPending() {
   const el = document.getElementById('admin-pending-list');
   try {
@@ -4144,7 +4189,7 @@ async function loadAdminPending() {
       ${pending.map(u => `<div class="adm-prow">
         <span class="adm-avatar" style="background:${avatarColorFor(u.email)}">${escapeHtml((u.name || u.email || '?')[0].toUpperCase())}</span>
         <div class="adm-main"><div class="adm-name">${escapeHtml(u.name) || '(ללא שם)'}</div>
-          <div class="adm-email">${escapeHtml(u.email)}</div><div class="adm-meta">ביקש/ה להצטרף ${relativeTime(u.created_at)}</div></div>
+          <div class="adm-email">${escapeHtml(u.email)}</div><div class="adm-meta">ביקש/ה להצטרף ${relativeTime(u.created_at)} ${adminPlanPill(u)}</div></div>
         <div class="adm-actions">
           <button class="btn btn-success btn-sm" onclick="adminApproveUser('${u.id}')">✓ אישור</button>
           <button class="btn btn-ghost btn-sm text-danger" onclick="adminRejectUser('${u.id}')">דחייה</button>
@@ -4191,7 +4236,8 @@ function renderAdminUsersList(users, isFiltered) {
         <i class="adm-status ${activeNow ? 'on' : ''}" title="${activeNow ? 'פעיל/ה החודש' : 'לא פעיל/ה החודש'}"></i></span>
       <div class="adm-main">
         <div class="adm-name">${escapeHtml(u.name) || '(ללא שם)'} ${u.isAdmin ? '<span class="adm-pill">מנהלת</span>' : ''}
-          ${(() => { const v = (_profPick.list || []).find(x => x.id === u.profession); return v ? `<span class="adm-pill">${v.icon} ${escapeHtml(v.label[u.gender === 'm' ? 'm' : 'f'])}</span>` : ''; })()}</div>
+          ${(() => { const v = (_profPick.list || []).find(x => x.id === u.profession); return v ? `<span class="adm-pill">${v.icon} ${escapeHtml(v.label[u.gender === 'm' ? 'm' : 'f'])}</span>` : ''; })()}
+          ${adminPlanPill(u)}</div>
         <div class="adm-email">${escapeHtml(u.email)}</div>
         <div class="adm-stats">
           <span><b>${u.activeStudentCount}</b> ${t('clients')}${u.studentCount !== u.activeStudentCount ? ` <small>(${u.studentCount} סה״כ)</small>` : ''}</span>
@@ -5796,6 +5842,7 @@ async function loginToDemoAccount() {
 
 async function renderAdminPage() {
   await loadVerticalList(); // user rows show each profession's label
+  if (!_signup.pricing) { try { _signup.pricing = await (await fetch('/api/pricing')).json(); } catch (e) { /* pills fall back to the plan id */ } }
   renderAdminDemoList();
   await Promise.all([loadAdminStats(), loadAdminPending(), loadAdminUsers(), loadAdminAnnouncementIntoForm()]);
 }
@@ -5978,6 +6025,13 @@ async function initApp() {
   // the "set new password" form instead of the normal login screen.
   if (new URLSearchParams(location.search).get('reset')) {
     showAuthTab('reset');
+  }
+  // From the landing page: /?signup=<plan>[&coupon=CODE] opens signup with them filled in
+  const signupParams = new URLSearchParams(location.search);
+  if (signupParams.get('signup')) {
+    _signup.plan = signupParams.get('signup');
+    document.getElementById('auth-coupon').value = signupParams.get('coupon') || '';
+    showAuthTab('register');
   }
 
   // Restore dark mode
