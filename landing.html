@@ -191,6 +191,7 @@
   .contact { display: grid; grid-template-columns: .9fr 1.1fr; gap: 32px; align-items: start; max-width: 960px; margin: 0 auto; }
   .contact-info h2 { margin-bottom: 12px; }
   .contact-info p { color: var(--muted); font-size: 18px; margin: 0 0 20px; }
+  [hidden] { display: none !important; }
   .mail { display: inline-flex; align-items: center; gap: 10px; background: var(--soft2); color: var(--blue-d); font-weight: 700;
     border-radius: 14px; padding: 12px 18px; direction: ltr; }
   .cform { background: #fff; border: 1px solid var(--line); border-radius: 24px; padding: 26px; box-shadow: 0 14px 34px rgba(15, 23, 42, .06); display: grid; gap: 14px; }
@@ -440,8 +441,9 @@
       <div class="contact-info">
         <span class="eyebrow">צור קשר</span>
         <h2>יש שאלה? נשמח לעזור</h2>
-        <p>השאירי פרטים ונחזור אלייך בהקדם — או כתבי לנו ישירות למייל.</p>
-        <a class="mail" href="mailto:dekelkartel@gmail.com?subject=%D7%9C%D7%95%D7%96%D7%99%20-%20%D7%A4%D7%A0%D7%99%D7%99%D7%94">✉️ dekelkartel@gmail.com</a>
+        <p>השאירי פרטים ונחזור אלייך בהקדם<span class="mail-only" hidden> — או כתבי לנו ישירות למייל</span>.</p>
+        <!-- address comes from verticals/_brand.json (contactEmail); hidden while empty -->
+        <a class="mail mail-only" id="contact-mail" hidden>✉️ <span></span></a>
       </div>
       <form class="cform" id="contact-form" novalidate>
         <label>שם<input name="name" maxlength="60" autocomplete="name" required></label>
@@ -463,7 +465,7 @@
   </div>
 </section>
 
-<footer>© לוזי · הלו״ז של העסק שלך · <a href="mailto:dekelkartel@gmail.com">dekelkartel@gmail.com</a> · <a href="/">כניסה למערכת</a></footer>
+<footer>© לוזי · הלו״ז של העסק שלך<span class="mail-only" hidden> · <a id="footer-mail"></a></span> · <a href="/">כניסה למערכת</a></footer>
 
 <script>
 (function () {
@@ -492,6 +494,15 @@
     }).join('');
   }
   fetch('/api/pricing').then(r => r.json()).then(d => { data = d; render(); }).catch(() => {});
+  // Contact email (the app's own address, from _brand.json)
+  fetch('/api/verticals').then(r => r.json()).then(j => {
+    const mail = (j.brand && j.brand.contactEmail || '').trim();
+    if (!mail) return;
+    const href = 'mailto:' + mail + '?subject=' + encodeURIComponent('לוזי - פנייה');
+    const a = document.getElementById('contact-mail'); a.href = href; a.querySelector('span').textContent = mail;
+    const f = document.getElementById('footer-mail'); f.href = href; f.textContent = mail;
+    document.querySelectorAll('.mail-only').forEach(el => { el.hidden = false; });
+  }).catch(() => {});
 
   const form = document.getElementById('coupon-form'), input = document.getElementById('coupon-in'), msg = document.getElementById('coupon-msg');
   form.addEventListener('submit', async e => {
