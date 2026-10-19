@@ -24,7 +24,7 @@ Timezone `Asia/Jerusalem`. Metricool brand (blogId) **7516388**, Instagram only.
    `https://raw.githubusercontent.com/dekelPK/tutor-app/<branch>/marketing/instagram/<date>/<file>` as media URLs
    (check they return 200). Metricool copies the files when the post is created.
 5. **Schedule** each item with Metricool `createScheduledPost`: `providers:[{"network":"instagram"}]`,
-   `instagramData.type` `POST` (images, carousel = several media in order) or `REEL` (one mp4),
+   `instagramData.type` `POST` (images, carousel = several media in order) or `TRIAL_REEL` (one mp4 — the owner wants every reel published as a trial reel),
    `publicationDate:{dateTime, timezone:"Asia/Jerusalem"}`, `autoPublish:true`, `draft:false`.
    Then `getScheduledPosts` for the week to confirm all 14 are there, once each.
 6. Open a PR with the plan + media and merge it after checks pass, so the history of plans stays on `main`.
