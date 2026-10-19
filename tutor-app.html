@@ -1627,6 +1627,14 @@
     .tl-btn { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 9px; padding: 5px 10px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
     .tl-btn:hover { border-color: var(--success); color: var(--success); }
     .tl-icon { padding: 5px 8px; }
+    /* unpaid → an action button that says what it does, not a "paid" lookalike */
+    .tl-pay { border-color: var(--warning); color: #b45309; background: var(--warning-light); }
+    [data-theme="dark"] .tl-pay { color: #fcd34d; background: #3a2a0c; }
+    .tl-pay:hover { border-color: var(--success); color: var(--success); background: var(--card); }
+    /* payment state in the sub line — only on phones, where the badge is hidden */
+    .tl-paystat { display: none; font-weight: 700; }
+    .tl-paystat.is-unpaid { color: #b45309; } .tl-paystat.is-paid { color: var(--success); }
+    [data-theme="dark"] .tl-paystat.is-unpaid { color: #fcd34d; }
 
     /* Inbox */
     .ib-sec + .ib-sec { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
@@ -1762,6 +1770,7 @@
       .dx-grid { gap: 14px; }
       .dx-card { padding: 16px 14px; border-radius: 16px; }
       .tl-actions .badge { display: none; }
+      .tl-paystat { display: inline; }
       /* the hero's quick actions + the FAB already cover "add" on phones */
       .dx-cal .cal-toolbar .btn-primary { display: none; }
       .adm-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -4306,7 +4315,10 @@ function renderToday() {
       const past = endMin <= nowMin;
       const live = timeToMin(start) <= nowMin && nowMin < endMin;
       const isNext = !past && !live && !nextMarked && (nextMarked = true);
-      const sub = [l.serviceName ? lessonKindLabel(l) : l.durationHours > 1 ? `${l.durationHours} ${t('appointments')}` : `${t('appointment')}`, l.packageId ? `🎟 ${lessonPackagePosition(l)}` : '', l.topic ? `📘 ${escapeHtml(l.topic)}` : '']
+      const ps = l.packageId ? '' : getLessonPayStatus(l);
+      const payStat = !ps ? '' : ps === 'paid' ? '<span class="tl-paystat is-paid">✓ שולם</span>'
+        : ps === 'partial' ? `<span class="tl-paystat is-unpaid">שולם חלקית</span>` : '<span class="tl-paystat is-unpaid">לא שולם</span>';
+      const sub = [payStat, l.serviceName ? lessonKindLabel(l) : l.durationHours > 1 ? `${l.durationHours} ${t('appointments')}` : `${t('appointment')}`, l.packageId ? `🎟 ${lessonPackagePosition(l)}` : '', l.topic ? `📘 ${escapeHtml(l.topic)}` : '']
         .filter(Boolean).join(' · ');
       return `<div class="tl-row ${past ? 'is-past' : ''} ${live ? 'is-live' : ''}">
         <div class="tl-time"><b>${start}</b><small>${end}</small></div>
@@ -4317,7 +4329,7 @@ function renderToday() {
         </div>
         <div class="tl-actions">
           ${lessonBadge(l)}
-          ${l.packageId || getLessonPayStatus(l) === 'paid' ? '' : `<button class="tl-btn" title="סימון כשולם" onclick="toggleLessonPaid('${l.id}').then(renderDashboard)">₪ שולם</button>`}
+          ${l.packageId || getLessonPayStatus(l) === 'paid' ? '' : `<button class="tl-btn tl-pay" title="סימון כשולם" onclick="toggleLessonPaid('${l.id}').then(renderDashboard)">סמן שולם ✓</button>`}
           ${s.phone ? `<button class="tl-btn tl-icon" title="ווצאפ ל${t('client')}" onclick="sendWhatsApp(getLessons().find(x=>x.id==='${l.id}'))">💬</button>` : ''}
         </div>
       </div>`;
