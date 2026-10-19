@@ -290,6 +290,39 @@ class MigrationAndApiTests(unittest.TestCase):
         db.close()
         self.assertEqual((n_users, n_students), (1, 5))
 
+    def test_pricing_coupon_and_signup_plan(self):
+        import pricing
+        pub = self.client.get('/api/pricing').json
+        self.assertEqual([p['id'] for p in pub['plans']], ['basic', 'pro'])
+        self.assertNotIn('coupons', pub)  # codes never listed publicly
+        code = next(iter(pricing.load()['coupons']))
+        ok = self.client.post('/api/coupon', json={'code': code.lower()})
+        self.assertEqual((ok.status_code, ok.json['plan'], ok.json['price']), (200, 'pro', 29))
+        self.assertEqual(self.client.post('/api/coupon', json={'code': 'NOPE'}).status_code, 404)
+        self.assertEqual(self.client.post('/api/coupon', json={'code': code, 'plan': 'basic'}).status_code, 404)
+        c = self.app_mod.app.test_client()
+        bad = c.post('/api/auth/register', json={'email': 'p0@x.com', 'password': 'secret123', 'plan': 'pro', 'coupon': 'NOPE'})
+        self.assertEqual(bad.status_code, 400)
+        c.post('/api/auth/register', json={'email': 'p1@x.com', 'password': 'secret123', 'plan': 'pro', 'coupon': code})
+        c.post('/api/auth/register', json={'email': 'p2@x.com', 'password': 'secret123', 'plan': 'basic'})
+        db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))
+        rows = dict((e, (pl, cp)) for e, pl, cp in db.execute("SELECT email, plan, coupon FROM users WHERE email IN ('p1@x.com','p2@x.com','p0@x.com')"))
+        db.close()
+        self.assertEqual(rows, {'p1@x.com': ('pro', code.upper()), 'p2@x.com': ('basic', None)})
+        self.assertEqual(pricing.price_for('pro', code), 29)
+        self.assertEqual(pricing.price_for('basic', code), 19)  # a pro-only code doesn't discount basic
+        admin = self.app_mod.app.test_client()
+        with admin.session_transaction() as sess:
+            sess['user_id'], sess['user_email'] = 'adm', self.app_mod.ADMIN_EMAIL
+        pending = {u['email']: u['monthlyPrice'] for u in admin.get('/api/admin/pending-users').json}
+        self.assertEqual((pending.get('p1@x.com'), pending.get('p2@x.com')), (29, 19))
+
+    def test_landing_page_and_assets(self):
+        r = self.client.get('/welcome')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('/api/pricing', r.get_data(as_text=True))
+        self.assertEqual(self.client.get('/landing/dashboard.jpg').status_code, 200)
+
     def test_public_vertical_list_and_js(self):
         r = self.client.get('/api/verticals')
         ids = [v['id'] for v in r.json['verticals']]

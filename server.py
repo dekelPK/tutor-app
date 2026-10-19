@@ -5,6 +5,7 @@ import json, os, threading, webbrowser, sqlite3, hashlib, secrets, uuid
 import portal_core
 import verticals
 import demo_accounts
+import pricing
 from datetime import datetime, timedelta
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -57,6 +58,10 @@ def init_db():
         c.execute('ALTER TABLE users ADD COLUMN custom_fields TEXT')
     if 'services' not in cols:
         c.execute('ALTER TABLE users ADD COLUMN services TEXT')
+    if 'plan' not in cols:
+        c.execute('ALTER TABLE users ADD COLUMN plan TEXT')
+    if 'coupon' not in cols:
+        c.execute('ALTER TABLE users ADD COLUMN coupon TEXT')
     c.commit()
     c.close()
 
@@ -110,6 +115,44 @@ def require_admin():
     if (session.get('user_email') or '').lower() != ADMIN_EMAIL.lower():
         return jsonify({'error': 'Forbidden'}), 403
     return None
+
+CODE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# ── Landing page + pricing ───────────────────────────────────────────────────
+# The marketing page (/welcome) reads the plans from /api/pricing (pricing.json);
+# coupon codes are never listed — /api/coupon only confirms one that was typed.
+@app.route('/welcome')
+@app.route('/landing')
+def landing_page():
+    with open(os.path.join(CODE_DIR, 'landing.html'), encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'text/html; charset=utf-8'}
+
+@app.route('/landing/<path:filename>')
+def landing_assets(filename):
+    return send_from_directory(os.path.join(CODE_DIR, 'landing'), filename)
+
+@app.route('/api/pricing')
+def public_pricing():
+    return jsonify(pricing.public())
+
+@app.route('/api/coupon', methods=['POST'])
+def check_coupon():
+    body = request.json or {}
+    c = pricing.check_coupon(body.get('code'), pricing.normalize_plan(body.get('plan')))
+    if not c:
+        return jsonify({'valid': False, 'error': 'קוד הקופון לא תקין'}), 404
+    return jsonify({'valid': True, 'plan': c['plan'], 'price': c['price']})
+
+def signup_plan(body):
+    """(plan, coupon) chosen at signup — (None, None) for none; raises ValueError for a bad coupon."""
+    plan = pricing.normalize_plan(body.get('plan'))
+    code = (body.get('coupon') or '').strip()
+    if not code:
+        return plan, None
+    c = pricing.check_coupon(code, plan)
+    if not c:
+        raise ValueError('קוד הקופון לא תקין')
+    return plan or c['plan'], c['code']
 
 # ── Serve HTML ─────────────────────────────────────────────────────────────────
 @app.route('/')
@@ -224,6 +267,10 @@ def auth_register():
         return jsonify({'error': 'נא למלא אימייל וסיסמה'}), 400
     if len(pw) < 6:
         return jsonify({'error': 'הסיסמה חייבת להכיל לפחות 6 תווים'}), 400
+    try:
+        plan, coupon = signup_plan(body)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     is_admin_account = email.lower() == ADMIN_EMAIL.lower()
     c = get_db()
     if c.execute('SELECT 1 FROM users WHERE email=?', [email]).fetchone():
@@ -233,8 +280,8 @@ def auth_register():
     is_first = c.execute('SELECT COUNT(*) FROM users').fetchone()[0] == 0
     uid = uuid.uuid4().hex[:12]
     approved = 1 if (is_first or is_admin_account) else 0
-    c.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved,profession,gender) VALUES (?,?,?,?,?,?,?,?)',
-              [uid, email, hash_pw(pw), name, datetime.now().isoformat(), approved, profession, gender])
+    c.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved,profession,gender,plan,coupon) VALUES (?,?,?,?,?,?,?,?,?,?)',
+              [uid, email, hash_pw(pw), name, datetime.now().isoformat(), approved, profession, gender, plan, coupon])
     c.commit()
     c.close()
     if is_first and os.path.exists(DATA_FILE):
@@ -696,9 +743,9 @@ def admin_pending_users():
     err = require_admin()
     if err: return err
     c = get_db()
-    rows = c.execute('SELECT id, name, email, created_at FROM users WHERE approved=0 ORDER BY created_at').fetchall()
+    rows = c.execute('SELECT id, name, email, created_at, profession, plan, coupon FROM users WHERE approved=0 ORDER BY created_at').fetchall()
     c.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify([{**dict(r), 'monthlyPrice': pricing.price_for(r['plan'], r['coupon']) if r['plan'] else None} for r in rows])
 
 @app.route('/api/admin/demo-account', methods=['POST'])
 def admin_demo_account():
@@ -728,7 +775,7 @@ def admin_users():
     err = require_admin()
     if err: return err
     c = get_db()
-    rows = c.execute('SELECT id, name, email, created_at, profession, gender FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
+    rows = c.execute('SELECT id, name, email, created_at, profession, gender, plan, coupon FROM users WHERE approved=1 ORDER BY created_at DESC').fetchall()
     c.close()
     out = []
     for u in rows:
@@ -741,6 +788,7 @@ def admin_users():
         d['lessonsThisMonth'] = sum(1 for l in data.get('lessons', []) if l.get('date', '').startswith(today[:7]))
         d['lastLessonDate'] = max((l['date'] for l in data.get('lessons', []) if l.get('date', '') <= today), default=None)
         d['isAdmin'] = u['email'].lower() == ADMIN_EMAIL.lower()
+        d['monthlyPrice'] = pricing.price_for(u['plan'], u['coupon']) if u['plan'] else None
         out.append(d)
     return jsonify(out)
 
