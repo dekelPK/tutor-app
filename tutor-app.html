@@ -1861,6 +1861,13 @@
     .cal-day-exam { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; border: 1px dashed #f59e0b;
       background: var(--warning-light); margin-bottom: 8px; flex-wrap: wrap; }
     [data-theme="dark"] .cal-day-exam { background: #3a2a0c; }
+    /* calendar surfaces that were hard-coded white/light (text is light in dark mode → invisible) */
+    [data-theme="dark"] .cal-day-lesson,
+    [data-theme="dark"] .cal-week-col,
+    [data-theme="dark"] .cal-view-btn.active { background: var(--card); }
+    [data-theme="dark"] .cal-day-cell.today,
+    [data-theme="dark"] .cal-week-col.today { background: var(--primary-light); }
+    [data-theme="dark"] .cal-day-cell.other-month { background: var(--bg); }
     .cal-day-exam-icon { font-size: 22px; }
     .cal-add-day-row { display: flex; gap: 8px; }
     .cal-add-day-row .cal-add-day-btn { flex: 1; width: auto; }
