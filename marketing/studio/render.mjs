@@ -1,6 +1,6 @@
 // Renders Instagram content for לוזי from a plan file.
 //   node marketing/studio/render.mjs <plan.json> <out-dir>
-// Posts → 1080×1350 JPGs (one per slide; several slides = carousel).
+// Posts → 1080×1350 JPGs (one per slide; several slides = carousel). Stories → 1080×1920 JPGs (one per story).
 // Reels → 1080×1920 MP4 (animated scenes + synthesized music via music.py).
 // See README.md for the plan format and the slide templates.
 import { createRequire } from 'module';
@@ -157,6 +157,20 @@ async function renderPost(item) {
   return files;
 }
 
+// Stories: one 1080×1920 image per slide, laid out with the reel templates (safe margins for
+// Instagram's top/bottom UI), with the entrance animations jumped to their end state.
+async function renderStory(item) {
+  const files = [];
+  for (const [i, s] of item.slides.entries()) {
+    await load(page({ ...s, dur: 1 }, true, i, item.slides.length), 1920);
+    await p.evaluate(() => document.getAnimations().forEach(a => a.finish()));
+    const f = path.join(OUT, item.slides.length > 1 ? `${item.id}-${i + 1}.jpg` : `${item.id}.jpg`);
+    await p.screenshot({ path: f, type: 'jpeg', quality: 90 });
+    files.push(path.basename(f));
+  }
+  return files;
+}
+
 async function renderReel(item) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'reel-'));
   const silent = path.join(tmp, 'v.mp4');
@@ -193,7 +207,7 @@ async function renderReel(item) {
 const manifest = [];
 const ONLY = (process.env.ONLY || '').split(',').filter(Boolean);
 for (const item of plan.items.filter(i => !ONLY.length || ONLY.includes(i.id))) {
-  const files = item.kind === 'reel' ? await renderReel(item) : await renderPost(item);
+  const files = item.kind === 'reel' ? await renderReel(item) : item.kind === 'story' ? await renderStory(item) : await renderPost(item);
   manifest.push({ id: item.id, kind: item.kind, files });
   console.log(item.id, files.join(' '));
 }

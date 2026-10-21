@@ -1,0 +1,38 @@
+{
+  "week": "2026-10-21",
+  "note": "Stories for the rest of week 1 (Wed–Sun). Instagram stories carry no caption and the API can't add link/poll stickers, so every story is a self-contained image; calls to action say 'הקישור בביו' or ask people to reply by message.",
+  "items": [
+    {
+      "id": "2026-10-21-story-1", "kind": "story", "date": "2026-10-21T14:00:00", "audience": "all",
+      "slides": [{"type": "hook", "theme": "blue", "emoji": "🤔", "title": "כמה מ-5 הסימנים\nהאלה מוכרים לך?", "sub": "הפוסט החדש בפיד 👆\nענו לנו בהודעה — אנחנו מקריאים הכל", "titleSize": 96}]
+    },
+    {
+      "id": "2026-10-21-story-2", "kind": "story", "date": "2026-10-21T20:30:00", "audience": "all",
+      "slides": [{"type": "phone", "theme": "blue", "tag": "💡 טיפ של לוזי", "title": "שלחו ללקוח קישור אישי", "sub": "הוא רואה את התורים שלו וקובע לבד", "shot": "tutor-portal"}]
+    },
+    {
+      "id": "2026-10-22-story-1", "kind": "story", "date": "2026-10-22T11:30:00", "audience": "tutor",
+      "slides": [{"type": "hook", "theme": "light", "emoji": "💸", "title": "מורים: כמה זמן ביום\nהולך על מעקב תשלומים?", "sub": "ענו לנו בהודעה 💬", "titleSize": 92}]
+    },
+    {
+      "id": "2026-10-22-story-2", "kind": "story", "date": "2026-10-22T20:30:00", "audience": "tutor",
+      "slides": [{"type": "phone", "theme": "light", "tag": "📚 למורים", "title": "מי חייב כמה?", "sub": "כל מה שעוד לא שולם, במסך אחד", "shot": "tutor-unpaid"}]
+    },
+    {
+      "id": "2026-10-23-story-1", "kind": "story", "date": "2026-10-23T11:00:00", "audience": "all",
+      "slides": [{"type": "hook", "theme": "warm", "emoji": "🕯️", "title": "שבת שלום 💙", "sub": "סוגרים שבוע.\nבשבוע הבא היומן כבר מסודר.", "foot": "🔗 הקישור בביו"}]
+    },
+    {
+      "id": "2026-10-24-story-1", "kind": "story", "date": "2026-10-24T21:30:00", "audience": "cosmetician",
+      "slides": [{"type": "phone", "theme": "warm", "tag": "💅 לקוסמטיקאיות", "title": "המחירון בתוך היומן", "sub": "בוחרים טיפול — המחיר והשעה מתמלאים לבד", "shot": "cosmetician-newlesson"}]
+    },
+    {
+      "id": "2026-10-25-story-1", "kind": "story", "date": "2026-10-25T11:30:00", "audience": "all",
+      "slides": [{"type": "offer", "theme": "sun", "emoji": "☀️", "title": "שבוע חדש,\nיומן מסודר", "sub": "מחיר השקה למצטרפים ראשונים", "foot": "🔗 הקישור בביו"}]
+    },
+    {
+      "id": "2026-10-25-story-2", "kind": "story", "date": "2026-10-25T20:30:00", "audience": "barber",
+      "slides": [{"type": "phone", "theme": "dark", "tag": "✂️ לספרים", "title": "כל השבוע במבט אחד", "sub": "מי מגיע, מתי, ומה עוד פנוי", "shot": "barber-calendar"}]
+    }
+  ]
+}
