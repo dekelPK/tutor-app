@@ -1,0 +1,194 @@
+{
+ "week": "2026-10-26",
+ "note": "Stories for week 2 (Mon 26/10 – Sun 1/11).",
+ "items": [
+  {
+   "id": "2026-10-26-story-1",
+   "kind": "story",
+   "date": "2026-10-26T11:30:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "hook",
+     "theme": "light",
+     "emoji": "🤨",
+     "title": "מה יותר מעצבן:\nביטולים ברגע האחרון\nאו כסף שנשכח?",
+     "sub": "ענו לנו בהודעה 💬",
+     "titleSize": 84
+    }
+   ]
+  },
+  {
+   "id": "2026-10-26-story-2",
+   "kind": "story",
+   "date": "2026-10-26T20:30:00",
+   "audience": "tutor",
+   "slides": [
+    {
+     "type": "phone",
+     "theme": "blue",
+     "tag": "💡 טיפ של לוזי",
+     "title": "סמנו שולם בלחיצה",
+     "sub": "ליד כל שיעור, בלי לפתוח כלום",
+     "shot": "tutor-lessons"
+    }
+   ]
+  },
+  {
+   "id": "2026-10-27-story-1",
+   "kind": "story",
+   "date": "2026-10-27T11:30:00",
+   "audience": "tutor",
+   "slides": [
+    {
+     "type": "hook",
+     "theme": "blue",
+     "emoji": "🍀",
+     "title": "מבחן השבוע?",
+     "sub": "הפוסט החדש בפיד 👆\nלוזי מזכירה ושולחת בהצלחה"
+    }
+   ]
+  },
+  {
+   "id": "2026-10-27-story-2",
+   "kind": "story",
+   "date": "2026-10-27T20:30:00",
+   "audience": "cosmetician",
+   "slides": [
+    {
+     "type": "phone",
+     "theme": "warm",
+     "tag": "💅 לקוסמטיקאיות",
+     "title": "היום שלך במסך אחד",
+     "sub": "מי מגיע, מתי ואיזה טיפול",
+     "shot": "cosmetician-dashboard"
+    }
+   ]
+  },
+  {
+   "id": "2026-10-28-story-1",
+   "kind": "story",
+   "date": "2026-10-28T11:30:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "hook",
+     "theme": "white",
+     "emoji": "❓",
+     "title": "5 שאלות\nלפני שמתחילים",
+     "sub": "החליקו בפוסט החדש בפיד 👆"
+    }
+   ]
+  },
+  {
+   "id": "2026-10-28-story-2",
+   "kind": "story",
+   "date": "2026-10-28T20:30:00",
+   "audience": "barber",
+   "slides": [
+    {
+     "type": "phone",
+     "theme": "dark",
+     "tag": "✂️ לספרים",
+     "title": "גם בלילה\nהלקוחות קובעים",
+     "sub": "ואתה מאשר בבוקר בלחיצה",
+     "shot": "barber-portal"
+    }
+   ]
+  },
+  {
+   "id": "2026-10-29-story-1",
+   "kind": "story",
+   "date": "2026-10-29T11:30:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "hook",
+     "theme": "light",
+     "emoji": "🙋",
+     "title": "מי עוד מנהל תורים\nבהודעות וואטסאפ?",
+     "sub": "ענו לנו בהודעה 💬",
+     "titleSize": 88
+    }
+   ]
+  },
+  {
+   "id": "2026-10-29-story-2",
+   "kind": "story",
+   "date": "2026-10-29T20:30:00",
+   "audience": "tutor",
+   "slides": [
+    {
+     "type": "phone",
+     "theme": "blue",
+     "tag": "🎯 למורים",
+     "title": "שיעור ניסיון\nבצעד אחד",
+     "sub": "ולוזי שואלת אחרי — ממשיך?",
+     "shot": "tutor-trial"
+    }
+   ]
+  },
+  {
+   "id": "2026-10-30-story-1",
+   "kind": "story",
+   "date": "2026-10-30T11:00:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "hook",
+     "theme": "warm",
+     "emoji": "🕯️",
+     "title": "שבת שלום 💙",
+     "sub": "מתחילים את השבוע הבא\nעם יומן מסודר",
+     "foot": "🔗 הקישור בביו"
+    }
+   ]
+  },
+  {
+   "id": "2026-10-31-story-1",
+   "kind": "story",
+   "date": "2026-10-31T21:30:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "hook",
+     "theme": "blue",
+     "emoji": "🌙",
+     "title": "שבוע חדש מתחיל",
+     "sub": "מי כבר שלח ללקוחות\nקישור אישי?"
+    }
+   ]
+  },
+  {
+   "id": "2026-11-01-story-1",
+   "kind": "story",
+   "date": "2026-11-01T11:30:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "offer",
+     "theme": "sun",
+     "emoji": "🎁",
+     "title": "שבוע ניסיון\nחינם",
+     "sub": "ואחריו מחיר השקה",
+     "foot": "🔗 הקישור בביו"
+    }
+   ]
+  },
+  {
+   "id": "2026-11-01-story-2",
+   "kind": "story",
+   "date": "2026-11-01T20:30:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "cta",
+     "theme": "blue",
+     "title": "לוזי",
+     "sub": "הלו״ז של העסק שלך",
+     "foot": "🔗 הקישור בביו"
+    }
+   ]
+  }
+ ]
+}

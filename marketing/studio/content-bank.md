@@ -5,13 +5,13 @@
 - "מי חייב כמה?" — unpaid view (used 2026-10-20)
 - "באמצע תספורת והטלפון לא מפסיק" — barbers self-booking (used 2026-10-23)
 - "לקוחה ביטלה ברגע האחרון" — free slot visible, others can book
-- "סוף החודש ואין לך מושג כמה הרווחת" — payments / monthly income
-- "שכחת לרשום שיעור?" — recurring weekly lessons
-- "כרטיסייה של 10 — כמה נשארו?" — punch cards
+- "סוף החודש ואין לך מושג כמה הרווחת" — payments / monthly income (used 2026-10-26)
+- "שכחת לרשום שיעור?" — recurring weekly lessons (used 2026-10-29, barbers)
+- "כרטיסייה של 10 — כמה נשארו?" — punch cards (used 2026-10-30)
 - "ההורים שואלים מה למדתם" — lesson summary in personal link (used 2026-10-24)
 - "תלמיד חדש רוצה לנסות" — trial lessons (used 2026-10-21)
-- "מבחן מחר ושכחת?" — exam reminders + "בהצלחה" message
-- "כמה זמן לוקח לך לקבוע תור?" — 3 taps
+- "מבחן מחר ושכחת?" — exam reminders + "בהצלחה" message (used 2026-10-27)
+- "כמה זמן לוקח לך לקבוע תור?" — 3 taps (used 2026-10-29 reel)
 
 ## Formats
 - Before/after (vs) (used 2026-10-22) · 3 steps to start (used 2026-10-23) · "5 signs" carousel (used 2026-10-21)
@@ -21,3 +21,9 @@
 
 ## Audiences
 tutor (incl. music teachers) · cosmetician (nails, facials, lashes, brows) · barber · all
+
+## Used in week 2 (26/10–1/11) — don't repeat before mid-November
+Posts: monthly income · exam reminder + good luck · FAQ carousel (5 questions) · recurring appointment (barbers) · punch cards (cosmeticians) · Saturday engagement question · plan the week.
+Reels (each independent of that day's post): morning push with today's lessons · "who's coming today" · clients book at night (barbers) · 3 taps to add a lesson · plan next week in 5 min (Friday) · what clients see in their personal link · 7-day free trial.
+Stories: reply-bait questions, tips with screenshots (mark paid, today's schedule, night booking, trial lesson), Shabbat greeting, free-trial/offer, brand CTA.
+Ideas still unused: "יום בחיים" reel, myth vs fact, seasonal (Hanukkah starts 14/12), services/price list for barbers, student/client profile, WhatsApp one-tap reminders, dark mode, install to home screen.
