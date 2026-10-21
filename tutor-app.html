@@ -2335,7 +2335,7 @@
               <h3 class="dx-title"><span class="dx-ic dx-ic-violet">📸</span>תוכן אינסטגרם שבועי</h3>
               <span class="adm-pill" id="admin-ig-status">—</span>
             </div>
-            <p class="adm-hint">כל יום ראשון בבוקר תגיע לכאן התראה. שולחים ל-Claude את ההודעה למטה, והוא מכין ומתזמן פוסט ורילס לכל יום (שלישי עד ראשון, עם קרוסלה אחת).</p>
+            <p class="adm-hint">כל יום ראשון בבוקר תגיע לכאן התראה. שולחים ל-Claude את ההודעה למטה, והוא מכין ומתזמן פוסט, רילס ושני סטוריז לכל יום (עם קרוסלה אחת בשבוע).</p>
             <div class="adm-ann-preview" id="admin-ig-msg" style="white-space:pre-wrap;user-select:all"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
               <button class="btn btn-primary btn-sm" onclick="adminCopyInstagramMsg()">📋 העתקת ההודעה</button>
@@ -4650,7 +4650,7 @@ async function adminSetSubscription(userId, body) {
 function adminInstagramMessage() {
   const d = new Date();
   d.setDate(d.getDate() + ((2 - d.getDay() + 7) % 7 || 7));  // next Tuesday
-  return `תכיני את תוכן האינסטגרם לשבוע הקרוב, מיום שלישי ${formatDate(isoDate(d)).slice(0, 5)} עד יום ראשון: פוסט ורילס (Trial Reel) בכל יום, קרוסלה אחת, ותתזמני הכל במטריקול.`;
+  return `תכיני את תוכן האינסטגרם לשבוע הקרוב, מיום שלישי ${formatDate(isoDate(d)).slice(0, 5)} עד יום ראשון: פוסט ורילס (Trial Reel) בכל יום, קרוסלה אחת, ושני סטוריז ביום (ביום שישי אחד, לפני שבת), ותתזמני הכל במטריקול.`;
 }
 async function loadAdminInstagram() {
   const msg = document.getElementById('admin-ig-msg');
