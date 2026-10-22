@@ -9,6 +9,7 @@ import pricing
 import landing_contact
 import subscription
 import instagram_reminder
+import invoicing
 from datetime import datetime, timedelta
 
 BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -73,7 +74,7 @@ def init_db():
         c.execute('ALTER TABLE users ADD COLUMN plan TEXT')
     if 'coupon' not in cols:
         c.execute('ALTER TABLE users ADD COLUMN coupon TEXT')
-    for col in ('phone', 'trial_ends', 'paid_until', 'billing', 'sub_request_at'):  # see subscription.py
+    for col in ('phone', 'trial_ends', 'paid_until', 'billing', 'sub_request_at', 'invoicing'):  # see subscription.py / invoicing.py
         if col not in cols:
             c.execute(f'ALTER TABLE users ADD COLUMN {col} TEXT')
     if 'kind' not in [r[1] for r in c.execute('PRAGMA table_info(contact_messages)').fetchall()]:
@@ -262,6 +263,7 @@ def account_info(user_id):
     return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand(),
             'customFields': verticals.fields_for(prof, row['custom_fields'] if row else None),
             'services': verticals.services_for(prof, row['services'] if row else None),
+            'invoicing': invoicing.normalize(row['invoicing'] if row else None),
             'subscription': {**subscription.status(row, ADMIN_EMAIL), **plan_info(row)} if row else None}
 
 def plan_info(u):
@@ -288,6 +290,9 @@ def update_account():
     if 'services' in body:
         c.execute('UPDATE users SET services=? WHERE id=?',
                   [json.dumps(verticals.normalize_services(body['services']), ensure_ascii=False), session['user_id']])
+    if 'invoicing' in body:
+        c.execute('UPDATE users SET invoicing=? WHERE id=?',
+                  [json.dumps(invoicing.normalize(body['invoicing']), ensure_ascii=False), session['user_id']])
     c.commit()
     c.close()
     return jsonify(account_info(session['user_id']))
@@ -719,6 +724,15 @@ def add_payment():
     data['payments'].append(payment)
     write_data(data)
     return jsonify(payment), 201
+
+@app.route('/api/payments/<pid>', methods=['PUT'])
+def update_payment(pid):
+    err = require_auth()
+    if err: return err
+    data = read_data()
+    data['payments'] = [request.json if p['id'] == pid else p for p in data['payments']]
+    write_data(data)
+    return jsonify(request.json)
 
 @app.route('/api/payments/<pid>', methods=['DELETE'])
 def delete_payment(pid):

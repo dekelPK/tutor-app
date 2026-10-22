@@ -235,6 +235,19 @@ class InstagramReminderTests(unittest.TestCase):
         self.assertEqual(ig.PUSH['url'], '/?admin=instagram')
 
 
+class InvoicingTests(unittest.TestCase):
+    def test_normalize_is_strict(self):
+        import invoicing
+        self.assertEqual(invoicing.normalize(None), invoicing.DEFAULT)
+        self.assertEqual(invoicing.normalize('not json'), invoicing.DEFAULT)
+        n = invoicing.normalize({'enabled': 1, 'docType': 'חשבונית מס קבלה', 'siteName': '  חשבונית   ירוקה ', 'siteUrl': 'app.example.co.il/x', 'evil': 1})
+        self.assertEqual(n, {'enabled': True, 'docType': 'חשבונית מס קבלה', 'siteName': 'חשבונית ירוקה', 'siteUrl': 'https://app.example.co.il/x'})
+        self.assertEqual(invoicing.normalize({'docType': 'hax'})['docType'], 'קבלה')
+        self.assertEqual(invoicing.normalize({'siteUrl': 'javascript:alert(1)'})['siteUrl'], '')
+        self.assertEqual(invoicing.normalize({'siteUrl': 'https://a b'})['siteUrl'], '')
+        self.assertEqual(len(invoicing.normalize({'siteName': 'x' * 99})['siteName']), 40)
+
+
 class MigrationAndApiTests(unittest.TestCase):
     """An existing pre-migration database must come out as (female) tutors."""
 
@@ -386,6 +399,18 @@ class MigrationAndApiTests(unittest.TestCase):
         self.assertEqual(c.get('/api/push/instagram-reminder?token=bad').status_code, 401)
         # right after "done" (and not Sunday morning anyway) there is nothing to send
         self.assertEqual(c.get(f'/api/push/instagram-reminder?token={self.app_mod.CRON_SECRET}').json['subscriptions'], [])
+
+    def test_invoicing_setting_and_payment_update(self):
+        c = self.app_mod.app.test_client()
+        r = c.post('/api/auth/register', json={'email': 'inv@x.com', 'password': 'secret123', 'name': 'נעה', 'phone': '0521111111'})
+        self.assertEqual(r.status_code, 201)
+        self.assertFalse(r.json['invoicing']['enabled'])          # off by default
+        r = c.put('/api/account', json={'invoicing': {'enabled': True, 'docType': 'קבלה', 'siteName': 'חשבונית ירוקה', 'siteUrl': 'javascript:x'}})
+        self.assertEqual((r.json['invoicing']['enabled'], r.json['invoicing']['siteUrl']), (True, ''))
+        self.assertTrue(c.get('/api/auth/me').json['invoicing']['enabled'])   # persisted
+        self.assertEqual(c.post('/api/payments', json={'id': 'p1', 'studentId': 's1', 'date': '2026-10-01', 'amount': 300}).status_code, 201)
+        self.assertEqual(c.put('/api/payments/p1', json={'id': 'p1', 'studentId': 's1', 'date': '2026-10-01', 'amount': 300, 'receiptAmount': 300, 'receiptNo': '17'}).status_code, 200)
+        self.assertEqual(c.get('/api/payments').json[0]['receiptAmount'], 300)
 
     def test_brand_has_a_contact_email(self):
         import verticals
