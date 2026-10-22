@@ -24,6 +24,7 @@ import pricing
 import landing_contact
 import subscription
 import instagram_reminder
+import invoicing
 DB_PATH  = os.path.join(BASE_DIR, 'tutor.db')
 
 app = Flask(__name__, static_folder=BASE_DIR)
@@ -231,7 +232,7 @@ CREATE TABLE IF NOT EXISTS contact_messages (
             db.execute('ALTER TABLE users ADD COLUMN coupon TEXT')
         # Free trial + manually recorded payments (subscription.py). NULL trial_ends
         # and paid_until = never billed (founding users) → free, never blocked.
-        for col in ('phone', 'trial_ends', 'paid_until', 'billing', 'sub_request_at'):
+        for col in ('phone', 'trial_ends', 'paid_until', 'billing', 'sub_request_at', 'invoicing'):
             if col not in user_cols:
                 db.execute(f'ALTER TABLE users ADD COLUMN {col} TEXT')
         if 'kind' not in [r[1] for r in db.execute('PRAGMA table_info(contact_messages)').fetchall()]:
@@ -403,6 +404,7 @@ def account_info(user_id):
     return {'profession': prof, 'gender': gender, 'vertical': verticals.load(prof), 'brand': verticals.brand(),
             'customFields': verticals.fields_for(prof, row['custom_fields'] if row else None),
             'services': verticals.services_for(prof, row['services'] if row else None),
+            'invoicing': invoicing.normalize(row['invoicing'] if row else None),
             'subscription': {**subscription.status(row, ADMIN_EMAIL), **plan_info(row)} if row else None}
 
 def plan_info(u):
@@ -446,6 +448,9 @@ def update_account():
         if 'services' in body:
             db.execute('UPDATE users SET services=? WHERE id=?',
                        [json.dumps(verticals.normalize_services(body['services']), ensure_ascii=False), uid()])
+        if 'invoicing' in body:
+            db.execute('UPDATE users SET invoicing=? WHERE id=?',
+                       [json.dumps(invoicing.normalize(body['invoicing']), ensure_ascii=False), uid()])
     return jsonify(account_info(uid()))
 
 @app.route('/vertical.js')
@@ -1491,6 +1496,17 @@ def add_payment():
                    [p['id'], uid(), p.get('studentId',''), p.get('date',''),
                     json.dumps(p, ensure_ascii=False)])
     return jsonify(p), 201
+
+@app.route('/api/payments/<pid>', methods=['PUT'])
+def update_payment(pid):
+    # Used to record receipt/invoice info on a payment (receiptAmount / receiptAt / receiptNo)
+    err = require_auth()
+    if err: return err
+    p = request.json
+    with get_db() as db:
+        db.execute('UPDATE payments SET studentId=?, date=?, data=? WHERE id=? AND user_id=?',
+                   [p.get('studentId',''), p.get('date',''), json.dumps(p, ensure_ascii=False), pid, uid()])
+    return jsonify(p)
 
 @app.route('/api/payments/<pid>', methods=['DELETE'])
 def delete_payment(pid):
