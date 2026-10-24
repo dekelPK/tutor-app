@@ -2760,7 +2760,8 @@ async function openBusinessModal() {
         <label style="margin-top:10px;display:block">מערכת החשבוניות שלך (לא חובה)</label>
         <input type="text" id="biz-inv-name" maxlength="40" placeholder="למשל: חשבונית ירוקה" value="${escapeHtml(invoicing().siteName || '')}">
         <input type="text" id="biz-inv-url" maxlength="300" inputmode="url" placeholder="הקישור למערכת, https://..." style="direction:ltr;margin-top:6px" value="${escapeHtml(invoicing().siteUrl || '')}">
-        <div class="pkg-sub" style="margin-top:4px">מהכפתור "פתיחת המערכת" נעתיק את פרטי התשלום ונפתח את האתר שלך</div>
+        <div class="pkg-sub" style="margin-top:4px">מהכפתור "פתיחת המערכת" נעתיק את פרטי התשלום ונפתח את האתר שלך
+          · <button type="button" class="pm-link" onclick="document.getElementById('biz-inv-name').value='SUMIT';document.getElementById('biz-inv-url').value='https://app.sumit.co.il'">מילוי מהיר: SUMIT</button></div>
       </div>
     </div>`, async () => {
     addBizField();  // a label typed but not yet added still counts
