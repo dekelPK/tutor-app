@@ -27,3 +27,9 @@ Posts: monthly income · exam reminder + good luck · FAQ carousel (5 questions)
 Reels (each independent of that day's post): morning push with today's lessons · "who's coming today" · clients book at night (barbers) · 3 taps to add a lesson · plan next week in 5 min (Friday) · what clients see in their personal link · 7-day free trial.
 Stories: reply-bait questions, tips with screenshots (mark paid, today's schedule, night booking, trial lesson), Shabbat greeting, free-trial/offer, brand CTA.
 Ideas still unused: "יום בחיים" reel, myth vs fact, seasonal (Hanukkah starts 14/12), services/price list for barbers, student/client profile, WhatsApp one-tap reminders, dark mode, install to home screen.
+
+## Used in week 3 (2/11–8/11) — don't repeat before December
+Posts: cosmetician cancellation/free slot · barber services price list · myth-vs-fact carousel · student card · one-tap WhatsApp reminder · feature-ideas question (Sat) · receipts tracking.
+Reels: debt screen + WhatsApp message · cosmetician trial session · barber availability/self-booking · install to home screen · 3 things before Shabbat · launch price/LUZI29 · what's new.
+Stories: reply-bait questions, tips with screenshots, myth teaser, free-trial offer, Shabbat greeting, feature ideas, receipts.
+Ideas still unused: "יום בחיים" reel, seasonal (Hanukkah starts 14/12), dark mode, monthly-income recap, FAQ for cosmeticians.

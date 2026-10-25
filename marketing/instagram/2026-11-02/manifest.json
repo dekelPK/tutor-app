@@ -1,0 +1,105 @@
+[
+  {
+    "id": "2026-11-02-post",
+    "kind": "post",
+    "files": [
+      "2026-11-02-post.jpg"
+    ]
+  },
+  {
+    "id": "2026-11-03-post",
+    "kind": "post",
+    "files": [
+      "2026-11-03-post.jpg"
+    ]
+  },
+  {
+    "id": "2026-11-04-carousel",
+    "kind": "post",
+    "files": [
+      "2026-11-04-carousel-1.jpg",
+      "2026-11-04-carousel-2.jpg",
+      "2026-11-04-carousel-3.jpg",
+      "2026-11-04-carousel-4.jpg",
+      "2026-11-04-carousel-5.jpg",
+      "2026-11-04-carousel-6.jpg"
+    ]
+  },
+  {
+    "id": "2026-11-05-post",
+    "kind": "post",
+    "files": [
+      "2026-11-05-post.jpg"
+    ]
+  },
+  {
+    "id": "2026-11-06-post",
+    "kind": "post",
+    "files": [
+      "2026-11-06-post.jpg"
+    ]
+  },
+  {
+    "id": "2026-11-07-post",
+    "kind": "post",
+    "files": [
+      "2026-11-07-post.jpg"
+    ]
+  },
+  {
+    "id": "2026-11-08-post",
+    "kind": "post",
+    "files": [
+      "2026-11-08-post.jpg"
+    ]
+  },
+  {
+    "id": "2026-11-02-reel",
+    "kind": "reel",
+    "files": [
+      "2026-11-02-reel.mp4"
+    ]
+  },
+  {
+    "id": "2026-11-03-reel",
+    "kind": "reel",
+    "files": [
+      "2026-11-03-reel.mp4"
+    ]
+  },
+  {
+    "id": "2026-11-04-reel",
+    "kind": "reel",
+    "files": [
+      "2026-11-04-reel.mp4"
+    ]
+  },
+  {
+    "id": "2026-11-05-reel",
+    "kind": "reel",
+    "files": [
+      "2026-11-05-reel.mp4"
+    ]
+  },
+  {
+    "id": "2026-11-06-reel",
+    "kind": "reel",
+    "files": [
+      "2026-11-06-reel.mp4"
+    ]
+  },
+  {
+    "id": "2026-11-07-reel",
+    "kind": "reel",
+    "files": [
+      "2026-11-07-reel.mp4"
+    ]
+  },
+  {
+    "id": "2026-11-08-reel",
+    "kind": "reel",
+    "files": [
+      "2026-11-08-reel.mp4"
+    ]
+  }
+]
