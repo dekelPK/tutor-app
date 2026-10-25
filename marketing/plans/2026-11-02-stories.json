@@ -1,0 +1,211 @@
+{
+ "week": "2026-11-02",
+ "items": [
+  {
+   "id": "2026-11-02-story-1",
+   "kind": "story",
+   "date": "2026-11-02T11:30:00",
+   "audience": "cosmetician",
+   "slides": [
+    {
+     "type": "hook",
+     "theme": "warm",
+     "emoji": "💅",
+     "title": "קוסמטיקאיות: כמה ביטולים\nהיו לכן החודש?",
+     "sub": "ענו לנו בהודעה 💬",
+     "titleSize": 92
+    }
+   ]
+  },
+  {
+   "id": "2026-11-02-story-2",
+   "kind": "story",
+   "date": "2026-11-02T20:30:00",
+   "audience": "cosmetician",
+   "slides": [
+    {
+     "type": "phone",
+     "theme": "warm",
+     "tag": "💅 טיפ",
+     "title": "שעה התפנתה? רואים מיד",
+     "sub": "הלקוחות מבקשות אותה מהקישור האישי",
+     "shot": "cosmetician-portal"
+    }
+   ]
+  },
+  {
+   "id": "2026-11-03-story-1",
+   "kind": "story",
+   "date": "2026-11-03T11:30:00",
+   "audience": "barber",
+   "slides": [
+    {
+     "type": "hook",
+     "theme": "dark",
+     "emoji": "✂️",
+     "title": "ספרים: מה המחיר\nשאתם הכי נשאלים עליו?",
+     "sub": "ענו לנו בהודעה 💬",
+     "titleSize": 92
+    }
+   ]
+  },
+  {
+   "id": "2026-11-03-story-2",
+   "kind": "story",
+   "date": "2026-11-03T20:30:00",
+   "audience": "barber",
+   "slides": [
+    {
+     "type": "phone",
+     "theme": "dark",
+     "tag": "✂️ לספרים",
+     "title": "שירותים ומחירים במקום אחד",
+     "sub": "מחיר ומשך מתמלאים לבד",
+     "shot": "barber-newlesson"
+    }
+   ]
+  },
+  {
+   "id": "2026-11-04-story-1",
+   "kind": "story",
+   "date": "2026-11-04T11:30:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "hook",
+     "theme": "blue",
+     "emoji": "🤔",
+     "title": "מיתוס או אמת?",
+     "sub": "\"אני לא טכנולוגית\" — מיתוס!\nהפוסט החדש בפיד 👆",
+     "titleSize": 100
+    }
+   ]
+  },
+  {
+   "id": "2026-11-04-story-2",
+   "kind": "story",
+   "date": "2026-11-04T20:30:00",
+   "audience": "tutor",
+   "slides": [
+    {
+     "type": "phone",
+     "theme": "light",
+     "tag": "📚 למורים",
+     "title": "כרטיס תלמיד מלא",
+     "sub": "שיעורים, תשלומים והערות",
+     "shot": "tutor-student"
+    }
+   ]
+  },
+  {
+   "id": "2026-11-05-story-1",
+   "kind": "story",
+   "date": "2026-11-05T11:30:00",
+   "audience": "tutor",
+   "slides": [
+    {
+     "type": "hook",
+     "theme": "light",
+     "emoji": "📇",
+     "title": "מורים: איפה אתם רושמים\nמה למדתם עם כל תלמיד?",
+     "sub": "ענו לנו בהודעה 💬",
+     "titleSize": 88
+    }
+   ]
+  },
+  {
+   "id": "2026-11-05-story-2",
+   "kind": "story",
+   "date": "2026-11-05T20:30:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "offer",
+     "theme": "sun",
+     "emoji": "🎁",
+     "title": "שבוע ניסיון חינם",
+     "sub": "בלי כרטיס אשראי",
+     "foot": "🔗 הקישור בביו"
+    }
+   ]
+  },
+  {
+   "id": "2026-11-06-story-1",
+   "kind": "story",
+   "date": "2026-11-06T11:00:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "hook",
+     "theme": "warm",
+     "emoji": "🕯️",
+     "title": "שבת שלום 💙",
+     "sub": "סוגרים שבוע.\nבשבוע הבא היומן כבר מסודר.",
+     "foot": "🔗 הקישור בביו"
+    }
+   ]
+  },
+  {
+   "id": "2026-11-07-story-1",
+   "kind": "story",
+   "date": "2026-11-07T21:30:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "hook",
+     "theme": "sun",
+     "emoji": "💡",
+     "title": "מה הייתם רוצים\nשנוסיף ללוזי?",
+     "sub": "כתבו לנו בהודעה — אנחנו קוראים הכל 💙",
+     "titleSize": 96
+    }
+   ]
+  },
+  {
+   "id": "2026-11-07-story-2",
+   "kind": "story",
+   "date": "2026-11-07T22:00:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "phone",
+     "theme": "blue",
+     "tag": "💬 טיפ",
+     "title": "תזכורת בלחיצה",
+     "sub": "ההודעה מוכנה, רק לשלוח",
+     "shot": "tutor-lessons"
+    }
+   ]
+  },
+  {
+   "id": "2026-11-08-story-1",
+   "kind": "story",
+   "date": "2026-11-08T11:30:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "phone",
+     "theme": "light",
+     "tag": "🧾 חדש",
+     "title": "סימון קבלות וחשבוניות",
+     "sub": "רואים מה נשלח ומה עוד מחכה",
+     "shot": "tutor-payments"
+    }
+   ]
+  },
+  {
+   "id": "2026-11-08-story-2",
+   "kind": "story",
+   "date": "2026-11-08T20:30:00",
+   "audience": "all",
+   "slides": [
+    {
+     "type": "cta",
+     "theme": "blue",
+     "sub": "יומן · לקוחות · תשלומים",
+     "foot": "🔗 הקישור בביו"
+    }
+   ]
+  }
+ ]
+}
