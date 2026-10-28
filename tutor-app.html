@@ -4766,7 +4766,7 @@ async function adminSetSubscription(userId, body) {
 }
 // Weekly Instagram routine: copyable request for Claude + "done this week" (stops the Sunday push)
 function adminInstagramMessage() {
-  return 'תכיני את תוכן האינסטגרם לשבוע הקרוב: בדקי במטריקול עד איזה יום כבר מתוזמן, והתחילי מהיום שאחריו ועד יום ראשון. פוסט ורילס (Trial Reel) בכל יום, קרוסלה אחת, ושני סטוריז ביום (ביום שישי אחד, לפני שבת), ותתזמני הכל במטריקול.';
+  return 'תכיני את תוכן האינסטגרם לשבוע הקרוב: בדקי במטריקול עד איזה יום כבר מתוזמן, והתחילי מהיום שאחריו ועד יום ראשון. פוסט ורילס (רילס רגיל, לא Trial) בכל יום, קרוסלה אחת, ושני סטוריז ביום (ביום שישי אחד, לפני שבת), ותתזמני הכל במטריקול.';
 }
 async function loadAdminInstagram() {
   const msg = document.getElementById('admin-ig-msg');
