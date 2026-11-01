@@ -38,7 +38,7 @@ def main():
     # from the regular "you have a lesson today" pushes on the same device.
     payload = json.dumps({
         'title': '🔔 התראת מנהל — נרשם/ה משתמש/ת חדש/ה',
-        'body': f'{SIGNUP_NAME} ({SIGNUP_EMAIL}) נרשם/ה — שבוע הניסיון התחיל.',
+        'body': f'{SIGNUP_NAME} ({SIGNUP_EMAIL}) נרשם/ה — חבילה חינמית (עד 2 לקוחות).',
         'url': '/',
         'tag': 'admin-signup',
     })

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from flask import Flask, jsonify, request, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
-import json, os, threading, webbrowser, sqlite3, hashlib, secrets, uuid
+import re, json, os, threading, webbrowser, sqlite3, hashlib, secrets, uuid
 import portal_core
 import verticals
 import demo_accounts
@@ -123,12 +123,6 @@ def write_data(data, uid=None):
 def require_auth():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    # Same lock as flask_app.require_auth: trial over / subscription lapsed → 402
-    c = get_db()
-    u = c.execute('SELECT * FROM users WHERE id=?', [session['user_id']]).fetchone()
-    c.close()
-    if u and subscription.blocked(u, ADMIN_EMAIL):
-        return jsonify({'error': 'subscription', 'subscription': subscription.status(u, ADMIN_EMAIL)}), 402
     return None
 
 ADMIN_EMAIL = 'dekelkartel@gmail.com'
@@ -148,7 +142,27 @@ CODE_DIR = os.path.dirname(os.path.abspath(__file__))
 @app.route('/landing')
 def landing_page():
     with open(os.path.join(CODE_DIR, 'landing.html'), encoding='utf-8') as f:
-        return f.read(), 200, {'Content-Type': 'text/html; charset=utf-8'}
+        html = f.read().replace('__BASE__', site_base())
+    return html, 200, {'Content-Type': 'text/html; charset=utf-8'}
+
+def site_base():
+    """Public origin for canonical / Open Graph / sitemap URLs (https everywhere but localhost)."""
+    base = request.url_root.rstrip('/')
+    if not re.match(r'^http://(localhost|127\.|0\.0\.0\.0)', base):
+        base = re.sub(r'^http://', 'https://', base)
+    return base
+
+# Search engines: only the landing page is meant to be indexed (the app itself is behind a login).
+@app.route('/robots.txt')
+def robots_txt():
+    return (f'User-agent: *\nAllow: /welcome\nAllow: /landing/\nDisallow: /api/\nDisallow: /?\n\nSitemap: {site_base()}/sitemap.xml\n',
+            200, {'Content-Type': 'text/plain; charset=utf-8'})
+
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+           f'  <url><loc>{site_base()}/welcome</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>\n</urlset>\n')
+    return xml, 200, {'Content-Type': 'application/xml; charset=utf-8'}
 
 @app.route('/landing/<path:filename>')
 def landing_assets(filename):
@@ -353,7 +367,7 @@ def auth_register():
     # First user gets the legacy data.json migrated automatically
     is_first = c.execute('SELECT COUNT(*) FROM users').fetchone()[0] == 0
     uid = uuid.uuid4().hex[:12]
-    trial_ends = None if (is_first or is_admin_account) else subscription.new_trial_end()
+    trial_ends = None if (is_first or is_admin_account) else subscription.free_plan_marker()
     c.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved,profession,gender,plan,coupon,phone,trial_ends) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
               [uid, email, hash_pw(pw), name, datetime.now().isoformat(), 1, profession, gender, plan, coupon, phone, trial_ends])
     c.commit()
@@ -431,6 +445,11 @@ def add_student():
     if err: return err
     data = read_data()
     student = request.json
+    c = get_db()
+    u = c.execute('SELECT * FROM users WHERE id=?', [session['user_id']]).fetchone()
+    c.close()
+    if u and subscription.over_limit(u, len(data['students']), ADMIN_EMAIL):
+        return jsonify({'error': 'limit', 'subscription': subscription.status(u, ADMIN_EMAIL)}), 402
     data['students'].append(student)
     write_data(data)
     return jsonify(student), 201
@@ -893,7 +912,7 @@ def admin_approve_user(target_id):
     user = c.execute('SELECT email, name, plan, trial_ends, paid_until FROM users WHERE id=?', [target_id]).fetchone()
     c.execute('UPDATE users SET approved=1 WHERE id=?', [target_id])
     if user and user['plan'] and not (user['trial_ends'] or user['paid_until']):
-        c.execute('UPDATE users SET trial_ends=? WHERE id=?', [subscription.new_trial_end(), target_id])
+        c.execute('UPDATE users SET trial_ends=? WHERE id=?', [subscription.free_plan_marker(), target_id])
     c.commit(); c.close()
     if user:
         # Local dev has no email sending — see forgot-password for the same pattern.
@@ -998,10 +1017,6 @@ def admin_set_subscription(target_id):
         c.execute('UPDATE users SET billing=?, paid_until=?, sub_request_at=NULL WHERE id=?', [billing, until, target_id])
     elif action == 'free':
         c.execute('UPDATE users SET trial_ends=NULL, paid_until=NULL WHERE id=?', [target_id])
-    elif action == 'trial':
-        days = max(1, min(60, int(body.get('days') or subscription.TRIAL_DAYS)))
-        c.execute('UPDATE users SET trial_ends=?, paid_until=NULL WHERE id=?',
-                  [(datetime.now() + timedelta(days=days)).isoformat(timespec='seconds'), target_id])
     else:
         c.close()
         return jsonify({'error': 'bad action'}), 400
