@@ -427,6 +427,7 @@ class MigrationAndApiTests(unittest.TestCase):
         robots = c.get('/robots.txt', headers={'Host': 'luzi.example.com'}).get_data(as_text=True)
         self.assertIn('Disallow: /api/', robots)
         self.assertIn('Sitemap: https://luzi.example.com/sitemap.xml', robots)
+        self.assertEqual(c.get('/googlebeb2b8f9cf50fb69.html').get_data(as_text=True), 'google-site-verification: googlebeb2b8f9cf50fb69.html')
         sm = c.get('/sitemap.xml', headers={'Host': 'luzi.example.com'})
         self.assertIn('https://luzi.example.com/welcome', sm.get_data(as_text=True))
         self.assertEqual(sm.mimetype, 'application/xml')
