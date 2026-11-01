@@ -33,3 +33,7 @@ Posts: cosmetician cancellation/free slot · barber services price list · myth-
 Reels: debt screen + WhatsApp message · cosmetician trial session · barber availability/self-booking · install to home screen · 3 things before Shabbat · launch price/LUZI29 · what's new.
 Stories: reply-bait questions, tips with screenshots, myth teaser, free-trial offer, Shabbat greeting, feature ideas, receipts.
 Ideas still unused: "יום בחיים" reel, seasonal (Hanukkah starts 14/12), dark mode, monthly-income recap, FAQ for cosmeticians.
+
+## Note on cadence
+Since 1/11 the plan is monthly with a 20-item quota (Metricool Free). November: 4 items already published on 1/11, 6 kept for 2–8/11
+(posts 2/11 + 4/11 carousel + 8/11, reels 2/11 + 6/11, story 6/11); the other 2–8/11 items are saved as Metricool drafts and can be reused later.

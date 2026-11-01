@@ -2342,14 +2342,14 @@
         <aside class="adm-side">
           <section class="card dx-card" id="admin-instagram-card">
             <div class="dx-card-head">
-              <h3 class="dx-title"><span class="dx-ic dx-ic-violet">📸</span>תוכן אינסטגרם שבועי</h3>
+              <h3 class="dx-title"><span class="dx-ic dx-ic-violet">📸</span>תוכן אינסטגרם חודשי</h3>
               <span class="adm-pill" id="admin-ig-status">—</span>
             </div>
-            <p class="adm-hint">כל יום ראשון בבוקר תגיע לכאן התראה. שולחים ל-Claude את ההודעה למטה, והוא מכין ומתזמן פוסט, רילס ושני סטוריז לכל יום (עם קרוסלה אחת בשבוע).</p>
+            <p class="adm-hint">ב-25 לכל חודש תגיע לכאן התראה. שולחים ל-Claude את ההודעה למטה, והוא מכין ומתזמן את תוכן החודש הבא: 20 פריטים בסך הכל (המגבלה של התוכנית החינמית במטריקול).</p>
             <div class="adm-ann-preview" id="admin-ig-msg" style="white-space:pre-wrap;user-select:all"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
               <button class="btn btn-primary btn-sm" onclick="adminCopyInstagramMsg()">📋 העתקת ההודעה</button>
-              <button class="btn btn-success btn-sm" onclick="adminInstagramDone()">✓ הכנו את השבוע</button>
+              <button class="btn btn-success btn-sm" onclick="adminInstagramDone()">✓ הכנו את החודש</button>
             </div>
           </section>
           <section class="card dx-card">
@@ -4766,7 +4766,7 @@ async function adminSetSubscription(userId, body) {
 }
 // Weekly Instagram routine: copyable request for Claude + "done this week" (stops the Sunday push)
 function adminInstagramMessage() {
-  return 'תכיני את תוכן האינסטגרם לשבוע הקרוב: בדקי במטריקול עד איזה יום כבר מתוזמן, והתחילי מהיום שאחריו ועד יום ראשון. פוסט ורילס (רילס רגיל, לא Trial) בכל יום, קרוסלה אחת, ושני סטוריז ביום (ביום שישי אחד, לפני שבת), ותתזמני הכל במטריקול.';
+  return 'תכיני את תוכן האינסטגרם לחודש הבא, עד 20 פריטים בסך הכל (מגבלת התוכנית החינמית במטריקול): כ-4 פוסטים (מהם קרוסלה אחת), 4 רילסים רגילים (לא Trial) ו-12 סטוריז, מפוזרים לאורך החודש. בדקי קודם מה כבר מתוזמן, ותזמני הכל במטריקול.';
 }
 async function loadAdminInstagram() {
   const msg = document.getElementById('admin-ig-msg');
@@ -4778,7 +4778,7 @@ async function loadAdminInstagram() {
     // the server stores Israel-local time — compare calendar dates, not instants
     const days = st.lastDone ? Math.max(0, Math.round((new Date(isoDate(new Date()) + 'T12:00') - new Date(st.lastDone.slice(0, 10) + 'T12:00')) / 86400000)) : null;
     pill.textContent = days === null ? 'עוד לא הוכן' : days === 0 ? 'הוכן היום ✓' : `הוכן לפני ${days} ימים`;
-    pill.className = 'adm-pill ' + (days !== null && days < 5 ? 'adm-pill-live' : 'adm-pill-warn');
+    pill.className = 'adm-pill ' + (days !== null && days < 20 ? 'adm-pill-live' : 'adm-pill-warn');
   } catch (e) { /* pill stays */ }
 }
 async function adminCopyInstagramMsg() {
@@ -4788,7 +4788,7 @@ async function adminCopyInstagramMsg() {
 }
 async function adminInstagramDone() {
   const r = await fetch('/api/admin/instagram', { method: 'POST' });
-  if (r.ok) { showToast('מעולה! נסמן שהשבוע מוכן ✓', 'success'); loadAdminInstagram(); }
+  if (r.ok) { showToast('מעולה! נסמן שהחודש מוכן ✓', 'success'); loadAdminInstagram(); }
 }
 async function loadAdminBillingSettings() {
   try {

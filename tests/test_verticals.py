@@ -211,16 +211,16 @@ class SubscriptionTests(unittest.TestCase):
 
 
 class InstagramReminderTests(unittest.TestCase):
-    def test_due_only_on_sunday_morning_once_and_not_after_done(self):
+    def test_due_only_on_the_25th_morning_once_and_not_after_done(self):
         import instagram_reminder as ig
         from datetime import datetime
-        sun = lambda h: datetime(2026, 10, 25, h, 45)      # Sunday
-        self.assertTrue(ig.due({}, sun(8)))
-        self.assertFalse(ig.due({}, sun(7)))               # winter run at 07:45 local waits
-        self.assertFalse(ig.due({}, datetime(2026, 10, 26, 9, 0)))   # Monday
-        self.assertFalse(ig.due({'lastReminder': '2026-10-25'}, sun(9)))  # already sent today
-        self.assertFalse(ig.due({'lastDone': '2026-10-23T12:00:00'}, sun(8)))  # prepared two days ago
-        self.assertTrue(ig.due({'lastDone': '2026-10-12T12:00:00'}, sun(8)))
+        day = lambda h: datetime(2026, 10, 25, h, 45)      # the 25th
+        self.assertTrue(ig.due({}, day(8)))
+        self.assertFalse(ig.due({}, day(7)))               # winter run at 07:45 local waits
+        self.assertFalse(ig.due({}, datetime(2026, 10, 26, 9, 0)))   # not the 25th
+        self.assertFalse(ig.due({'lastReminder': '2026-10-25'}, day(9)))  # already sent today
+        self.assertFalse(ig.due({'lastDone': '2026-10-15T12:00:00'}, day(8)))  # prepared ten days ago
+        self.assertTrue(ig.due({'lastDone': '2026-09-20T12:00:00'}, day(8)))
 
     def test_claim_marks_sent_and_endpoints(self):
         import instagram_reminder as ig

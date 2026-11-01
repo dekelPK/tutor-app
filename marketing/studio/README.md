@@ -1,16 +1,21 @@
 # לוזי — Instagram studio
 
-Generates and schedules the weekly Instagram content for **@luzibyd** through Metricool.
+Generates and schedules the **monthly** Instagram content for **@luzibyd** through Metricool.
 
-## Weekly routine (run every Sunday morning for Mon–Sun of the coming week)
+## Monthly routine (the admin card + push reminds on the 25th, for the coming month)
 
-Cadence: **every day one post (10:00) + one reel (18:00) + two stories (≈11:30 and 20:30)**; one of the week's posts (Wednesday) is a **carousel**.
-Shabbat: Friday reel at 13:00 and a single story at 11:00 (before Shabbat); Saturday post 20:00, reel 21:00 and a story 21:30 (after Shabbat).
-Timezone `Asia/Jerusalem`. Metricool brand (blogId) **7516388**, Instagram only.
+The Metricool plan is **Free: 20 posts per month, counted per calendar month** (posts, reels and stories each count; carousel = 1).
+Items beyond the quota fail with "You have reached your Metricool account limit" — so **never schedule more than 20 items for one
+month**; check what's already in that month first (`getScheduledPosts`) and keep a running count. Surplus ideas stay as Metricool
+drafts (`draft: true`) or in the content bank.
+
+Default monthly mix (20 items): **~4 posts (one carousel) + 4 reels + 12 stories**, spread over the month (roughly one post and one reel per week,
+three stories per week). Post 10:00, reel 18:00, stories ≈11:30 / 20:30; before Shabbat: Friday reel 13:00, story 11:00; after Shabbat: 20:00–22:00.
+Timezone `Asia/Jerusalem`. Metricool brand (blogId) **7516388**, Instagram only. Reels are regular `REEL` (not Trial Reel).
 
 1. **Avoid repeats.** Read the previous plans in `marketing/plans/` (and `content-bank.md`). Pick topics and hooks
-   that weren't used in the last 3 weeks; rotate audiences (tutor / cosmetician / barber / all) across the week.
-2. **Write the plan** `marketing/plans/<monday-date>.json` (same shape as the existing ones):
+   that weren't used in the last 3 weeks; rotate audiences (tutor / cosmetician / barber / all) across the month.
+2. **Write the plan** `marketing/plans/<first-day-of-month>.json` (same shape as the existing ones):
    - `id` = `<date>-post` / `<date>-reel` / `<date>-carousel`, `date` = local time `YYYY-MM-DDTHH:MM:SS`.
    - `caption`: Hebrew, 3–8 short lines, ends with `🔗 הקישור בביו` and 4–7 hashtags incl. `#לוזי`.
    - Stories (`kind: "story"`, a separate `<monday-date>-stories.json` is fine): one `slides` entry per story, any template; no caption —
