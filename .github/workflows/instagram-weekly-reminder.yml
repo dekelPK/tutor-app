@@ -1,11 +1,11 @@
-name: Weekly Instagram content reminder
+name: Monthly Instagram content reminder
 
 on:
   schedule:
-    # Sunday 08:xx Israel time = 05:xx UTC in summer (IDT), 06:xx UTC in winter (IST).
-    # Both run; the server sends only from 08:00 local, and only once per day.
-    - cron: '45 5 * * 0'
-    - cron: '45 6 * * 0'
+    # 08:xx Israel time = 05:xx UTC in summer (IDT), 06:xx UTC in winter (IST).
+    # Runs daily; the server sends only on the 25th, from 08:00 local, and only once per day.
+    - cron: '45 5 * * *'
+    - cron: '45 6 * * *'
   workflow_dispatch: {}   # manual test run from the Actions tab
 
 jobs:

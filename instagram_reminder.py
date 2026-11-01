@@ -1,22 +1,22 @@
 """
-instagram_reminder.py — the weekly "time to make the Instagram content" nudge for the admin.
+instagram_reminder.py — the monthly "time to make next month's Instagram content" nudge for the admin.
 Shared by both backends. State lives in instagram_status.json next to the app:
-  {"lastDone": ISO time the admin tapped "הכנו את השבוע", "lastReminder": YYYY-MM-DD}
-A push goes out on Sunday morning (the GitHub workflow runs at 05:45 and 06:45 UTC so one
-of the two lands after 08:00 Israel time whatever the DST); it is skipped if the week's
+  {"lastDone": ISO time the admin tapped "הכנו את החודש", "lastReminder": YYYY-MM-DD}
+A push goes out on the 25th of the month (the GitHub workflow runs daily at 05:45 and 06:45 UTC so
+one of the two lands after 08:00 Israel time whatever the DST); it is skipped if next month's
 content was already marked done, and never sent twice on the same day.
 """
 import json
 import os
 from datetime import datetime, timedelta
 
-REMIND_WEEKDAY = 6   # Python: Monday=0 … Sunday=6
+REMIND_DAY = 25      # day of the month
 REMIND_FROM_HOUR = 8
-RECENT_DONE_DAYS = 5
+RECENT_DONE_DAYS = 20
 
-PUSH = {'title': '📸 תוכן האינסטגרם לשבוע הקרוב',
-        'body': 'הגיע הזמן להכין את הפוסטים והרילסים של השבוע. לחצי לפתיחת הכרטיס בעמוד הניהול.',
-        'url': '/?admin=instagram', 'tag': 'instagram-weekly'}
+PUSH = {'title': '📸 תוכן האינסטגרם לחודש הבא',
+        'body': 'הגיע הזמן להכין את הפוסטים, הרילסים והסטוריז של החודש הבא. לחצי לפתיחת הכרטיס בעמוד הניהול.',
+        'url': '/?admin=instagram', 'tag': 'instagram-monthly'}
 
 
 def load(path):
@@ -40,8 +40,8 @@ def mark_done(path, now):
 
 
 def due(status, now):
-    """True when the Sunday reminder should be pushed right now."""
-    if now.weekday() != REMIND_WEEKDAY or now.hour < REMIND_FROM_HOUR:
+    """True when the monthly reminder should be pushed right now."""
+    if now.day != REMIND_DAY or now.hour < REMIND_FROM_HOUR:
         return False
     if status.get('lastReminder') == now.date().isoformat():
         return False
