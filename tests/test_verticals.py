@@ -189,10 +189,15 @@ class SubscriptionTests(unittest.TestCase):
         now = datetime(2026, 10, 19, 12, 0)
         u = lambda **k: {'email': 'a@x.com', 'trial_ends': None, 'paid_until': None, **k}
         self.assertEqual(sub.status(u(), now=now)['state'], 'free')
-        self.assertEqual(sub.status(u(trial_ends='2026-10-26T12:00:00'), now=now)['daysLeft'], 7)
-        self.assertEqual(sub.status(u(trial_ends='2026-10-19T11:00:00'), now=now)['state'], 'expired')
+        free = sub.status(u(trial_ends='2026-10-19T11:00:00'), now=now)      # joined → free plan, capped
+        self.assertEqual((free['state'], free['limit']), ('limited', 2))
+        self.assertFalse(sub.over_limit(u(trial_ends='x'), 1))
+        self.assertTrue(sub.over_limit(u(trial_ends='x'), 2))
+        self.assertFalse(sub.over_limit(u(trial_ends='x', paid_until='2026-11-01'), 50, now=now))   # paying → unlimited
+        self.assertFalse(sub.over_limit(u(), 50))                                # founding user → unlimited
         self.assertEqual(sub.status(u(trial_ends='2026-10-01T00:00:00', paid_until='2026-10-19'), now=now)['state'], 'active')
-        self.assertEqual(sub.status(u(paid_until='2026-10-18'), now=now)['reason'], 'subscription')
+        lapsed = sub.status(u(paid_until='2026-10-18'), now=now)              # paid period ended → back to the free plan
+        self.assertEqual((lapsed['state'], lapsed['lapsed']), ('limited', True))
         self.assertEqual(sub.status(u(email='demo.tutor@luzi.test', trial_ends='2020-01-01T00:00:00'), now=now)['state'], 'free')
         self.assertEqual(sub.status(u(email='Boss@x.com', paid_until='2020-01-01'), 'boss@x.com', now)['state'], 'free')
 
@@ -412,38 +417,53 @@ class MigrationAndApiTests(unittest.TestCase):
         self.assertEqual(c.put('/api/payments/p1', json={'id': 'p1', 'studentId': 's1', 'date': '2026-10-01', 'amount': 300, 'receiptAmount': 300, 'receiptNo': '17'}).status_code, 200)
         self.assertEqual(c.get('/api/payments').json[0]['receiptAmount'], 300)
 
+    def test_landing_is_seo_ready(self):
+        c = self.app_mod.app.test_client()
+        html = c.get('/welcome', headers={'Host': 'luzi.example.com', 'X-Forwarded-Proto': 'https'}).get_data(as_text=True)
+        self.assertNotIn('__BASE__', html)
+        self.assertIn('<link rel="canonical" href="https://luzi.example.com/welcome">', html)
+        self.assertIn('application/ld+json', html)
+        self.assertIn('חינם', html)
+        robots = c.get('/robots.txt', headers={'Host': 'luzi.example.com'}).get_data(as_text=True)
+        self.assertIn('Disallow: /api/', robots)
+        self.assertIn('Sitemap: https://luzi.example.com/sitemap.xml', robots)
+        sm = c.get('/sitemap.xml', headers={'Host': 'luzi.example.com'})
+        self.assertIn('https://luzi.example.com/welcome', sm.get_data(as_text=True))
+        self.assertEqual(sm.mimetype, 'application/xml')
+
     def test_brand_has_a_contact_email(self):
         import verticals
         self.assertIn('@', verticals.brand()['contactEmail'])
 
-    def test_signup_needs_a_phone_and_starts_a_week_trial(self):
+    def test_signup_needs_a_phone_and_starts_on_the_free_plan(self):
         c = self.app_mod.app.test_client()
         r = c.post('/api/auth/register', json={'email': 'nophone@x.com', 'password': 'secret123', 'plan': 'pro'})
         self.assertEqual(r.status_code, 400)
         r = c.post('/api/auth/register', json={'email': 'trial@x.com', 'password': 'secret123', 'name': 'נועה לוי', 'plan': 'pro', 'phone': '+972 52-123-4567'})
         self.assertEqual(r.status_code, 201)
         sub = r.json['subscription']
-        self.assertEqual((sub['state'], sub['daysLeft'], sub['planName'], sub['price']), ('trial', 7, 'פרו', 39))
+        self.assertEqual((sub['state'], sub['limit'], sub['planName'], sub['price']), ('limited', 2, 'פרו', 39))
         self.assertEqual(c.get('/api/students').status_code, 200)
         db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))
         self.assertEqual(db.execute("SELECT phone FROM users WHERE email='trial@x.com'").fetchone()[0], '0521234567')
         db.close()
-        # the founding user (no trial, no payment) is never locked
+        # the founding user (no free-plan marker, no payment) is never capped
         old = self.app_mod.app.test_client()
         self.assertEqual(old.post('/api/auth/login', json={'email': 'old@x.com', 'password': 'secret123'}).json['subscription']['state'], 'free')
 
-    def test_trial_end_locks_the_app_until_a_payment_is_recorded(self):
+    def test_free_plan_caps_clients_until_a_payment_is_recorded(self):
         c = self.app_mod.app.test_client()
         c.post('/api/auth/register', json={'email': 'late@x.com', 'password': 'secret123', 'name': 'דנה', 'plan': 'pro', 'phone': '0541234567'})
         db = sqlite3.connect(os.path.join(self.tmp.name, 'tutor.db'))
-        db.execute("UPDATE users SET trial_ends='2020-01-01T00:00:00' WHERE email='late@x.com'")
-        db.commit()
         user_id = db.execute("SELECT id FROM users WHERE email='late@x.com'").fetchone()[0]
         db.close()
-        r = c.get('/api/students')
-        self.assertEqual((r.status_code, r.json['subscription']['state']), (402, 'expired'))
-        self.assertEqual(c.post('/api/students', json={'id': 's1', 'name': 'x'}).status_code, 402)
-        self.assertEqual(c.get('/api/auth/me').json['subscription']['state'], 'expired')
+        self.assertEqual(c.get('/api/students').status_code, 200)              # never locked
+        for i in (1, 2):
+            self.assertEqual(c.post('/api/students', json={'id': f's{i}', 'name': 'x'}).status_code, 201)
+        r = c.post('/api/students', json={'id': 's3', 'name': 'x'})            # the third client hits the cap
+        self.assertEqual((r.status_code, r.json['error'], r.json['subscription']['state']), (402, 'limit', 'limited'))
+        self.assertEqual(len(c.get('/api/students').json), 2)
+        self.assertEqual(c.get('/api/auth/me').json['subscription']['state'], 'limited')
         # "I want to continue" → admin message (+ push text)
         self.assertTrue(c.post('/api/subscription/request', json={'message': 'אשמח לשנתי'}).json['ok'])
         admin = self.admin_client()
@@ -463,7 +483,7 @@ class MigrationAndApiTests(unittest.TestCase):
         r = admin.post(f'/api/admin/users/{user_id}/subscription', json={'action': 'payment', 'amount': 290, 'period': 'year', 'paidAt': '2026-10-19'})
         self.assertEqual((r.json['subscription']['state'], r.json['subscription']['paidUntil']), ('active', '2027-10-18'))
         self.assertEqual(r.json['billing'][0]['amount'], 290)
-        self.assertEqual(c.get('/api/students').status_code, 200)
+        self.assertEqual(c.post('/api/students', json={'id': 's3', 'name': 'x'}).status_code, 201)   # unlimited once paid
         self.assertEqual(c.post(f'/api/admin/users/{user_id}/subscription', json={'action': 'free'}).status_code, 403)
         self.assertEqual(admin.post(f'/api/admin/users/{user_id}/subscription', json={'action': 'free'}).json['subscription']['state'], 'free')
 

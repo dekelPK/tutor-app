@@ -6,7 +6,7 @@ flask_app.py — PythonAnywhere WSGI entry point
 """
 from flask import Flask, jsonify, request, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
-import sqlite3, json, os, sys, hashlib, secrets, uuid, hmac, subprocess, urllib.request, urllib.error, shutil, glob
+import re, sqlite3, json, os, sys, hashlib, secrets, uuid, hmac, subprocess, urllib.request, urllib.error, shutil, glob
 from datetime import datetime, timedelta
 try:
     from zoneinfo import ZoneInfo
@@ -231,7 +231,7 @@ CREATE TABLE IF NOT EXISTS contact_messages (
         if 'coupon' not in user_cols:
             db.execute('ALTER TABLE users ADD COLUMN coupon TEXT')
         # Free trial + manually recorded payments (subscription.py). NULL trial_ends
-        # and paid_until = never billed (founding users) → free, never blocked.
+        # and paid_until = never billed (founding users) → unlimited. See subscription.py.
         for col in ('phone', 'trial_ends', 'paid_until', 'billing', 'sub_request_at', 'invoicing'):
             if col not in user_cols:
                 db.execute(f'ALTER TABLE users ADD COLUMN {col} TEXT')
@@ -281,12 +281,6 @@ def verify_pw(stored_hash, pw):
 def require_auth():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
-    # Trial over / subscription lapsed → the app is locked (402) until the admin
-    # records a payment. /api/auth/me and /api/subscription/request stay open.
-    with get_db() as db:
-        u = db.execute('SELECT * FROM users WHERE id=?', [session['user_id']]).fetchone()
-    if u and subscription.blocked(u, ADMIN_EMAIL):
-        return jsonify({'error': 'subscription', 'subscription': subscription.status(u, ADMIN_EMAIL)}), 402
     return None
 
 def uid():
@@ -301,7 +295,27 @@ CODE_DIR = os.path.dirname(os.path.abspath(__file__))
 @app.route('/landing')
 def landing_page():
     with open(os.path.join(CODE_DIR, 'landing.html'), encoding='utf-8') as f:
-        return f.read(), 200, {'Content-Type': 'text/html; charset=utf-8'}
+        html = f.read().replace('__BASE__', site_base())
+    return html, 200, {'Content-Type': 'text/html; charset=utf-8'}
+
+def site_base():
+    """Public origin for canonical / Open Graph / sitemap URLs (https everywhere but localhost)."""
+    base = request.url_root.rstrip('/')
+    if not re.match(r'^http://(localhost|127\.|0\.0\.0\.0)', base):
+        base = re.sub(r'^http://', 'https://', base)
+    return base
+
+# Search engines: only the landing page is meant to be indexed (the app itself is behind a login).
+@app.route('/robots.txt')
+def robots_txt():
+    return (f'User-agent: *\nAllow: /welcome\nAllow: /landing/\nDisallow: /api/\nDisallow: /?\n\nSitemap: {site_base()}/sitemap.xml\n',
+            200, {'Content-Type': 'text/plain; charset=utf-8'})
+
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+           f'  <url><loc>{site_base()}/welcome</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>\n</urlset>\n')
+    return xml, 200, {'Content-Type': 'application/xml; charset=utf-8'}
 
 @app.route('/landing/<path:filename>')
 def landing_assets(filename):
@@ -508,7 +522,7 @@ def auth_register():
         new_id   = uuid.uuid4().hex[:12]
         # Everyone starts right away on a free trial (subscription.TRIAL_DAYS);
         # the app locks itself when it ends unless the admin recorded a payment.
-        trial_ends = None if (is_first or is_admin_account) else subscription.new_trial_end()
+        trial_ends = None if (is_first or is_admin_account) else subscription.free_plan_marker()
         db.execute('INSERT INTO users (id,email,password_hash,name,created_at,approved,profession,gender,plan,coupon,phone,trial_ends) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
                    [new_id, email, hash_pw(pw), name, datetime.now().isoformat(), 1, profession, gender, plan, coupon, phone, trial_ends])
         if is_first:
@@ -993,7 +1007,7 @@ def admin_approve_user(target_id):
         db.execute('UPDATE users SET approved=1 WHERE id=?', [target_id])
         if user and user['plan'] and not (user['trial_ends'] or user['paid_until']):
             # Signed up for a paid plan before the trial existed — the trial starts now.
-            db.execute('UPDATE users SET trial_ends=? WHERE id=?', [subscription.new_trial_end(), target_id])
+            db.execute('UPDATE users SET trial_ends=? WHERE id=?', [subscription.free_plan_marker(), target_id])
     if user:
         # Best-effort — approval always succeeds even if the notification fails.
         try:
@@ -1104,7 +1118,7 @@ def admin_payment_request(target_id):
 
 @app.route('/api/admin/users/<target_id>/subscription', methods=['POST'])
 def admin_set_subscription(target_id):
-    # action: payment (record a Bit payment → extends paid_until) | free | trial (restart N days)
+    # action: payment (record a Bit payment → extends paid_until) | free (unlimited, no billing)
     err = require_admin()
     if err: return err
     body = request.json or {}
@@ -1121,10 +1135,6 @@ def admin_set_subscription(target_id):
             db.execute('UPDATE users SET billing=?, paid_until=?, sub_request_at=NULL WHERE id=?', [billing, until, target_id])
         elif action == 'free':
             db.execute('UPDATE users SET trial_ends=NULL, paid_until=NULL WHERE id=?', [target_id])
-        elif action == 'trial':
-            days = max(1, min(60, int(body.get('days') or subscription.TRIAL_DAYS)))
-            db.execute('UPDATE users SET trial_ends=?, paid_until=NULL WHERE id=?',
-                       [(datetime.now() + timedelta(days=days)).isoformat(timespec='seconds'), target_id])
         else:
             return jsonify({'error': 'bad action'}), 400
         u = db.execute('SELECT * FROM users WHERE id=?', [target_id]).fetchone()
@@ -1145,6 +1155,11 @@ def add_student():
     if err: return err
     s = request.json
     with get_db() as db:
+        # Free plan: capped at subscription.FREE_CLIENT_LIMIT clients (402 → the app offers an upgrade).
+        u = db.execute('SELECT * FROM users WHERE id=?', [uid()]).fetchone()
+        count = db.execute('SELECT COUNT(*) FROM students WHERE user_id=?', [uid()]).fetchone()[0]
+        if u and subscription.over_limit(u, count, ADMIN_EMAIL):
+            return jsonify({'error': 'limit', 'subscription': subscription.status(u, ADMIN_EMAIL)}), 402
         db.execute('INSERT INTO students(id,user_id,data) VALUES (?,?,?)',
                    [s['id'], uid(), json.dumps(s, ensure_ascii=False)])
     return jsonify(s), 201

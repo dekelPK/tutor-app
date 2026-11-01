@@ -2069,7 +2069,7 @@
           <div class="gender-pick" id="reg-gender-pick"></div>
         </div>
         <div class="auth-field">
-          <label>מסלול</label>
+          <label>מסלול להמשך (כשיהיו לך יותר מ-2 לקוחות)</label>
           <div class="gender-pick" id="reg-plan-pick"></div>
         </div>
         <div class="auth-field">
@@ -2110,7 +2110,7 @@
           </div>
         </div>
         <button class="btn-auth" id="register-btn" onclick="doRegister()">יצירת חשבון</button>
-        <div class="auth-note">🎁 שבוע ניסיון חינם — בלי התחייבות ובלי כרטיס אשראי</div>
+        <div class="auth-note">🆓 חינם לתמיד עד 2 לקוחות — בלי כרטיס אשראי ובלי התחייבות</div>
       </div>
 
       <div id="auth-error" class="auth-error">⚠️ <span id="auth-error-text"></span></div>
@@ -2569,8 +2569,9 @@ async function apiCall(method, url, body) {
   if (body !== undefined) opts.body = JSON.stringify(body);
   const r = await fetch(url, opts);
   if (r.status === 401) { showAuthOverlay(); throw new Error('Unauthorized'); }
-  if (r.status === 402) { showSubWall((await r.json()).subscription); throw new Error('subscription'); }
+  if (r.status === 402) { showSubWall((await r.json()).subscription); throw new Error('limit'); }
   if (!r.ok) throw new Error(`${method} ${url} → ${r.status}`);
+  if (url.startsWith('/api/students')) setTimeout(renderTrialBanner, 0);   // client count changed
   return r.status !== 204 ? r.json() : null;
 }
 
@@ -2938,14 +2939,14 @@ async function doRegister() {
     btn.disabled = false; btn.textContent = 'יצירת חשבון';
   }
 }
-// ===== SUBSCRIPTION (free trial → Bit payment that the admin records) =====
-// The server answers 402 once the trial / paid period is over; until then a
-// strip shows the days left. "אני רוצה להמשיך" lands in the admin's messages.
+// ===== SUBSCRIPTION (free plan: up to 2 clients → Bit payment that the admin records) =====
+// New accounts are free forever with up to _sub.limit clients. Adding another answers 402 {error:'limit'};
+// "אני רוצה לשדרג" lands in the admin's messages and the admin records the Bit payment.
 let _sub = null;
 function setSubscription(s) {
   _sub = s || null;
   renderTrialBanner();
-  return _sub?.state === 'expired';
+  return false;   // nothing is ever locked any more
 }
 function subPlanLine() {
   if (!_sub?.planName) return '';
@@ -2953,7 +2954,7 @@ function subPlanLine() {
 }
 function subFormHtml() {
   return `<textarea id="sub-msg" rows="2" maxlength="500" placeholder="רוצה להוסיף משהו? (לא חובה — למשל: מעדיף/ה מנוי שנתי)"></textarea>
-    <button class="btn btn-primary sub-cta" id="sub-btn" onclick="sendSubRequest()">אני רוצה להמשיך 💙</button>`;
+    <button class="btn btn-primary sub-cta" id="sub-btn" onclick="sendSubRequest()">אני רוצה לשדרג 💙</button>`;
 }
 function subSentHtml(at) {
   return `<div class="sub-sent">✓ הבקשה נשלחה ${relativeTime(at)}<br>
@@ -2964,23 +2965,17 @@ function subRequestBlock() {
   return `${subPlanLine() ? `<div class="sub-plan">${subPlanLine()}</div>` : ''}
     <div id="sub-req">${_sub?.requestedAt ? subSentHtml(_sub.requestedAt) : subFormHtml()}</div>`;
 }
-function showSubWall(s) {
+function showSubWall(s) {   // 402 {error:'limit'} — the free plan's client cap
   if (s) _sub = { ..._sub, ...s };
-  const trial = _sub?.reason !== 'subscription';
-  const el = document.getElementById('sub-wall');
-  el.innerHTML = `<div class="sub-card">
-    <div class="sub-logo">ל</div>
-    <h2>${trial ? 'שבוע הניסיון הסתיים' : 'תקופת המנוי הסתיימה'}</h2>
-    <p>${trial ? 'מקווים שנהנית מלוזי 💙 ' : ''}כל הנתונים שלך שמורים. כדי להמשיך, שלח/י לנו בקשה — ונשלח לך בקשת תשלום בביט.</p>
-    ${subRequestBlock()}
-    <button class="sub-logout" onclick="doLogout()">יציאה מהחשבון</button>
-  </div>`;
-  el.style.display = 'flex';
-  closeModal();
-  hideLoading();
+  openLimitModal();
+}
+function openLimitModal() {
+  const lim = _sub?.limit || 2;
+  openModal('הגעת למגבלת החבילה החינמית 💙', `<p class="pkg-sub" style="margin:0 0 14px">בחבילה החינמית אפשר לנהל עד ${lim} לקוחות. כדי להוסיף עוד — שלח/י בקשה, נשלח לך בקשת תשלום בביט, ואחרי התשלום אפשר להוסיף לקוחות ללא הגבלה. כל מה שכבר הכנסת נשמר.</p>
+    <div style="text-align:center">${subRequestBlock()}</div>`);
 }
 function openSubRequestModal() {
-  openModal('המשך המנוי', `<p class="pkg-sub" style="margin:0 0 14px">רוצה להמשיך עם לוזי? שלח/י בקשה — נשלח לך בקשת תשלום בביט, ואחרי התשלום הכל ממשיך כרגיל.</p>
+  openModal('שדרוג לוזי', `<p class="pkg-sub" style="margin:0 0 14px">רוצה לנהל יותר מ-${_sub?.limit || 2} לקוחות? שלח/י בקשה — נשלח לך בקשת תשלום בביט, ואחרי התשלום אפשר להוסיף לקוחות ללא הגבלה.</p>
     <div style="text-align:center">${subRequestBlock()}</div>`);
 }
 async function sendSubRequest() {
@@ -3003,11 +2998,17 @@ function renderTrialBanner() {
   if (!el) return;
   const s = _sub, n = s?.daysLeft;
   const days = n === 1 ? 'יום אחד' : `${n} ימים`;
-  let txt = '';
-  if (s?.state === 'trial') txt = n <= 0 ? '🎁 שבוע הניסיון מסתיים היום' : `🎁 שבוע ניסיון · ${n === 1 ? 'נשאר' : 'נשארו'} ${days}`;
-  else if (s?.state === 'active' && n <= 5) txt = n === 0 ? '⏳ המנוי מסתיים היום' : `⏳ המנוי מסתיים בעוד ${days}`;
+  let txt = '', btn = '';
+  if (s?.state === 'limited') {
+    const used = _students.length, lim = s.limit || 2;
+    txt = used >= lim ? `🆓 חבילה חינמית · הגעת למגבלה (${used}/${lim} לקוחות)` : `🆓 חבילה חינמית · ${used}/${lim} לקוחות`;
+    btn = s.requestedAt ? '✓ הבקשה נשלחה' : 'שדרוג';
+  } else if (s?.state === 'active' && n <= 5) {
+    txt = n === 0 ? '⏳ המנוי מסתיים היום' : `⏳ המנוי מסתיים בעוד ${days}`;
+    btn = s.requestedAt ? '✓ הבקשה נשלחה' : 'להמשך המנוי';
+  }
   if (!txt) { el.style.display = 'none'; return; }
-  el.innerHTML = `<span>${txt}</span><button onclick="openSubRequestModal()">${s.requestedAt ? '✓ הבקשה נשלחה' : 'להמשך המנוי'}</button>`;
+  el.innerHTML = `<span>${txt}</span><button onclick="openSubRequestModal()">${btn}</button>`;
   el.style.display = 'flex';
 }
 
@@ -4691,9 +4692,8 @@ function adminSubPill(u) {
   if (!s || u.isAdmin || s.state === 'free') return '';
   const d = iso => iso ? formatDate(iso.slice(0, 10)).slice(0, 5) : '';
   const req = s.requestedAt ? ' <span class="adm-pill adm-pill-warn">🙋 ביקש/ה להמשיך</span>' : '';
-  if (s.state === 'trial') return `<span class="adm-pill adm-pill-warn">🎁 ניסיון עד ${d(s.trialEnds)}</span>${req}`;
   if (s.state === 'active') return `<span class="adm-pill adm-pill-live">✓ שולם עד ${formatDate(s.paidUntil.slice(0, 10))}</span>${req}`;
-  return `<span class="adm-pill adm-pill-bad">🔒 ${s.reason === 'trial' ? 'הניסיון' : 'המנוי'} הסתיים</span>${req}`;
+  return `<span class="adm-pill adm-pill-warn">🆓 חבילה חינמית (עד ${s.limit} לקוחות)${s.lapsed ? ' · המנוי הסתיים' : ''}</span>${req}`;
 }
 function adminPhoneLine(u) {
   if (!u.phone) return '';
@@ -4744,8 +4744,7 @@ function openAdminPaymentModal(userId) {
       <table class="adm-pay-hist">${hist.map(b => `<tr><td>${formatDate(b.paidAt)}</td><td><b>₪${b.amount}</b></td><td>${periodLabel(b)}</td>
         <td>עד ${formatDate(b.until)}</td><td class="text-muted">${escapeHtml(b.note || '')}</td></tr>`).join('')}</table>` : ''}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
-      <button class="btn btn-ghost btn-xs" onclick="adminSetSubscription('${u.id}', {action:'trial', days:7})">🎁 עוד 7 ימי ניסיון</button>
-      <button class="btn btn-ghost btn-xs" onclick="adminSetSubscription('${u.id}', {action:'free'})">חשבון חינם (בלי חיוב)</button>
+      <button class="btn btn-ghost btn-xs" onclick="adminSetSubscription('${u.id}', {action:'free'})">בלי מגבלת לקוחות (בלי חיוב)</button>
     </div>`, async () => {
       const period = document.getElementById('ap-period').value;
       const ok = await adminSetSubscription(u.id, { action: 'payment', amount: document.getElementById('ap-amount').value, period,
@@ -4761,7 +4760,7 @@ async function adminSetSubscription(userId, body) {
   _adminUsers = _adminUsers.map(x => x.id === userId ? { ...x, subscription: d.subscription, billing: d.billing } : x);
   closeModal();
   filterAdminUsers(document.getElementById('admin-user-search')?.value);
-  if (body.action !== 'payment') showToast(body.action === 'free' ? 'החשבון הוגדר כחינם' : 'הניסיון הוארך ב-7 ימים', 'success');
+  if (body.action !== 'payment') showToast('החשבון הוגדר ללא מגבלת לקוחות', 'success');
   return d;
 }
 // Weekly Instagram routine: copyable request for Claude + "done this week" (stops the Sunday push)

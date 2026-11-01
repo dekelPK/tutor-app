@@ -1,22 +1,27 @@
 """
-subscription.py — free trial + manually-recorded payments. Shared by both backends.
+subscription.py — free plan (limited clients) + manually-recorded payments. Shared by both backends.
 
-New signups get TRIAL_DAYS of full access. After that the app is blocked until
-the admin records a payment (paid by Bit, outside the app), which extends
-paid_until by the paid period. Accounts with neither a trial nor a payment on
-record — the founding users, the admin, demo accounts — are free and never blocked.
+Everyone who signs up starts on the free plan: full app, no time limit, up to FREE_CLIENT_LIMIT
+clients (students / customers). Adding more needs a paid period — the admin records a Bit payment,
+which extends paid_until. Nothing is ever locked: when a paid period ends the account simply drops
+back to the free plan (all data stays, new clients are capped again).
+Accounts with no free_plan / trial / payment on record — the founding users, the admin, demo
+accounts — are unlimited and never capped.
 """
 import json
 import re
 from datetime import datetime, timedelta, date
 
-TRIAL_DAYS = 7
+FREE_CLIENT_LIMIT = 2
+TRIAL_DAYS = 7   # kept for the old admin 'trial' action and the welcome mail wording
 PERIODS = {'month': 1, 'year': 12}   # months per period; 'custom' passes months directly
 DEMO_DOMAIN = '@luzi.test'
 
 
-def new_trial_end(now=None):
-    return ((now or datetime.now()) + timedelta(days=TRIAL_DAYS)).isoformat(timespec='seconds')
+def free_plan_marker(now=None):
+    """Stored in users.trial_ends for accounts on the free plan (the column predates the plan: it
+    now just records when the account joined, and marks it as capped)."""
+    return (now or datetime.now()).isoformat(timespec='seconds')
 
 
 def normalize_phone(raw):
@@ -37,8 +42,8 @@ def _row(u, key):
 
 
 def status(u, admin_email='', now=None):
-    """The account's subscription state for the UI and the access check.
-    state: free | trial | active | expired. `u` is a users row (or dict)."""
+    """The account's plan for the UI and the client cap.
+    state: free (unlimited, founders) | active (paid) | limited (free plan, capped). `u` is a users row (or dict)."""
     now = now or datetime.now()
     email = (_row(u, 'email') or '').lower()
     trial_ends, paid_until = _row(u, 'trial_ends'), _row(u, 'paid_until')
@@ -48,14 +53,13 @@ def status(u, admin_email='', now=None):
     if paid_until and paid_until >= now.date().isoformat():
         days = (date.fromisoformat(paid_until) - now.date()).days
         return {**out, 'state': 'active', 'daysLeft': days}
-    if trial_ends and not paid_until and trial_ends > now.isoformat(timespec='seconds'):
-        left = datetime.fromisoformat(trial_ends) - now
-        return {**out, 'state': 'trial', 'daysLeft': max(0, left.days + (1 if left.seconds else 0))}
-    return {**out, 'state': 'expired', 'reason': 'subscription' if paid_until else 'trial'}
+    return {**out, 'state': 'limited', 'limit': FREE_CLIENT_LIMIT, 'lapsed': bool(paid_until)}
 
 
-def blocked(u, admin_email='', now=None):
-    return status(u, admin_email, now)['state'] == 'expired'
+def over_limit(u, client_count, admin_email='', now=None):
+    """True when this account may not add another client."""
+    st = status(u, admin_email, now)
+    return st['state'] == 'limited' and client_count >= st['limit']
 
 
 def add_months(d, months):
