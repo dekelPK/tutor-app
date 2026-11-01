@@ -306,6 +306,11 @@ def site_base():
     return base
 
 # Search engines: only the landing page is meant to be indexed (the app itself is behind a login).
+# Google Search Console ownership (HTML-file method: the home page "/" is the app, not the landing page)
+@app.route('/googlebeb2b8f9cf50fb69.html')
+def google_site_verification():
+    return 'google-site-verification: googlebeb2b8f9cf50fb69.html', 200, {'Content-Type': 'text/html; charset=utf-8'}
+
 @app.route('/robots.txt')
 def robots_txt():
     return (f'User-agent: *\nAllow: /welcome\nAllow: /landing/\nDisallow: /api/\nDisallow: /?\n\nSitemap: {site_base()}/sitemap.xml\n',
